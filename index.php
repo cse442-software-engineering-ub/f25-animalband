@@ -23,7 +23,7 @@
         if ($conn->connect_error) {
         die("Connection failed: " . $conn->connect_error);
         }
-        echo "Successfully connected SQL database";
+        echo "Successfully connected MySQL database";
     ?>
 
 </body>
