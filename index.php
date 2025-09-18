@@ -11,6 +11,19 @@
 
     <?php
         echo "<p style=\"text-align: center;\">Hello World!</p>";
+
+        $servername = "localhost";
+        $username = "ikimos";
+        $password = "50445468";
+
+        // Create connection
+        $conn = new mysqli($servername, $username, $password);
+
+        // Check connection
+        if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+        }
+        echo "Connected successfully";
     ?>
 
 </body>
