@@ -41,6 +41,13 @@
             (Flamingo, Triangle),
             (Lizard, Xylophone)";
 
+        $conn->query($sql);
+
+        $sql="SELECT * FROM Animals";
+        $result=$conn->query($sql);
+        while ($row=$result->fetch_assoc()) {
+            echo "Animal: " . $row["Name"] . " Instrument: " . $row["Instrument"] . "\n";
+        }
         $conn->close();
     ?>
 
