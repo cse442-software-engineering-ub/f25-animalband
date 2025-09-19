@@ -24,6 +24,24 @@
         die("Connection failed: " . $conn->connect_error);
         }
         echo "Successfully connected MySQL database";
+
+        $sql="CREATE TABLE Animals (
+            Name VARCHAR(50),
+            Instrument VARCHAR(50)
+        )";
+
+        if ($conn->query($sql) === TRUE) {
+            echo "Table MyGuests created successfully";
+        } else {
+            echo "Error creating table: " . $conn->error;
+        }
+
+        $sql="INSERT INTO Animals (Name, Instrument) VALUES
+            (Monkey, Drums),
+            (Flamingo, Triangle),
+            (Lizard, Xylophone)";
+
+        $conn->close();
     ?>
 
 </body>
