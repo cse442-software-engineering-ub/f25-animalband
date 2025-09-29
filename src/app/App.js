@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Landing from "./routes/landing/landing.js";
+import useIsMobile from "../hook/useIsMobile.js";
+import MobileLanding from "./routes/landing/mobile_landing.js"
+import DesktopLanding from "./routes/landing/desktop_landing.js";
 import Forum from "./routes/forum/forum.js";
 import Looping from "./routes/looping/looping.js";
 import Stage from "./routes/stage/stage.js";
@@ -7,6 +9,10 @@ import "../App.css";
 
 function NotFound() {
   return <h2>404 – Page not found</h2>;
+}
+function Landing(){
+  const isMobile = useIsMobile(852);
+  return isMobile ? <MobileLanding /> : <DesktopLanding />;
 }
 
 export default function App() {

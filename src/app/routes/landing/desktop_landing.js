@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import "./landing.css"
-import Ostrich from "../../../assets/ostrich.jpeg"
+import "./desktop_landing.css";
+import Ostrich from "../../../assets/ostrich.jpeg";
 export default function Landing() {
   return (
     <div className="landing-page">
