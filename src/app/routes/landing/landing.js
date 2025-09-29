@@ -7,7 +7,7 @@ export default function Landing() {
       {/* Header */}
       <header className="header">
         <Link to="/" className="logo-section">
-          <span className="material-icons paw-icon">pets</span>
+          <span className="material-symbols-outlined paw-icon">pets</span>
           <h1 className="site-title">ANIMALBAND</h1>
         </Link>
         <div className="header-buttons">
@@ -64,14 +64,42 @@ export default function Landing() {
         <button className="btn-start-band">Start Your Band</button>
       </section>
 
-
-
+      {/* Features */}
+      <section className="features-section">
+        <div className="features-grid">
+          {/* Stage */}
+          <Link to="/stage" className="feature-card">
+            <span className="material-symbols-outlined feature-icon">piano</span>
+            <h3>Stage</h3>
+            <p>Play instruments with your favorite animals.</p>
+          </Link>
+          {/* Looping */}
+          <Link to="/looping" className="feature-card">
+            <span className="material-symbols-outlined feature-icon">instant_mix</span>
+            <h3>Looping</h3>
+            <p>Layer beats & notes with a visual mixer.</p>
+          </Link>
+          {/* Forum */}
+          <Link to="/forum" className="feature-card">
+            <span className="material-symbols-outlined feature-icon">chat</span>
+            <h3>Forum</h3>
+            <p>Share your tracks, ask for help, and get feedback.</p>
+          </Link>
+          {/* Customization */}
+          <Link to="/stage" className="feature-card">
+            <span className="material-symbols-outlined feature-icon">edit</span>
+            <h3>Customization</h3>
+            <p>Import sounds and personalize your animals.</p>
+          </Link>
+        </div>
+      </section>
       
       {/* Material Icons Font */}
       <link
-        href="https://fonts.googleapis.com/icon?family=Material+Icons"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
       />
+
     </div>
   );
 }
