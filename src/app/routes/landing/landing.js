@@ -94,6 +94,30 @@ export default function Landing() {
         </div>
       </section>
       
+      {/* Stats */}
+      <section className="stats-section">
+        <div className="stats-container">
+          <div className="stat-card">
+            <p className="stat-number">12,572</p>
+            <p className="stat-label">Loops Created</p>
+          </div>
+          <div className="stat-card">
+            <p className="stat-number">472</p>
+            <p className="stat-label">Members</p>
+          </div>
+          <div className="stat-card">
+            <p className="stat-number">2,184</p>
+            <p className="stat-label">Posts</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="footer">
+        <h3>Register for free and rock out with your animals today!</h3>
+      </footer>
+
+      
       {/* Material Icons Font */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
