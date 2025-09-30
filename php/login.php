@@ -45,7 +45,7 @@
     $passwordResult = $stmt->get_result();
     $stmt->close();
 
-    if ($result->num_rows === 0) {
+    if ($passwordResult->num_rows === 0) {
         echo json_encode(["success" => false, "message" => "Invalid user"]);
         exit;
     }
