@@ -2,11 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./mobile_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
+import Bird from "../../../assets/bird.jpeg";
+import Hamster from "../../../assets/hamster.jpeg";
+import Kangaroo from "../../../assets/kangaroo.jpeg";
+import Snake from "../../../assets/snake.jpeg";
 
 export default function MobileLanding() {
 
   // Stuff for carousel
-  const slides = [Ostrich, Ostrich, Ostrich, Ostrich, Ostrich];
+  const slides = [Ostrich, Bird, Hamster, Kangaroo, Snake];
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
 

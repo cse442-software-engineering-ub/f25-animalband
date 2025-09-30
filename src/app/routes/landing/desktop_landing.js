@@ -1,6 +1,13 @@
 import { Link } from "react-router-dom";
 import "./desktop_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
+import Bird from "../../../assets/bird.jpeg";
+import Hamster from "../../../assets/hamster.jpeg";
+import Kangaroo from "../../../assets/kangaroo.jpeg";
+import Snake from "../../../assets/snake.jpeg";
+
+
+
 export default function Landing() {
   return (
     <div className="landing-page">
@@ -36,22 +43,22 @@ export default function Landing() {
         <div className="animals-container">  
           <div className="animal-member">
             <div className="hamster">
-              <img src={Ostrich} alt="Ostrich"/>
+              <img src={Hamster} alt="Hamster"/>
             </div>
           </div>
           <div className="animal-member">
-            <div className="iguana">
-              <img src={Ostrich} alt="Ostrich"/>
+            <div className="snake">
+              <img src={Snake} alt="Snake"/>
             </div>
           </div>
           <div className="animal-member">
             <div className="bird">
-              <img src={Ostrich} alt="Ostrich"/>
+              <img src={Bird} alt="Bird"/>
             </div>
           </div>
           <div className="animal-member">
             <div className="kangaroo">
-              <img src={Ostrich} alt="Ostrich"/>
+              <img src={Kangaroo} alt="Kangaroo"/>
             </div>
           </div>
           <div className="animal-member">
