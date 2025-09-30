@@ -7,8 +7,6 @@ import Hamster from "../../../assets/hamster.jpeg";
 import Kangaroo from "../../../assets/kangaroo.jpeg";
 import Snake from "../../../assets/snake.jpeg";
 
-import { useNavigate } from "react-router-dom";
-
 function handleAccountClick() {
   const navigate = useNavigate();
 
