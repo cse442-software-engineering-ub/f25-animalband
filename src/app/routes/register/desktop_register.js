@@ -27,7 +27,6 @@ export default function Register() {
         }
 
         const result = await response.json();
-        alert("result.message" || "Registration successful");
       } catch {
         alert("Registration");
       }
