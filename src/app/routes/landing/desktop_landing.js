@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "./desktop_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
@@ -9,6 +10,10 @@ import Snake from "../../../assets/snake.jpeg";
 
 
 export default function Landing() {
+  const navigate = useNavigate();
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
   return (
     <div className="landing-page">
       {/* Header */}
@@ -22,9 +27,7 @@ export default function Landing() {
           <Link to="/todo">
             <button className="btn-login">Login</button>
           </Link>
-          <Link to="/todo">
-            <button className="btn-register">Register</button>
-          </Link>
+          <button className="btn-register" onClick={() => handleNavigation("/register")}>Register</button>
         </div>
       </header>
 
