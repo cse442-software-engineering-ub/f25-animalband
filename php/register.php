@@ -62,11 +62,8 @@
     $stmt = $conn->prepare("INSERT INTO authTokens (Email, Token) VALUES (?, ?)");
     $stmt->bind_param("ss", $email, $token);
 
-    if ($stmt->execute()) {
-        echo json_encode(['message' => 'Auth token issued']);
-    } else {
-        // Handle duplicate username/email or other errors
-        echo json_encode(['message' => 'Error: ' . $stmt->error]);
+    if (!$stmt->execute()) {
+        error_log("auth token statement error")
     }
     $stmt->close();
 
