@@ -18,7 +18,7 @@ export default function Register() {
       try {
         // Try localhost first
         const response = await fetch(
-          "http://localhost:3000/CSE442/2025-Fall/cse-442h/register.php",
+          "http://localhost:3000/CSE442/2025-Fall/cse-442h/php/register.php",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
