@@ -1,4 +1,8 @@
+import { useNavigate } from "react-router-dom";
+
 export default function Register() {
+    const navigate = useNavigate();
+
     const handleRegister = async (e) => {
       e.preventDefault();
 
@@ -27,8 +31,10 @@ export default function Register() {
         }
 
         const result = await response.json();
+        
+        navigate("/");
       } catch {
-        alert("Registration");
+        alert("Registration failed");
       }
     };
 
