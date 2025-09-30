@@ -7,7 +7,22 @@ import Hamster from "../../../assets/hamster.jpeg";
 import Kangaroo from "../../../assets/kangaroo.jpeg";
 import Snake from "../../../assets/snake.jpeg";
 
+import { useNavigate } from "react-router-dom";
 
+function handleAccountClick() {
+  const navigate = useNavigate();
+
+  // Check if auth_token cookie exists
+  const hasAuthToken = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("auth_token="));
+
+  if (hasAuthToken) {
+    navigate("/account");
+  } else {
+    navigate("/login");
+  }
+}
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -23,8 +38,9 @@ export default function Landing() {
           <h1 className="site-title">ANIMALBAND</h1>
         </Link>
         <div className="header-buttons">
-            <button className="btn-login" onClick={() => handleNavigation("/login")}>Login</button>
+          <button className="btn-login" onClick={() => handleNavigation("/login")}>Login</button>
           <button className="btn-register" onClick={() => handleNavigation("/register")}>Register</button>
+          <button className="btn-account" onClick={() => handleAccountClick()}>Account</button>
         </div>
       </header>
 
