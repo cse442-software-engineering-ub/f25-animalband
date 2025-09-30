@@ -32,6 +32,11 @@
     $username = $data['username'] ?? 'dne';
     $email = $data['email'] ?? 'dne';
     $password = $data['password'] ?? 'dne';
+
+    echo "\nname " . $username . "\n";
+    echo "email " . $email . "\n";
+    echo "password " . $password . "\n";
+
     $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
 
     $stmt = $conn->prepare("INSERT INTO accountCredentials (Name, Email, Password) VALUES (?, ?, ?)");
