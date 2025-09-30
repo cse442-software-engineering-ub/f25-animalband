@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     const form = e.target.form;
@@ -23,13 +24,15 @@ export default function Login() {
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`Request failed. Status ${response.status}`);
-      }
+      const data = await response.json();
 
-      navigate("/");
+      if (data.success) {
+        navigate("/");
+      } else {
+        navigate("/login");
+      }
     } catch {
-      alert("Registration failed");
+      alert("Login failed");
     }
   };
 
@@ -46,10 +49,12 @@ export default function Login() {
           Password
           <input type="password" name="password" />
         </label>
-        <button type="button" onClick={handleRegister}>
-          Register
+        <button type="button" onClick={handleLogin}>
+          Login
         </button>
       </form>
+
+      Don't have an account? <Link to="/register">Register</Link>
     </div>
   );
 }

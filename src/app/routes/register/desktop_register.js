@@ -31,7 +31,7 @@ export default function Register() {
             throw new Error(`Request failed. Status ${response.status}`);
         }
 
-        const result = await response.json();
+        // const result = await response.json();
 
         navigate("/");
       } catch {

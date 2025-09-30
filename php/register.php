@@ -40,9 +40,9 @@
     $email = $data['email'] ?? 'dne';
     $password = $data['password'] ?? 'dne';
 
-    error_log("recv user: $username");
-    error_log("recv email: $email");
-    error_log("recv pwd: $password");
+    // error_log("recv user: $username");
+    // error_log("recv email: $email");
+    // error_log("recv pwd: $password");
 
     $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
 
