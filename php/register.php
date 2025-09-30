@@ -29,9 +29,9 @@
     $json = file_get_contents('php://input');
     $data = json_decode($json, true);
 
-    $username = $data['username'] ?? '';
-    $email = $data['email'] ?? '';
-    $password = $data['password'] ?? '';
+    $username = $data['username'] ?? 'dne';
+    $email = $data['email'] ?? 'dne';
+    $password = $data['password'] ?? 'dne';
     $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
 
     $stmt = $conn->prepare("INSERT INTO accountCredentials (Name, Email, Password) VALUES (?, ?, ?)");
