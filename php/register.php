@@ -14,6 +14,15 @@
         die("Connection failed: " . $conn->connect_error);
     }
 
+    $makeTokenTable = "CREATE TABLE IF NOT EXISTS authTokens (
+        `Email` VARCHAR(50),
+        `Token` VARCHAR(255)
+    )";
+
+    if (!$conn->query($makeTokenTable)) {
+        error_log("error making token table");
+    }
+
     $makeTable = "CREATE TABLE IF NOT EXISTS accountCredentials (
         `Name` VARCHAR(50),
         `Email` VARCHAR(50),
@@ -46,7 +55,28 @@
         // Handle duplicate username/email or other errors
         echo json_encode(['message' => 'Error: ' . $stmt->error]);
     }
-
     $stmt->close();
+
+    $token = bin2hex(random_bytes(32));
+
+    $stmt = $conn->prepare("INSERT INTO authTokens (Email, Token) VALUES (?, ?)");
+    $stmt->bind_param("ss", $email, $token);
+
+    if ($stmt->execute()) {
+        echo json_encode(['message' => 'Auth token issued']);
+    } else {
+        // Handle duplicate username/email or other errors
+        echo json_encode(['message' => 'Error: ' . $stmt->error]);
+    }
+    $stmt->close();
+
+    setcookie("auth_token", $token, [
+        'expires' => time() + 3600,
+        'path' => '/',
+        'secure' => true,
+        'httponly' => true,
+        'samesite' => 'Strict',
+    ]);
+
     $conn->close();
 ?>

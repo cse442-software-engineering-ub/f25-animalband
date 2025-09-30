@@ -24,6 +24,7 @@ export default function Register() {
             method: "POST",
             headers: {"Content-Type":"application/json"},
             body: JSON.stringify(postData),
+            credentials: 'include'
         });
 
         if (!response.ok) {
@@ -31,7 +32,7 @@ export default function Register() {
         }
 
         const result = await response.json();
-        
+
         navigate("/");
       } catch {
         alert("Registration failed");
