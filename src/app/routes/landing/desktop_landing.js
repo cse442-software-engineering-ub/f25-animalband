@@ -11,8 +11,6 @@ export default function Landing() {
   const navigate = useNavigate();
 
   const handleAccountClick = () => {
-    const navigate = useNavigate();
-
     // Check if auth_token cookie exists
     const hasAuthToken = document.cookie
       .split("; ")
