@@ -63,7 +63,7 @@
     $stmt->bind_param("ss", $email, $token);
 
     if (!$stmt->execute()) {
-        error_log("auth token statement error")
+        error_log("auth token statement error");
     }
     $stmt->close();
 
