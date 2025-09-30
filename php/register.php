@@ -22,7 +22,7 @@
         Password VARCHAR(50) 
     )";
 
-    if (!$conn->query($makeTable) !== TRUE) {
+    if (!$conn->query($makeTable)) {
         echo "Error creating table: " . $conn->error;
     }
 
@@ -33,11 +33,6 @@
     $email = $data['email'] ?? '';
     $password = $data['password'] ?? '';
     $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
-
-    header('Content-Type: application/json');
-    echo json_encode([
-        'message' => "Received user $username with email $email"
-    ]);
 
     $stmt = $conn->prepare("INSERT INTO accountCredentials (Name, Email, Password) VALUES (?, ?, ?)");
     $stmt->bind_param("sss", $username, $email, $hashedPwd);
