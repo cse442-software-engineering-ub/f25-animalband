@@ -3,8 +3,8 @@ export default function Register() {
       e.preventDefault();
 
       const form = e.target.form;
-      const username = form["username"].value;
-      const email = form["email"].value;
+      const username = form["username"].value.trim();
+      const email = form["email"].value.trim();
       const password = form["password"].value;
       const passwordConf = form["password-conf"].value;
 
@@ -16,46 +16,20 @@ export default function Register() {
       const postData = { username, email, password };
 
       try {
-        // Try localhost first
-        const response = await fetch(
-          "http://localhost:3000/CSE442/2025-Fall/cse-442h/php/register.php",
-          {
+        const response = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/register.php", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {"Content-Type":"application/json"},
             body: JSON.stringify(postData),
-          }
-        );
+        });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Request failed. Status ${response.status}`);
         }
 
-        const data = await response.json();
-        alert(data.message || "Registration successful!");
-      } catch (error) {
-        // If localhost failed, silently POST to test server instead
-        try {
-          const fallbackResponse = await fetch(
-            "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/register.php",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(postData),
-            }
-          );
-
-          if (!fallbackResponse.ok) {
-            throw new Error(
-              `Fallback HTTP error! status: ${fallbackResponse.status}`
-            );
-          }
-
-          const fallbackData = await fallbackResponse.json();
-          alert(fallbackData.message || "Registration successful (fallback)!");
-        } catch (fallbackError) {
-          console.error("Both fetch attempts failed:", fallbackError);
-          alert("Failed to register on both local and test server.");
-        }
+        const result = await response.json();
+        alert("result.message" || "Registration successful");
+      } catch {
+        alert("Registration");
       }
     };
 
