@@ -6,6 +6,7 @@ import Forum from "./routes/forum/forum.js";
 import Looping from "./routes/looping/looping.js";
 import Stage from "./routes/stage/stage.js";
 import Register from "./routes/register/desktop_register.js";
+import Login from "./routes/login/desktop_login.js"
 import "../App.css";
 
 function NotFound() {
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/forum" element={<Forum />} />
           <Route path="*" element={<NotFound />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
         </Routes>
       </main>
     </BrowserRouter>
