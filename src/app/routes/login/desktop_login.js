@@ -38,7 +38,7 @@ export default function Login() {
 
   return (
     <div className="login-page">
-      <h2>Register</h2>
+      <h2>Login</h2>
       <form>
         <label>
           Email

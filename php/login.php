@@ -37,7 +37,6 @@
 
     $email = $data['email'] ?? 'dne';
     $password = $data['password'] ?? 'dne';    
-    $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
 
     $stmt = $conn->prepare("SELECT Password FROM accountCredentials WHERE Email = ?");
     $stmt->bind_param("s", $email);
@@ -50,10 +49,17 @@
         exit;
     }
 
-    $row = $result->fetch_assoc();
+    $row = $passwordResult->fetch_assoc();
     $hashedPwd = $row['Password'];
 
-    if (password_verify($password, $hashedPassword)) {
+    if (password_verify($password, $hashedPwd)) {
+        $token = bin2hex(random_bytes(32));
+
+        $insertToken = $conn->prepare("INSERT INTO authTokens (Email, Token) VALUES (?, ?)");
+        $insertToken->bind_param("ss", $email, $token);
+        $insertToken->execute();
+        $insertToken->close();
+
         echo json_encode(["success" => true, "message" => "Successful login"]);
         setcookie("auth_token", $token, [
             'expires' => time() + 3600,
