@@ -7,23 +7,24 @@ import Hamster from "../../../assets/hamster.jpeg";
 import Kangaroo from "../../../assets/kangaroo.jpeg";
 import Snake from "../../../assets/snake.jpeg";
 
-function handleAccountClick() {
-  const navigate = useNavigate();
-
-  // Check if auth_token cookie exists
-  const hasAuthToken = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("auth_token="));
-
-  if (hasAuthToken) {
-    navigate("/account");
-  } else {
-    navigate("/login");
-  }
-}
-
 export default function Landing() {
   const navigate = useNavigate();
+
+  const handleAccountClick = () => {
+    const navigate = useNavigate();
+
+    // Check if auth_token cookie exists
+    const hasAuthToken = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("auth_token="));
+
+    if (hasAuthToken) {
+      navigate("/account");
+    } else {
+      navigate("/login");
+    }
+  }
+
   const handleNavigation = (path) => {
     navigate(path);
   };
