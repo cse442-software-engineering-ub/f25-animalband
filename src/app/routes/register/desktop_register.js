@@ -36,7 +36,7 @@ export default function Register() {
         // If localhost failed, silently POST to test server instead
         try {
           const fallbackResponse = await fetch(
-            "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/register.php",
+            "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/register.php",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
