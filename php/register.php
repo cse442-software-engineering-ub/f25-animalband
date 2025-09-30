@@ -4,6 +4,8 @@
     header("Access-Control-Allow-Headers: Content-Type");
     header("Content-Type: application/json");
 
+    echo "Reached register.php";
+
     $servername = "localhost";
     $username = "ikimos";
     $password = "50445468";
