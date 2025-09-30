@@ -3,9 +3,9 @@ export default function Register() {
       e.preventDefault();
 
       const form = e.target.form;
-      const username = form.username.value;
-      const email = form.email.value;
-      const password = form.password.value;
+      const username = form["username"].value;
+      const email = form["email"].value;
+      const password = form["password"].value;
       const passwordConf = form["password-conf"].value;
 
       if (password !== passwordConf) {
