@@ -4,8 +4,6 @@
     header("Access-Control-Allow-Headers: Content-Type");
     header("Content-Type: application/json");
 
-    echo "Reached register.php";
-
     $servername = "localhost";
     $username = "ikimos";
     $password = "50445468";
@@ -17,13 +15,13 @@
     }
 
     $makeTable = "CREATE TABLE IF NOT EXISTS accountCredentials (
-        Name VARCHAR(50),
-        Email VARCHAR(50),
-        Password VARCHAR(50) 
+        `Name` VARCHAR(50),
+        `Email` VARCHAR(50),
+        `Password` VARCHAR(255) 
     )";
 
     if (!$conn->query($makeTable)) {
-        echo "Error creating table: " . $conn->error;
+        error_log("error making table");
     }
 
     $json = file_get_contents('php://input');
@@ -33,9 +31,9 @@
     $email = $data['email'] ?? 'dne';
     $password = $data['password'] ?? 'dne';
 
-    echo "\nname " . $username . "\n";
-    echo "email " . $email . "\n";
-    echo "password " . $password . "\n";
+    error_log("recv user: $username");
+    error_log("recv email: $email");
+    error_log("recv pwd: $password");
 
     $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
 
