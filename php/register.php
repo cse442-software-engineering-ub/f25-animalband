@@ -71,7 +71,7 @@
         'expires' => time() + 3600,
         'path' => '/',
         'secure' => true,
-        'httponly' => true,
+        'httponly' => false,
         'samesite' => 'Strict',
     ]);
 
