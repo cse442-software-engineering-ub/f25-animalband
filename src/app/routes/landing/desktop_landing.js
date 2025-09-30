@@ -23,10 +23,7 @@ export default function Landing() {
           <h1 className="site-title">ANIMALBAND</h1>
         </Link>
         <div className="header-buttons">
-          {/* TODO REGISTER LINKS */}
-          <Link to="/todo">
-            <button className="btn-login">Login</button>
-          </Link>
+            <button className="btn-login" onClick={() => handleNavigation("/login")}>Login</button>
           <button className="btn-register" onClick={() => handleNavigation("/register")}>Register</button>
         </div>
       </header>
