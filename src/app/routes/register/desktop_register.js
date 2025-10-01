@@ -45,9 +45,9 @@ export default function Register() {
     <div className="register-container">
       <div className="register-card">
         <div className="logo">
-          <div className="paw-icon">🐾</div>
+          <span className="material-symbols-outlined paw-icon">pets</span>
           <h1>ANIMALBAND</h1>
-          <h2>Register</h2>
+          <h2 style={{ color: "#2e8b57" }}>Register</h2>
         </div>
         <form>
           <input type="text" name="username" placeholder="Name" />
@@ -75,6 +75,11 @@ export default function Register() {
         <p className="login-link">
           Already have an account? <Link to="/login">Login</Link>
         </p>
+
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+          rel="stylesheet"
+        />
       </div>
     </div>
   );

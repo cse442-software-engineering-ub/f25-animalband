@@ -40,7 +40,7 @@ export default function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="logo">
-          <div className="paw-icon">🐾</div>
+          <span className="material-symbols-outlined paw-icon">pets</span>
           <h1>ANIMALBAND</h1>
           <h2 style={{ color: "#2e8b57" }}>Login</h2>
         </div>
@@ -65,6 +65,11 @@ export default function Login() {
           Don’t have an account? <Link to="/register">Register</Link>
         </p>
       </div>
+
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
     </div>
   );
 }
