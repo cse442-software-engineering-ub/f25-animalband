@@ -1,79 +1,80 @@
 <?php
-// Allow cross-origin requests
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Headers: Content-Type");
-    header("Content-Type: application/json");
+// Secure CORS setup — replace with your React frontend domain
+header("Access-Control-Allow-Origin: https://your-react-domain.com");
+header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Content-Type: application/json");
 
-    $servername = "localhost";
-    $username = "ikimos";
-    $password = "50445468";
+$servername = "localhost";
+$username = "ikimos";
+$password = "50445468";
+$dbname = "cse442_2025_fall_team_h_db";
 
-    $conn = new mysqli($servername, $username, $password, "cse442_2025_fall_team_h_db");
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) {
+    die(json_encode(["success" => false, "message" => "DB connection failed"]));
+}
 
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
+// --- Ensure tables exist ---
+$makeTokenTable = "CREATE TABLE IF NOT EXISTS authTokens (
+    `Email` VARCHAR(50),
+    `Token` VARCHAR(255)
+)";
+$conn->query($makeTokenTable);
 
-    $makeTokenTable = "CREATE TABLE IF NOT EXISTS authTokens (
-        `Email` VARCHAR(50),
-        `Token` VARCHAR(255)
-    )";
+$makeTable = "CREATE TABLE IF NOT EXISTS accountCredentials (
+    `Name` VARCHAR(50),
+    `Email` VARCHAR(50) UNIQUE,
+    `Password` VARCHAR(255),
+    `ProfilePicture` LONGBLOB NULL
+)";
+$conn->query($makeTable);
 
-    if (!$conn->query($makeTokenTable)) {
-        error_log("error making token table");
-    }
+// --- Parse JSON input ---
+$json = file_get_contents('php://input');
+$data = json_decode($json, true);
 
-    $makeTable = "CREATE TABLE IF NOT EXISTS accountCredentials (
-        `Name` VARCHAR(50),
-        `Email` VARCHAR(50),
-        `Password` VARCHAR(255) 
-    )";
+$username = $data['username'] ?? '';
+$email = $data['email'] ?? '';
+$password = $data['password'] ?? '';
 
-    if (!$conn->query($makeTable)) {
-        error_log("error making table");
-    }
+if (!$username || !$email || !$password) {
+    echo json_encode(["success" => false, "message" => "Missing required fields"]);
+    exit;
+}
 
-    $json = file_get_contents('php://input');
-    $data = json_decode($json, true);
+// --- Hash password ---
+$hashedPwd = password_hash($password, PASSWORD_DEFAULT);
 
-    $username = $data['username'] ?? 'dne';
-    $email = $data['email'] ?? 'dne';
-    $password = $data['password'] ?? 'dne';
+// --- Insert into DB ---
+$stmt = $conn->prepare("INSERT INTO accountCredentials (Name, Email, Password) VALUES (?, ?, ?)");
+$stmt->bind_param("sss", $username, $email, $hashedPwd);
 
-    // error_log("recv user: $username");
-    // error_log("recv email: $email");
-    // error_log("recv pwd: $password");
-
-    $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
-
-    $stmt = $conn->prepare("INSERT INTO accountCredentials (Name, Email, Password) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $username, $email, $hashedPwd);
-
-    if ($stmt->execute()) {
-        echo json_encode(['message' => 'User registered successfully']);
-    } else {
-        // Handle duplicate username/email or other errors
-        echo json_encode(['message' => 'Error: ' . $stmt->error]);
-    }
+if (!$stmt->execute()) {
+    echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
     $stmt->close();
-
-    $token = bin2hex(random_bytes(32));
-
-    $stmt = $conn->prepare("INSERT INTO authTokens (Email, Token) VALUES (?, ?)");
-    $stmt->bind_param("ss", $email, $token);
-
-    if (!$stmt->execute()) {
-        error_log("auth token statement error");
-    }
-    $stmt->close();
-
-    setcookie("auth_token", $token, [
-        'expires' => time() + 3600,
-        'path' => '/',
-        'secure' => true,
-        'httponly' => false,
-        'samesite' => 'Strict',
-    ]);
-
     $conn->close();
+    exit;
+}
+$stmt->close();
+
+// --- Create login token ---
+$token = bin2hex(random_bytes(32));
+$stmt = $conn->prepare("INSERT INTO authTokens (Email, Token) VALUES (?, ?)");
+$stmt->bind_param("ss", $email, $token);
+$stmt->execute();
+$stmt->close();
+
+// --- Set cookie securely ---
+setcookie("auth_token", $token, [
+    'expires' => time() + 3600,
+    'path' => '/',
+    'secure' => true,    // require HTTPS
+    'httponly' => true,  // JS cannot access cookie
+    'samesite' => 'Strict',
+]);
+
+// --- Respond ---
+echo json_encode(["success" => true, "message" => "User registered successfully"]);
+$conn->close();
 ?>
