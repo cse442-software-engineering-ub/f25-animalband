@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "./desktop_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
@@ -6,9 +7,25 @@ import Hamster from "../../../assets/hamster.jpeg";
 import Kangaroo from "../../../assets/kangaroo.jpeg";
 import Snake from "../../../assets/snake.jpeg";
 
-
-
 export default function Landing() {
+  const navigate = useNavigate();
+
+  const handleAccountClick = () => {
+    // Check if auth_token cookie exists
+    const hasAuthToken = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("auth_token="));
+
+    if (hasAuthToken) {
+      navigate("/account");
+    } else {
+      navigate("/login");
+    }
+  }
+
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
   return (
     <div className="landing-page">
       {/* Header */}
@@ -18,13 +35,9 @@ export default function Landing() {
           <h1 className="site-title">ANIMALBAND</h1>
         </Link>
         <div className="header-buttons">
-          {/* TODO REGISTER LINKS */}
-          <Link to="/todo">
-            <button className="btn-login">Login</button>
-          </Link>
-          <Link to="/todo">
-            <button className="btn-register">Register</button>
-          </Link>
+          <button className="btn-login" onClick={() => handleNavigation("/login")}>Login</button>
+          <button className="btn-register" onClick={() => handleNavigation("/register")}>Register</button>
+          <button className="btn-account" onClick={() => handleAccountClick()}>Account</button>
         </div>
       </header>
 

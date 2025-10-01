@@ -87,6 +87,22 @@
   background-color: #afd6bb;
 }
 
+.btn-account {
+  padding: 0.75rem 2rem;
+  background-color: #178C3A;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-account:hover {
+  background-color: #15803d;
+}
+
 
 /* ==========Main Description========== */
 .main-description {
