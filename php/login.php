@@ -1,74 +1,71 @@
 <?php
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Headers: Content-Type");
-    header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: https://your-react-domain.com");
+header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Content-Type: application/json");
 
-    $servername = "localhost";
-    $username = "ikimos";
-    $password = "50445468";
+$servername = "localhost";
+$username = "ikimos";
+$password = "50445468";
 
-    $conn = new mysqli($servername, $username, $password, "cse442_2025_fall_team_h_db");
+$conn = new mysqli($servername, $username, $password, "cse442_2025_fall_team_h_db");
 
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
-    $makeTokenTable = "CREATE TABLE IF NOT EXISTS authTokens (
-        `Email` VARCHAR(50),
-        `Token` VARCHAR(255)
-    )";
+$makeTokenTable = "CREATE TABLE IF NOT EXISTS authTokens (
+    `Email` VARCHAR(50),
+    `Token` VARCHAR(255)
+)";
+$conn->query($makeTokenTable);
 
-    if (!$conn->query($makeTokenTable)) {
-        error_log("error making token table");
-    }
+$makeTable = "CREATE TABLE IF NOT EXISTS accountCredentials (
+    `Name` VARCHAR(50),
+    `Email` VARCHAR(50) UNIQUE,
+    `Password` VARCHAR(255),
+    `ProfilePicture` LONGBLOB NULL
+)";
+$conn->query($makeTable);
 
-    $makeTable = "CREATE TABLE IF NOT EXISTS accountCredentials (
-        `Name` VARCHAR(50),
-        `Email` VARCHAR(50),
-        `Password` VARCHAR(255) 
-    )";
+$json = file_get_contents('php://input');
+$data = json_decode($json, true);
 
-    if (!$conn->query($makeTable)) {
-        error_log("error making table");
-    }
+$email = $data['email'] ?? 'dne';
+$password = $data['password'] ?? 'dne';
 
-    $json = file_get_contents('php://input');
-    $data = json_decode($json, true);
+$stmt = $conn->prepare("SELECT Password FROM accountCredentials WHERE Email = ?");
+$stmt->bind_param("s", $email);
+$stmt->execute();
+$passwordResult = $stmt->get_result();
+$stmt->close();
 
-    $email = $data['email'] ?? 'dne';
-    $password = $data['password'] ?? 'dne';    
+if ($passwordResult->num_rows === 0) {
+    echo json_encode(["success" => false, "message" => "Invalid credentials"]);
+    exit;
+}
 
-    $stmt = $conn->prepare("SELECT Password FROM accountCredentials WHERE Email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $passwordResult = $stmt->get_result();
-    $stmt->close();
+$row = $passwordResult->fetch_assoc();
+$hashedPwd = $row['Password'];
 
-    if ($passwordResult->num_rows === 0) {
-        echo json_encode(["success" => false, "message" => "Invalid user"]);
-        exit;
-    }
+if (password_verify($password, $hashedPwd)) {
+    $token = bin2hex(random_bytes(32));
 
-    $row = $passwordResult->fetch_assoc();
-    $hashedPwd = $row['Password'];
+    $insertToken = $conn->prepare("INSERT INTO authTokens (Email, Token) VALUES (?, ?)");
+    $insertToken->bind_param("ss", $email, $token);
+    $insertToken->execute();
+    $insertToken->close();
 
-    if (password_verify($password, $hashedPwd)) {
-        $token = bin2hex(random_bytes(32));
+    setcookie("auth_token", $token, [
+        'expires' => time() + 3600,
+        'path' => '/',
+        'secure' => true,
+        'httponly' => true,
+        'samesite' => 'Strict',
+    ]);
 
-        $insertToken = $conn->prepare("INSERT INTO authTokens (Email, Token) VALUES (?, ?)");
-        $insertToken->bind_param("ss", $email, $token);
-        $insertToken->execute();
-        $insertToken->close();
-
-        echo json_encode(["success" => true, "message" => "Successful login"]);
-        setcookie("auth_token", $token, [
-            'expires' => time() + 3600,
-            'path' => '/',
-            'secure' => true,
-            'httponly' => false,
-            'samesite' => 'Strict',
-        ]);
-    } else {
-        echo json_encode(["success" => false, "message" => "Incorrect password"]);
-    }
+    echo json_encode(["success" => true, "message" => "Successful login"]);
+} else {
+    echo json_encode(["success" => false, "message" => "Invalid credentials"]);
+}
 ?>
