@@ -42,19 +42,21 @@ export default function Login() {
         <div className="logo">
           <div className="paw-icon">🐾</div>
           <h1>ANIMALBAND</h1>
-          <h2>Login</h2>
+          <h2 style="color: #2e8b57">Login</h2>
         </div>
         <form>
           <input type="text" name="email" placeholder="Email" />
           <input type="password" name="password" placeholder="Password" />
           <div className="form-options">
-            <label>
-              <input type="checkbox" /> Remember Me
+            <label className="remember-me">
+              <input type="checkbox" />
+              Remember Me
             </label>
             <Link to="/forgot-password" className="forgot-link">
               Forget Password?
             </Link>
           </div>
+
           <button type="button" onClick={handleLogin}>
             Login
           </button>
