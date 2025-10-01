@@ -1,0 +1,97 @@
+/* Global styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #228b22;
+}
+
+/* Container */
+.register-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Card */
+.register-card {
+  background-color: #f0f0f0;
+  padding: 40px 30px;
+  border-radius: 8px;
+  width: 300px;
+  text-align: center;
+}
+
+/* Logo & Heading */
+.register-card .paw-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.register-card h1 {
+  margin: 0;
+  color: #2e8b57;
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.register-card h2 {
+  margin: 5px 0 20px;
+  font-size: 20px;
+  color: #333;
+}
+
+/* Inputs */
+.register-card form input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 20px;
+  box-sizing: border-box;
+}
+
+/* Remember Me */
+.register-card .form-options {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  margin: 10px 0 15px;
+}
+
+.register-card .remember-me {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #333;
+}
+
+/* Button */
+.register-card button {
+  width: 100%;
+  padding: 10px;
+  background-color: #228b22;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+.register-card button:hover {
+  background-color: #1e7a1e;
+}
+
+/* Link below the button */
+.register-card .login-link {
+  font-size: 12px;
+}
+
+.register-card .login-link a {
+  color: #228b22;
+  text-decoration: none;
+}
