@@ -48,7 +48,9 @@ export default function Stage() {
     <div style={{ textAlign: "center", padding: "2rem" }}>
       <h1>Stage</h1>
       <p style={{ fontSize: "0.9rem", color: "#888" }}>
-        Press keys A, S, D, F to play drum sounds. Adjust volume below:
+        Press Q, W, E, R to play piano chords.<br />
+        Press keys A, S, D, F to play drum sounds.<br /> 
+        Adjust volume below:
       </p>
 
       <div
