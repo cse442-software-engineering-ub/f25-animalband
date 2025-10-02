@@ -1,3 +1,4 @@
+// stage_soundControl.js
 import React from "react";
 
 export default function SoundControl({ sound, volume, onVolumeChange }) {
