@@ -7,7 +7,7 @@ import Looping from "./routes/looping/looping.js";
 import Stage from "./routes/stage/stage.js";
 import Register from "./routes/register/desktop_register.js";
 import Login from "./routes/login/desktop_login.js";
-import Account from "./routes/account/desktop_account.js";
+import Account from "./routes/account/desktop_profile.js";
 import "../App.css";
 
 function NotFound() {
