@@ -53,7 +53,7 @@ export default function Login() {
           Login
         </button>
       </form>
-
+      <Link to="/change-password">Forgot Password?</Link>
       Don't have an account? <Link to="/register">Register</Link>
     </div>
   );

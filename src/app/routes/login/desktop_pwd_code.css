@@ -1,0 +1,69 @@
+/* ChangePwd.css */
+
+.changepwd-container {
+  background-color: #108c3a;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.changepwd-card {
+  background-color: #eeeeee;
+  padding: 40px 30px;
+  border-radius: 8px;
+  text-align: center;
+  width: 90%;
+  max-width: 320px;
+}
+
+.changepwd-logo {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.changepwd-title {
+  color: #108c3a;
+  margin: 0;
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.changepwd-subtitle {
+  color: #555;
+  margin-top: 5px;
+  font-size: 18px;
+}
+
+.changepwd-input {
+  margin-top: 20px;
+  padding: 10px 15px;
+  width: 100%;
+  border-radius: 20px;
+  border: none;
+  font-size: 16px;
+  outline: none;
+}
+
+.changepwd-info {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #444;
+}
+
+.changepwd-button {
+  margin-top: 20px;
+  background-color: #108c3a;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.changepwd-button:hover {
+  background-color: #0d6f2c;
+}
