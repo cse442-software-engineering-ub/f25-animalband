@@ -36,6 +36,33 @@ export default function Login() {
     }
   };
 
+  // Function to handle the Forgot Password link click
+  const handleForgotPassword = async () => {
+    try {
+      const response = await fetch(
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/isabelTest/php/forgot-password.php", // Update with actual PHP endpoint
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // To include the auth_token cookie
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Redirect to the password-code page after the request is successful
+        navigate("/password-code");
+      } else {
+        alert("Something went wrong, please try again later.");
+      }
+    } catch {
+      alert("Error sending request. Please try again later.");
+    }
+  };
+
   return (
     <div className="login-page">
       <h2>Login</h2>
@@ -53,7 +80,9 @@ export default function Login() {
           Login
         </button>
       </form>
-      <Link to="/password-code">Forgot Password?</Link>
+      <button onClick={handleForgotPassword} className="forgot-password-btn">
+        Forgot Password?
+      </button>
       Don't have an account? <Link to="/register">Register</Link>
     </div>
   );
