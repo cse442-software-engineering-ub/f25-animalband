@@ -72,10 +72,12 @@ if(!is_string($currentPassword) || $currentPassword === ''){
     echo json_encode(["success"=>false, "message"=>"Current password required"]);
     exit;
 }
-if($newPassword !== null && $newPassword !== '' && strlen($newPassword) < 8) {
-    http_response_code(400);
-    echo json_encode(["success"=>false, "message"=>"New password must be at least 8 characters"]);
-    exit;
+if ($newPassword !== null && $newPassword !== '') {
+    if (preg_match('/\s/', $newPassword)) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "message" => "New password cannot contain spaces"]);
+        exit;
+    }
 }
 
 // Verify Password

@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./edit_account.css";
 
+const BASE_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
+
 export default function EditAccount() {
 
     // States and such
@@ -22,14 +25,17 @@ export default function EditAccount() {
         (async () => {
             try {
                 const res = await fetch(
-                    "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+                    `${PHP_URL}/getUser.php`,
                     { credentials: "include" }
                 );
-                const data = await res.json();
+                const text = await res.text();
+                console.log("Raw response:", text);
+                const data = JSON.parse(text);
+                // const data = await res.json();
 
                 // If not logged in redirect to login page
                 if (!data.loggedIn) {
-                    navigate("/login");
+                    navigate(`${BASE_URL}/login`);
                     return;
                 }
                 setUsername(data.username || "");
@@ -62,7 +68,7 @@ export default function EditAccount() {
 
         setSubmitting(true);
         try {
-            const res = await fetch("/updateAccount.php", {
+            const res = await fetch(`${PHP_URL}/updateAccount.php`, {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
@@ -139,7 +145,6 @@ export default function EditAccount() {
                     autoComplete="new-password"
                     value={newPwd}
                     onChange={(e) => setNewPwd(e.target.value)}
-                    minLength={8}
                 />
 
                 <label htmlFor="ea-confirm">Confirm new password</label>
@@ -150,7 +155,6 @@ export default function EditAccount() {
                     autoComplete="new-password"
                     value={confirmPwd}
                     onChange={(e) => setConfirmPwd(e.target.value)}
-                    minLength={8}
                 />
 
                 <div className="ea-actions">
@@ -158,7 +162,7 @@ export default function EditAccount() {
                         {submitting ? "Saving…" : "Save changes"}
                     </button>
                     <button type="button" className="btn" onClick={() => navigate(-1)}>
-                        Cancel
+                        Return
                     </button>
                 </div>
             </form>
