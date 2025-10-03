@@ -122,7 +122,7 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        <button className="btn-start-band">Start Your Band</button>
+        <Link to="/stage" className="btn-start-band">Start Your Band</Link>
       </section>
 
       {/* Features */}
