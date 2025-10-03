@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./edit_account.css";
 
-const BASE_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h";
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 export default function EditAccount() {
@@ -39,7 +38,7 @@ export default function EditAccount() {
 
                 // If not logged in redirect to login page
                 if (!data.loggedIn) {
-                    navigate(`${BASE_URL}/login`);
+                    navigate("/login");
                     return;
                 }
                 setUsername(data.username || "");

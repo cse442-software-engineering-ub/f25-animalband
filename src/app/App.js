@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import useIsMobile from "../hook/useIsMobile.js";
 import MobileLanding from "./routes/landing/mobile_landing.js"
 import DesktopLanding from "./routes/landing/desktop_landing.js";
@@ -22,7 +22,7 @@ function Landing(){
 
 export default function App() {
   return (
-    <BrowserRouter basename="/CSE442/2025-Fall/cse-442h">
+    <HashRouter>
       <main>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -36,6 +36,6 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
