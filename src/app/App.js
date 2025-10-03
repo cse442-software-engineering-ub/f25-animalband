@@ -8,6 +8,8 @@ import Stage from "./routes/stage/stage.js";
 import Register from "./routes/register/desktop_register.js";
 import Login from "./routes/login/desktop_login.js";
 import Account from "./routes/account/desktop_profile.js";
+import EditAccount from "./routes/account/edit_account.js";
+
 import "../App.css";
 
 function NotFound() {
@@ -27,10 +29,11 @@ export default function App() {
           <Route path="/stage" element={<Stage />} />
           <Route path="/looping" element={<Looping />} />
           <Route path="/forum" element={<Forum />} />
-          <Route path="*" element={<NotFound />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/account/edit" element={<EditAccount />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </BrowserRouter>
