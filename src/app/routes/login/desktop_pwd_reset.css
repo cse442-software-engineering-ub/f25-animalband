@@ -1,76 +1,87 @@
-/* ResetPwd.css */
-.reset-password-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #28a745; /* Green background */
+/* General reset for body and html */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.reset-password-card {
-    background-color: #f3f3f3; /* Light grey card */
-    border-radius: 10px;
-    padding: 40px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-    width: 400px;
-    text-align: center;
+html, body {
+  height: 100%;
+  font-family: 'Arial', sans-serif;
 }
 
-.header {
-    margin-bottom: 20px;
+/* Center the reset password card container */
+.resetpwd-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Make it fill the entire viewport */
+  background-color: #4CAF50; /* Green background */
 }
 
-.paw-icon {
-    font-size: 40px;
-    color: #28a745;
+/* The card that contains all form elements */
+.resetpwd-card {
+  background-color: #f7f7f7; /* Light grey background */
+  padding: 30px 50px;
+  border-radius: 15px; /* Rounded corners */
+  width: 100%;
+  max-width: 400px; /* Max width for the card */
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-h1 {
-    font-size: 24px;
-    color: #28a745;
-    margin-top: 10px;
-    font-family: Arial, sans-serif;
+/* The logo of the application */
+.resetpwd-logo {
+  font-size: 50px;
+  color: #4CAF50;
+  margin-bottom: 10px;
 }
 
-h2 {
-    font-size: 16px;
-    color: #777;
-    margin-top: 5px;
-    font-family: Arial, sans-serif;
+/* Title style */
+.resetpwd-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: #4CAF50;
+  margin-bottom: 10px;
 }
 
-.input-group {
-    margin-bottom: 20px;
-    text-align: left;
+/* Subtitle style */
+.resetpwd-subtitle {
+  font-size: 18px;
+  color: #555;
+  margin-bottom: 25px;
 }
 
-.input-group label {
-    font-size: 14px;
-    font-weight: bold;
-    display: block;
-    margin-bottom: 5px;
+/* Input fields styling */
+.resetpwd-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px; /* Spacing between inputs */
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+  outline: none;
 }
 
-.input-group input {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
+.resetpwd-input:focus {
+  border-color: #4CAF50; /* Green border on focus */
+  box-shadow: 0 0 5px rgba(0, 150, 0, 0.2);
 }
 
-.reset-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #28a745;
-    color: white;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+/* Button styling */
+.resetpwd-button {
+  width: 100%;
+  padding: 15px;
+  background-color: #4CAF50; /* Green button */
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.reset-btn:hover {
-    background-color: #218838;
+.resetpwd-button:hover {
+  background-color: #45a049; /* Darker green on hover */
 }
