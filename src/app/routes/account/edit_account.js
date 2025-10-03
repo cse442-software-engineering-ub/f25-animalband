@@ -20,6 +20,10 @@ export default function EditAccount() {
     const [confirmPwd, setConfirmPwd] = useState("");
     const [msg, setMsg] = useState(null);
 
+    const [showCurrent, setShowCurrent] = useState(false);
+    const [showNew, setShowNew] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+
     // Get User
     useEffect(() => {
         (async () => {
@@ -52,7 +56,7 @@ export default function EditAccount() {
 
 
 
-
+    // Submission
     const onSubmit = async (e) => {
         e.preventDefault();
         setMsg(null);
@@ -114,7 +118,7 @@ export default function EditAccount() {
                 <label htmlFor="ea-email">Email (read-only)</label>
                 <input id="ea-email" value={email} readOnly />
 
-                <label htmlFor="ea-username">Display name</label>
+                <label htmlFor="ea-username">Display name (required)</label>
                 <input
                     id="ea-username"
                     name="name"
@@ -126,36 +130,78 @@ export default function EditAccount() {
 
                 <hr className="ea-sep" />
 
+                {/* Current Password */}
                 <label htmlFor="ea-current">Current password (required)</label>
-                <input
-                    id="ea-current"
-                    type="password"
-                    name="current-password"
-                    autoComplete="current-password"
-                    value={currentPwd}
-                    onChange={(e) => setCurrentPwd(e.target.value)}
-                    required
-                />
+                <div className="ea-password-field">
+                    <input
+                        id="ea-current"
+                        type={showCurrent ? "text" : "password"}
+                        name="current-password"
+                        autoComplete="current-password"
+                        value={currentPwd}
+                        onChange={(e) => setCurrentPwd(e.target.value)}
+                        required
+                    />
+                    <button
+                        type="button"
+                        className="ea-eye-btn"
+                        onClick={() => setShowCurrent(!showCurrent)}
+                        aria-label={showCurrent ? "Hide password" : "Show password"}
+                    >
+                        <span className="material-symbols-outlined">
+                            {showCurrent ? "visibility_off" : "visibility"}
+                        </span>
+                    </button>
+                </div>
 
+                {/* New Password */}
                 <label htmlFor="ea-new">New password (optional)</label>
-                <input
-                    id="ea-new"
-                    type="password"
-                    name="new-password"
-                    autoComplete="new-password"
-                    value={newPwd}
-                    onChange={(e) => setNewPwd(e.target.value)}
-                />
+                <div className="ea-password-field">
 
+                    <input
+                        id="ea-new"
+                        type={showNew ? "text" : "password"}
+                        name="new-password"
+                        autoComplete="new-password"
+                        value={newPwd}
+                        onChange={(e) => setNewPwd(e.target.value)}
+                    />
+                    <button
+                        type="button"
+                        className="ea-eye-btn"
+                        onClick={() => setShowNew(!showNew)}
+                        aria-label={showNew ? "Hide password" : "Show password"}
+                    >
+                        <span className="material-symbols-outlined">
+                            {showNew ? "visibility_off" : "visibility"}
+                        </span>
+                    </button>
+                </div>
+
+
+                {/* Confirm Password */}
                 <label htmlFor="ea-confirm">Confirm new password</label>
-                <input
-                    id="ea-confirm"
-                    type="password"
-                    name="new-password"
-                    autoComplete="new-password"
-                    value={confirmPwd}
-                    onChange={(e) => setConfirmPwd(e.target.value)}
-                />
+                <div className="ea-password-field">
+
+                    <input
+                        id="ea-confirm"
+                        type={showConfirm ? "text" : "password"}
+                        name="new-password"
+                        autoComplete="new-password"
+                        value={confirmPwd}
+                        onChange={(e) => setConfirmPwd(e.target.value)}
+                    />
+                    <button
+                        type="button"
+                        className="ea-eye-btn"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        aria-label={showConfirm ? "Hide password" : "Show password"}
+                    >
+                        <span className="material-symbols-outlined">
+                            {showConfirm ? "visibility_off" : "visibility"}
+                        </span>
+                    </button>
+                </div>
 
                 <div className="ea-actions">
                     <button type="submit" className="btn btn-solid" disabled={submitting}>
@@ -166,6 +212,12 @@ export default function EditAccount() {
                     </button>
                 </div>
             </form>
+
+            {/* Material Icons Font */}
+            <link
+                href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+                rel="stylesheet"
+            />
         </div>
     );
 }

@@ -103,6 +103,40 @@
     border-color: rgba(160, 24, 24, .25);
 }
 
+.ea-password-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.ea-password-field input {
+    flex: 1;
+    padding-right: 2.5rem;
+}
+
+.ea-eye-btn {
+    position: absolute;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    color: #555;
+}
+
+.ea-eye-btn:hover {
+    color: #000;
+}
+
+.material-symbols-outlined {
+    font-size: 22px !important;
+    line-height: 1;
+    vertical-align: middle;
+}
+
 /* ====== Actions / buttons ====== */
 .ea-actions {
     display: flex;
