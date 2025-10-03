@@ -43,7 +43,7 @@ if ($result->num_rows === 0) {
 }
 
 $row = $result->fetch_assoc();
-$email = $row['email'];
+$email = $row['Email'];
 $stmt->close();
 
 // 5. Get verification code for the email
