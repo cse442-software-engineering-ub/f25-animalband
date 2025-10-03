@@ -1,4 +1,7 @@
 <?php
+    ini_set('display_errors', 1);
+    error_reporting(E_ALL);
+
     header("Access-Control-Allow-Origin: *");
     header("Access-Control-Allow-Headers: Content-Type");
     header("Content-Type: application/json");
@@ -16,11 +19,8 @@
     // Ensure the verificationCodes table exists, if not, create it
     $createTableSql = "
         CREATE TABLE IF NOT EXISTS verificationCodes (
-            id INT AUTO_INCREMENT PRIMARY KEY,
             email VARCHAR(255) NOT NULL,
             code VARCHAR(6) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            expires_at TIMESTAMP DEFAULT DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 15 MINUTE)
         );
     ";
     if ($conn->query($createTableSql) !== TRUE) {
