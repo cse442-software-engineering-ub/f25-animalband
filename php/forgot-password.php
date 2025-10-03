@@ -20,10 +20,10 @@
     $createTableSql = "
         CREATE TABLE IF NOT EXISTS verificationCodes (
             email VARCHAR(255) NOT NULL,
-            code VARCHAR(6) NOT NULL,
+            code VARCHAR(6) NOT NULL
         );
     ";
-    if ($conn->query($createTableSql) !== TRUE) {
+    if (!$conn->query($createTableSql)) {
         echo json_encode(['success' => false, 'message' => 'Error creating table: ' . $conn->error]);
         exit();
     }
@@ -37,7 +37,7 @@
     $authToken = $_COOKIE['auth_token'];
 
     // Fetch the email associated with the auth token from the authTokens table
-    $sql = "SELECT email FROM authTokens WHERE auth_token = ?";
+    $sql = "SELECT Email FROM authTokens WHERE Token = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $authToken);
     $stmt->execute();
