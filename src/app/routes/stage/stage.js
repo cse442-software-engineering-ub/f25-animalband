@@ -110,7 +110,7 @@ export default function Stage() {
           <div className="animal-member">
             <img src={Bird} alt="Bird Vocals"/>
             <div className="animal-controls">
-              <p className="key-text">[Q]-[P]</p>
+              <p className="key-text">C V B N</p>
               <input
                 type="range"
                 min="0"
@@ -126,7 +126,7 @@ export default function Stage() {
           <div className="animal-member">
             <img src={Ostrich} alt="Ostrich Keys"/>
             <div className="animal-controls">
-              <p className="key-text">[1]-[0]</p>
+              <p className="key-text">H J K L</p>
               <input
                 type="range"
                 min="0"
@@ -142,7 +142,7 @@ export default function Stage() {
           <div className="animal-member">
             <img src={Kangaroo} alt="Kangaroo Bass"/>
             <div className="animal-controls">
-              <p className="key-text">[A]-[:]</p>
+              <p className="key-text">U I O P</p>
               <input
                 type="range"
                 min="0"
@@ -158,7 +158,7 @@ export default function Stage() {
           <div className="animal-member">
             <img src={Snake} alt="Snake Guitar"/>
             <div className="animal-controls">
-              <p className="key-text">[Z]-[?]</p>
+              <p className="key-text">Q W E R</p>
               <input
                 type="range"
                 min="0"
