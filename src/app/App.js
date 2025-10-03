@@ -9,6 +9,7 @@ import Register from "./routes/register/desktop_register.js";
 import Login from "./routes/login/desktop_login.js";
 import Account from "./routes/account/desktop_account.js";
 import PwdCode from "./routes/login/desktop_pwd_code.js"
+import ResetPwd from "./routes/login/desktop_pwd_reset.js";
 import "../App.css";
 
 function NotFound() {
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/account" element={<Account />} />
           <Route path="/password-code" element={<PwdCode />} />
+          <Route path="/reset-password" element={<ResetPwd />} />
         </Routes>
       </main>
     </HashRouter>

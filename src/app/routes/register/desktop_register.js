@@ -20,7 +20,7 @@ export default function Register() {
       const postData = { username, email, password };
 
       try {
-        const response = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/register.php", {
+        const response = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/isabelTest/php/register.php", {
             method: "POST",
             headers: {"Content-Type":"application/json"},
             body: JSON.stringify(postData),

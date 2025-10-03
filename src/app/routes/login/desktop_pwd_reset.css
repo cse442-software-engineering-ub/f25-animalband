@@ -1,0 +1,76 @@
+/* ResetPwd.css */
+.reset-password-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #28a745; /* Green background */
+}
+
+.reset-password-card {
+    background-color: #f3f3f3; /* Light grey card */
+    border-radius: 10px;
+    padding: 40px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    text-align: center;
+}
+
+.header {
+    margin-bottom: 20px;
+}
+
+.paw-icon {
+    font-size: 40px;
+    color: #28a745;
+}
+
+h1 {
+    font-size: 24px;
+    color: #28a745;
+    margin-top: 10px;
+    font-family: Arial, sans-serif;
+}
+
+h2 {
+    font-size: 16px;
+    color: #777;
+    margin-top: 5px;
+    font-family: Arial, sans-serif;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-group label {
+    font-size: 14px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.reset-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #28a745;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.reset-btn:hover {
+    background-color: #218838;
+}

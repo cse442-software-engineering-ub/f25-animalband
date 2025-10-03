@@ -15,7 +15,7 @@ export default function Login() {
 
     try {
       const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/login.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/isabelTest/php/login.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -53,7 +53,7 @@ export default function Login() {
           Login
         </button>
       </form>
-      <Link to="/change-password">Forgot Password?</Link>
+      <Link to="/password-code">Forgot Password?</Link>
       Don't have an account? <Link to="/register">Register</Link>
     </div>
   );

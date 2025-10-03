@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import "./desktop_change_pwd.css"; // Assuming you put the CSS in the same folder
+import "./desktop_pwd_code.css"; // Assuming you put the CSS in the same folder
 
 export default function PwdCode() {
   const navigate = useNavigate();
 
   const handleVerify = () => {
-    //TODO: new path for reset password
+    //TODO: if success on PHP side, navigate to /reset-password
+    navigate("/reset-password");
   };
 
   return (
