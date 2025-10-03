@@ -5,16 +5,30 @@ import { loadSound, playSound, setMasterVolume } from "./stage_audioUtil";
 import "./stage.css";
 
 import Ostrich from "../../../assets/ostrich.jpeg";
+import OstrichPlaying from "../../../assets/ostrich_playing.jpeg";
 import Bird from "../../../assets/bird.jpeg";
+import BirdPlaying from "../../../assets/bird_playing.jpeg";
 import Hamster from "../../../assets/hamster.jpeg";
+import HamsterPlaying from "../../../assets/hamster_playing.jpeg";
 import Kangaroo from "../../../assets/kangaroo.jpeg";
+import KangarooPlaying from "../../../assets/kangaroo_playing.jpeg";
 import Snake from "../../../assets/snake.jpeg";
+import SnakePlaying from "../../../assets/snake_playing.jpeg";
 
 export default function Stage() {
   const navigate = useNavigate();
   const [sounds, setSounds] = useState({});
   const [volumes, setVolumes] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
+  const [playingAnimals, setPlayingAnimals] = useState({});
+
+  const ANIMAL_IMAGES = {
+    hamster: [Hamster, HamsterPlaying],
+    bird: [Bird, BirdPlaying],
+    ostrich: [Ostrich, OstrichPlaying],
+    kangaroo: [Kangaroo, KangarooPlaying],
+    snake: [Snake, SnakePlaying],
+  };
 
   // Load all sounds
   useEffect(() => {
@@ -35,15 +49,38 @@ export default function Stage() {
     loadAllSounds();
   }, []);
 
-  // Keyboard play
+  // Keyboard play and animation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      const key = e.key.toLowerCase();
-      if (sounds[key]) playSound(sounds[key], volumes[key]);
-    };
+  const key = e.key.toLowerCase();
+  if (!sounds[key]) return;
+
+  const animalMap = {
+    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+    c: "bird", v: "bird", b: "bird", n: "bird",
+    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+    q: "snake", w: "snake", e: "snake", r: "snake",
+  };
+
+  const animal = animalMap[key];
+  if (!animal) return;
+
+  // use the animal's volume
+  const volume = (volumes[animal] || 1) * masterVolume;
+  playSound(sounds[key], volume);
+
+  // trigger animation
+  setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+  setTimeout(() => {
+    setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
+  }, 300);
+};
+
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [sounds, volumes]);
+  }, [sounds, volumes, masterVolume]);
 
   // Master volume persistence
   useEffect(() => {
@@ -62,7 +99,6 @@ export default function Stage() {
 
   return (
     <div className="landing-page">
-      {/* Header */}
       <header className="header">
         <Link to="/" className="logo-section">
           <span className="material-symbols-outlined paw-icon">pets</span>
@@ -81,97 +117,43 @@ export default function Stage() {
         </div>
       </header>
 
-      {/* Stage Section */}
       <section className="band-stage">
         <h2 className="main-heading">Stage</h2>
         <p className="subtitle">
           Press your keyboard to play instruments. Adjust volumes below!
         </p>
 
-        {/* Animals Horizontal */}
         <div className="animals-container">
-          {/* Hamster */}
-          <div className="animal-member">
-            <img src={Hamster} alt="Hamster Drums"/>
-            <div className="animal-controls">
-              <p className="key-text">A S D F </p>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volumes["hamster"] || 1}
-                onChange={(e) => handleVolumeChange("hamster", e.target.value)}
+          {Object.keys(ANIMAL_IMAGES).map((animal) => (
+            <div key={animal} className="animal-member">
+              <img
+                src={playingAnimals[animal] ? ANIMAL_IMAGES[animal][1] : ANIMAL_IMAGES[animal][0]}
+                alt={`${animal} instrument`}
               />
+              <div className="animal-controls">
+                <p className="key-text">
+                  {Object.entries({
+                    hamster: "A S D F",
+                    bird: "C V B N",
+                    ostrich: "H J K L",
+                    kangaroo: "U I O P",
+                    snake: "Q W E R",
+                  })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]}
+                </p>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volumes[animal] || 1}
+                  onChange={(e) => handleVolumeChange(animal, e.target.value)}
+                  className="animal-volume-slider"
+                />
+              </div>
             </div>
-          </div>
-
-          {/* Bird */}
-          <div className="animal-member">
-            <img src={Bird} alt="Bird Vocals"/>
-            <div className="animal-controls">
-              <p className="key-text">C V B N</p>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volumes["bird"] || 1}
-                onChange={(e) => handleVolumeChange("bird", e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Ostrich */}
-          <div className="animal-member">
-            <img src={Ostrich} alt="Ostrich Keys"/>
-            <div className="animal-controls">
-              <p className="key-text">H J K L</p>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volumes["ostrich"] || 1}
-                onChange={(e) => handleVolumeChange("ostrich", e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Kangaroo */}
-          <div className="animal-member">
-            <img src={Kangaroo} alt="Kangaroo Bass"/>
-            <div className="animal-controls">
-              <p className="key-text">U I O P</p>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volumes["kangaroo"] || 1}
-                onChange={(e) => handleVolumeChange("kangaroo", e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Snake */}
-          <div className="animal-member">
-            <img src={Snake} alt="Snake Guitar"/>
-            <div className="animal-controls">
-              <p className="key-text">Q W E R</p>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volumes["snake"] || 1}
-                onChange={(e) => handleVolumeChange("snake", e.target.value)}
-              />
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Master Volume */}
         <div className="master-volume">
           <label>Master Volume: {(masterVolume * 100).toFixed(0)}%</label>
           <input
