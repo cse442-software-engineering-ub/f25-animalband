@@ -13,7 +13,7 @@
     sans-serif;
 }
 
-/* Header */
+/* ========== Header (Landing style) ========== */
 .header {
   display: flex;
   align-items: center;
@@ -65,9 +65,7 @@
   transition: background-color 0.2s;
 }
 
-.btn-login:hover {
-  background-color: #15803d;
-}
+.btn-login:hover { background-color: #15803d; }
 
 .btn-register {
   padding: 0.75rem 2rem;
@@ -81,27 +79,9 @@
   transition: background-color 0.2s;
 }
 
-.nav-links {
-  display: flex;
-  gap: 1rem;
-  margin-right: auto;
-  margin-left: 2rem;
-}
+.btn-register:hover { background-color: #afd6bb; }
 
-.nav-item {
-  text-decoration: none;
-  color: black;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  border-radius: 0.4rem;
-  transition: background 0.2s;
-}
-
-.nav-item.active {
-  background-color: #bdbdbd;
-}
-
-/* Stage */
+/* ========== Stage Section ========== */
 .band-stage {
   text-align: center;
   padding: 1rem 0 2rem;
@@ -117,11 +97,11 @@
   overflow-x: auto;
   padding-bottom: 1rem;
   -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  scrollbar-width: none;      /* Firefox */
 }
 
 .animals-container::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari, Opera */
+  display: none;              /* Chrome, Safari, Opera */
 }
 
 .animal-member {
@@ -151,10 +131,9 @@
   font-size: 0.9rem;
 }
 
-/* Animal volume sliders styled like login button */
 .animal-controls input[type="range"] {
   width: 100px;
-  accent-color: #178C3A;  /* modern browsers */
+  accent-color: #178C3A;
 }
 
 /* Master Volume */
@@ -169,7 +148,71 @@
   accent-color: #178C3A;
 }
 
-/* Responsive */
+/* ========== Recording and Playback Buttons ========== */
+.record-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.record-btn {
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;   /* center symbol with text */
+  gap: 0.5rem;           /* spacing between symbol and text */
+  transition: background-color 0.2s, transform 0.15s;
+}
+
+.record-symbol {
+  font-size: 1.5rem;          /* symbol size */
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  transform: translateY(-0.1rem);
+}
+
+/* Record button states */
+.record-btn.start {
+  background-color: #178C3A;
+}
+.record-btn.start:hover {
+  background-color: #15803d;
+  transform: scale(1.05);
+}
+
+.record-btn.stop {
+  background-color: #b91c1c;
+}
+.record-btn.stop:hover {
+  background-color: #991b1b;
+  transform: scale(1.05);
+}
+
+/* Play button states */
+.record-btn.play {
+  background-color: #6e6e6e;
+}
+.record-btn.play.playing {
+  background-color: #178C3A;
+}
+.record-btn.play:hover {
+  background-color: #8a8a8a;
+  transform: scale(1.05);
+}
+.record-btn.play:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ========== Responsive ========== */
 @media (max-width: 1024px) {
   .animal-member img {
     width: 120px;
@@ -197,4 +240,3 @@
     padding: 2rem 1rem;
   }
 }
-

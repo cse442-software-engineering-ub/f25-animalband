@@ -4,9 +4,12 @@ import useIsMobile from "../hook/useIsMobile.js";
 import MobileLanding from "./routes/landing/mobile_landing.js"
 import DesktopLanding from "./routes/landing/desktop_landing.js";
 
+import DesktopStage from "./routes/stage/decktop_stage.js";
+import MobileStage from "./routes/stage/mobile_stage.js";
+
 import Forum from "./routes/forum/forum.js";
 import Looping from "./routes/looping/looping.js";
-import Stage from "./routes/stage/stage.js";
+
 import Register from "./routes/register/desktop_register.js";
 import Login from "./routes/login/desktop_login.js";
 
@@ -32,6 +35,11 @@ function Account(){
 function EditAccount(){
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileEditAccount /> : <DesktopEditAccount />;
+}
+
+function Stage(){
+  const isMobile = useIsMobile(852);
+  return isMobile ? <MobileStage /> : <DesktopStage />;
 }
 
 export default function App() {
