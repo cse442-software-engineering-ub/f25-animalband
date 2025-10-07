@@ -29,15 +29,15 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
 $json = file_get_contents('php://input');
 $data = json_decode($json, true);
 
-$id = data['id'];
-$title = data['title'];
-$content = data['content'];
-$tags = data['tags'];
-$likeFrom = data['liked'];
-$author = data['author'];
-$authorId = data['authorId'];
-$likes = data['likes'];
-$comments = data['comments'];
+$id = $data['id'];
+$title = $data['title'];
+$content = $data['content'];
+$tags = $data['tags'];
+$likeFrom = $data['liked'];
+$author = $data['author'];
+$authorId = $data['authorId'];
+$likes = $data['likes'];
+$comments = $data['comments'];
 
 $stmt = $conn->prepare("INSERT INTO forumPosts 
     (id, title, content, tags, likesFrom, author, authorID, likeCount, comments) 
