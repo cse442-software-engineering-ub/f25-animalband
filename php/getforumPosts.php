@@ -15,11 +15,11 @@ if ($conn->connect_error) {
 }
 
 $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
-    id INT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255),
     content TEXT,
     tags JSON,
-    likesFrom INT,
+    likesFrom TINYINT(1),
     author VARCHAR(100),
     authorId INT,
     likeCount INT DEFAULT 0,
