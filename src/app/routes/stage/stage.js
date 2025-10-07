@@ -24,10 +24,12 @@ export default function Stage() {
 
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
-  const [recordStartTime, setRecordStartTime] = useState(null);
   const [recordedNotes, setRecordedNotes] = useState([]);
+  const [recordStartTime, setRecordStartTime] = useState(null);
 
-  // AudioContext reference
+  // Playback state
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const audioContextRef = useRef(null);
 
   useEffect(() => {
@@ -44,26 +46,24 @@ export default function Stage() {
     snake: [Snake, SnakePlaying],
   };
 
-  // Load all sounds
   useEffect(() => {
     const loadAllSounds = async () => {
-      try {
-        const loadedSounds = {};
-        const initialVolumes = {};
-        for (const sound of SOUND_CONFIG) {
-          loadedSounds[sound.key] = await loadSound(sound.file);
-          initialVolumes[sound.key] = 1;
-        }
-        setSounds(loadedSounds);
-        setVolumes(initialVolumes);
-      } catch (e) {
-        console.error("[ERROR] Loading failed:", e);
+      const loadedSounds = {};
+      const initialVolumes = {};
+      for (const sound of SOUND_CONFIG) {
+        loadedSounds[sound.key] = await loadSound(sound.file);
+        initialVolumes[sound.key] = 1;
       }
+      setSounds(loadedSounds);
+      setVolumes(initialVolumes);
     };
     loadAllSounds();
   }, []);
 
-  // Keyboard play and animation + recording
+  const handleVolumeChange = (key, value) => {
+    setVolumes((prev) => ({ ...prev, [key]: parseFloat(value) }));
+  };
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
@@ -80,7 +80,6 @@ export default function Stage() {
       const animal = animalMap[key];
       if (!animal) return;
 
-      // Record key press if recording
       if (isRecording) {
         const timeSinceStart = performance.now() - recordStartTime;
         setRecordedNotes((prev) => [...prev, { key, time: timeSinceStart }]);
@@ -99,7 +98,6 @@ export default function Stage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [sounds, volumes, masterVolume, isRecording, recordStartTime]);
 
-  // Master volume persistence
   useEffect(() => {
     const savedVol = parseFloat(localStorage.getItem("masterVolume") || "1");
     setMasterVol(savedVol);
@@ -110,58 +108,45 @@ export default function Stage() {
     localStorage.setItem("masterVolume", masterVolume);
   }, [masterVolume]);
 
-  const handleVolumeChange = (key, value) => {
-    setVolumes((prev) => ({ ...prev, [key]: parseFloat(value) }));
-  };
-
-  // Playback recorded sequence with Web Audio API
+  // Playback recorded sequence
   const playRecording = () => {
-  if (recordedNotes.length === 0) return;
+    if (recordedNotes.length === 0 || !audioContextRef.current) return;
 
-  const audioContext = audioContextRef.current;
-  const startTime = audioContext.currentTime;
+    setIsPlaying(true);
+    const audioContext = audioContextRef.current;
+    const animalMap = {
+      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+      c: "bird", v: "bird", b: "bird", n: "bird",
+      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+      q: "snake", w: "snake", e: "snake", r: "snake",
+    };
 
-  const animalMap = {
-    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-    c: "bird", v: "bird", b: "bird", n: "bird",
-    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-    q: "snake", w: "snake", e: "snake", r: "snake",
-  };
+    recordedNotes.forEach(({ key, time }) => {
+      const animal = animalMap[key];
+      if (!animal || !sounds[key]) return;
 
-  recordedNotes.forEach(({ key, time }) => {
-    const animal = animalMap[key];
-    if (!animal || !sounds[key]) return;
+      const volume = (volumes[animal] || 1) * masterVolume;
 
-    const volume = (volumes[animal] || 1) * masterVolume;
+      const source = audioContext.createBufferSource();
+      source.buffer = sounds[key];
+      const gainNode = audioContext.createGain();
+      gainNode.gain.value = volume;
+      source.connect(gainNode).connect(audioContext.destination);
+      source.start(audioContext.currentTime + time / 1000);
 
-    // Schedule sound
-    const source = audioContext.createBufferSource();
-    source.buffer = sounds[key];
-    const gainNode = audioContext.createGain();
-    gainNode.gain.value = volume;
-    source.connect(gainNode).connect(audioContext.destination);
-    source.start(startTime + time / 1000);
-
-    // Schedule animation using requestAnimationFrame
-    const scheduleAnimation = () => {
-      const currentTime = audioContext.currentTime;
-      const elapsed = (currentTime - startTime) * 1000; // in ms
-
-      if (elapsed >= time) {
-        // Trigger animation
+      setTimeout(() => {
         setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
         setTimeout(() => {
           setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
         }, 300);
-      } else {
-        requestAnimationFrame(scheduleAnimation);
-      }
-    };
-    requestAnimationFrame(scheduleAnimation);
-  });
-};
+      }, time);
+    });
 
+    // Reset play state after last note
+    const totalTime = recordedNotes[recordedNotes.length - 1].time + 400;
+    setTimeout(() => setIsPlaying(false), totalTime);
+  };
 
   return (
     <div className="landing-page">
@@ -171,15 +156,13 @@ export default function Stage() {
           <h1 className="site-title">ANIMALBAND</h1>
         </Link>
 
-        <nav className="nav-links">
-          <Link to="/stage" className="nav-item active">Stage</Link>
-          <Link to="/looping" className="nav-item">Looping & Recording</Link>
-          <Link to="/forum" className="nav-item">Forum</Link>
-        </nav>
-
         <div className="header-buttons">
-          <button className="btn-login" onClick={() => navigate("/login")}>Login</button>
-          <button className="btn-register" onClick={() => navigate("/register")}>Register</button>
+          <button className="btn-login" onClick={() => navigate("/login")}>
+            Login
+          </button>
+          <button className="btn-register" onClick={() => navigate("/register")}>
+            Register
+          </button>
         </div>
       </header>
 
@@ -198,13 +181,15 @@ export default function Stage() {
               />
               <div className="animal-controls">
                 <p className="key-text">
-                  {Object.entries({
-                    hamster: "A S D F",
-                    bird: "C V B N",
-                    ostrich: "H J K L",
-                    kangaroo: "U I O P",
-                    snake: "Q W E R",
-                  })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]}
+                  {
+                    Object.entries({
+                      hamster: "A S D F",
+                      bird: "C V B N",
+                      ostrich: "H J K L",
+                      kangaroo: "U I O P",
+                      snake: "Q W E R",
+                    })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]
+                  }
                 </p>
                 <input
                   type="range"
@@ -236,34 +221,30 @@ export default function Stage() {
           />
         </div>
 
-        {/* Recording Controls */}
         <div className="record-controls">
-          {!isRecording ? (
-            <button
-              onClick={() => {
+          <button
+            onClick={() => {
+              if (!isRecording) {
                 setRecordedNotes([]);
                 setRecordStartTime(performance.now());
                 setIsRecording(true);
-              }}
-              className="record-btn start"
-            >
-              Start Recording
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsRecording(false)}
-              className="record-btn stop"
-            >
-              Stop Recording
-            </button>
-          )}
+              } else {
+                setIsRecording(false);
+              }
+            }}
+            className={`record-btn ${isRecording ? "stop" : "start"}`}
+          >
+            <span className="record-symbol">{isRecording ? "■" : "●"}</span>
+            {isRecording ? "Stop Recording" : "Start Recording"}
+          </button>
 
           <button
             onClick={playRecording}
-            disabled={recordedNotes.length === 0}
-            className="record-btn play"
+            disabled={isRecording || recordedNotes.length === 0}
+            className={`record-btn play ${isPlaying ? "playing" : ""}`}
           >
-            Play Recording
+            <span className="record-symbol">►</span>
+            {isPlaying ? "Playing..." : "Play Recording"}
           </button>
         </div>
       </section>
@@ -275,4 +256,3 @@ export default function Stage() {
     </div>
   );
 }
-
