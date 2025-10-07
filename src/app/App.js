@@ -7,7 +7,8 @@ import Looping from "./routes/looping/looping.js";
 import Stage from "./routes/stage/stage.js";
 import Register from "./routes/register/desktop_register.js";
 import Login from "./routes/login/desktop_login.js";
-import Account from "./routes/account/desktop_profile.js";
+import DesktopProfile from "./routes/account/desktop_profile.js";
+import MobileProfile from "./routes/account/mobile_profile.js";
 import EditAccount from "./routes/account/edit_account.js";
 
 import "../App.css";
@@ -18,6 +19,10 @@ function NotFound() {
 function Landing(){
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileLanding /> : <DesktopLanding />;
+}
+function Account(){
+  const isMobile = useIsMobile(852);
+  return isMobile ? <MobileProfile /> : <DesktopProfile />;
 }
 
 export default function App() {
