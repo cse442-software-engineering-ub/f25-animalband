@@ -14,12 +14,13 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Adjust your table schema once (do this once manually or in a migration script):
 $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
-    id INT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255),
     content TEXT,
     tags JSON,
-    likesFrom INT,
+    likesFrom TINYINT(1),
     author VARCHAR(100),
     authorId INT,
     likeCount INT DEFAULT 0,
@@ -29,21 +30,33 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
 $json = file_get_contents('php://input');
 $data = json_decode($json, true);
 
-$id = $data['id'];
-$title = $data['title'];
-$content = $data['content'];
-$tags = json_encode($data['tags']);
-$likeFrom = $data['liked'];
-$author = $data['author'];
-$authorId = $data['authorId'];
-$likes = $data['likes'];
-$comments = $data['comments'];
+if ($data === null) {
+    echo json_encode(["success" => false, "message" => "Invalid JSON"]);
+    exit;
+}
+
+$title = $data['title'] ?? '';
+$content = $data['content'] ?? '';
+$tags = json_encode($data['tags'] ?? []);
+$likesFrom = isset($data['liked']) ? ($data['liked'] ? 1 : 0) : 0;
+$author = $data['author'] ?? '';
+$authorId = $data['authorId'] ?? 0;
+$likeCount = $data['likes'] ?? 0;
+$comments = $data['comments'] ?? 0;
 
 $stmt = $conn->prepare("INSERT INTO forumPosts 
-    (id, title, content, tags, likesFrom, author, authorID, likeCount, comments) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    (title, content, tags, likesFrom, author, authorId, likeCount, comments) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 );
-$stmt->bind_param("isssisiii", $id, $title, $content, $tags, $likeFrom, $author, $authorId, $likes, $comments);
+
+if (!$stmt) {
+    echo json_encode(["success" => false, "message" => "Prepare failed: " . $conn->error]);
+    exit;
+}
+
+// bind_param types:
+// s = string, i = int
+$stmt->bind_param("sssisiii", $title, $content, $tags, $likesFrom, $author, $authorId, $likeCount, $comments);
 
 if ($stmt->execute()) {
     echo json_encode(["success" => true, 'message' => 'Post inserted successfully.']);
@@ -52,5 +65,4 @@ if ($stmt->execute()) {
 }
 
 $stmt->close();
-
 ?>
