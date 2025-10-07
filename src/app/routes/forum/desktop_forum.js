@@ -31,9 +31,11 @@ export default function DesktopForum() {
                 if (data.loggedIn) {
                     setUser(data);
                 }
+                else{
+                    navigate("/login");
+                }
             } catch (err) {
                 console.error("Failed to fetch user", err);
-                navigate("/login");
             }
         };
         // Fetch Posts
