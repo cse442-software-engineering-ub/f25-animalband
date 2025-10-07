@@ -67,3 +67,42 @@
 .changepwd-button:hover {
   background-color: #0d6f2c;
 }
+
+@media screen and (max-width: 600px) {
+  .changepwd-container {
+    padding: 20px;
+    align-items: flex-start;
+  }
+
+  .changepwd-card {
+    width: 100%;
+    max-width: 95%;
+    padding: 30px 20px;
+    margin-top: 40px;
+  }
+
+  .changepwd-logo {
+    font-size: 36px;
+  }
+
+  .changepwd-title {
+    font-size: 22px;
+  }
+
+  .changepwd-subtitle {
+    font-size: 16px;
+  }
+
+  .changepwd-input {
+    font-size: 16px;
+    padding: 12px 16px;
+  }
+
+  .changepwd-info {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .changepwd-button {
+    font-size: 16px;
+    padding: 14px 18px
