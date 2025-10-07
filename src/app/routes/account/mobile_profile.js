@@ -34,6 +34,24 @@ export default function MobileProfile() {
       fileInputRef.current.click();
     }
   };
+  
+  const handleLogout = async () => {
+    try {
+      await fetch(
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/logout.php",
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+      setUser(null);
+      navigate("/"); // redirect to homepage
+    } catch (err) {
+      console.error("Logout failed", err);
+      alert("Failed to log out. Please try again.");
+    }
+  };
 
   const handleProfilePicChange = async (e) => {
     const file = e.target.files[0];
@@ -142,11 +160,7 @@ export default function MobileProfile() {
             </button>
           </li>
           <li>
-            <button onClick={() => {
-              // Add logout functionality here
-              console.log("Logout");
-              navigate("/login");
-            }}>
+            <button onClick={handleLogout}>
               <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
                 logout
               </span>
