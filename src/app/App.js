@@ -4,7 +4,6 @@ import useIsMobile from "../hook/useIsMobile.js";
 import MobileLanding from "./routes/landing/mobile_landing.js"
 import DesktopLanding from "./routes/landing/desktop_landing.js";
 
-import Forum from "./routes/forum/forum.js";
 import Looping from "./routes/looping/looping.js";
 import Stage from "./routes/stage/stage.js";
 import Register from "./routes/register/desktop_register.js";
@@ -15,6 +14,9 @@ import MobileProfile from "./routes/account/mobile_profile.js";
 
 import DesktopEditAccount from "./routes/account/desktop_edit_account.js";
 import MobileEditAccount from "./routes/account/mobile_edit_account.js";
+
+import DesktopForum from "./routes/forum/desktop_forum.js";
+import MobileForum from "./routes/forum/mobile_forum.js";
 
 import "../App.css";
 
@@ -32,6 +34,11 @@ function Account(){
 function EditAccount(){
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileEditAccount /> : <DesktopEditAccount />;
+}
+
+function Forum(){
+  const isMobile = useIsMobile(852);
+  return isMobile ? <MobileForum /> : <DesktopForum />;
 }
 
 export default function App() {
