@@ -1,97 +1,133 @@
-/* Global styles */
-body {
+/* Full page background */
+body, html {
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
-  background-color: #228b22;
+  font-family: 'Arial', sans-serif;
+  background-color: #138A36; /* green background */
 }
 
-/* Container */
-.register-container {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Card */
-.register-card {
-  background-color: #f0f0f0;
-  padding: 40px 30px;
+/* Center the registration form */
+.register-page {
+  background-color: #f0f0f0; /* light gray form background */
+  width: 320px;
+  margin: 50px auto;
+  padding: 30px 20px;
   border-radius: 8px;
-  width: 300px;
   text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Logo & Heading */
-.register-card .paw-icon {
+/* Logo area */
+.register-page h2 {
+  font-size: 24px;
+  color: #4CAF50;
+  margin-bottom: 20px;
+}
+
+/* Top animal paw image (simulated with emoji if you want for now) */
+.register-page::before {
+  content: '🐾';
   font-size: 40px;
+  display: block;
   margin-bottom: 10px;
 }
 
-.register-card h1 {
-  margin: 0;
-  color: #2e8b57;
-  font-size: 22px;
+/* Form labels hidden for minimal design */
+form label {
+  display: block;
+  text-align: left;
+  margin-bottom: 15px;
   font-weight: bold;
-  letter-spacing: 1px;
-}
-
-.register-card h2 {
-  margin: 5px 0 20px;
-  font-size: 20px;
   color: #333;
 }
 
-/* Inputs */
-.register-card form input {
+/* Input fields */
+input[type="text"],
+input[type="password"],
+input[type="file"] {
   width: 100%;
-  padding: 10px;
-  margin: 8px 0;
+  padding: 10px 12px;
+  margin-top: 5px;
   border: none;
   border-radius: 20px;
+  background-color: #fff;
   box-sizing: border-box;
+  font-size: 14px;
 }
 
-/* Remember Me */
-.register-card .form-options {
-  display: flex;
-  align-items: center;
-  font-size: 12px;
-  margin: 10px 0 15px;
+/* Hide the file input if not needed visually */
+input[type="file"] {
+  display: none; /* remove if you need to keep it visible */
 }
 
-.register-card .remember-me {
+/* Checkbox styling */
+input[type="checkbox"] {
+  margin-right: 5px;
+}
+
+/* "Remember Me" style (manually add this in JSX if you want) */
+.remember-me {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
+  font-size: 14px;
   color: #333;
+  margin: 10px 0;
 }
 
-/* Button */
-.register-card button {
+/* Register button */
+button[type="submit"] {
   width: 100%;
-  padding: 10px;
-  background-color: #228b22;
+  padding: 12px;
+  background-color: #138A36;
   color: white;
   border: none;
-  border-radius: 20px;
+  border-radius: 25px;
   font-size: 16px;
   cursor: pointer;
-  margin-bottom: 15px;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
 }
 
-.register-card button:hover {
-  background-color: #1e7a1e;
+button[type="submit"]:hover {
+  background-color: #0f6d2a;
 }
 
-/* Link below the button */
-.register-card .login-link {
-  font-size: 12px;
+/* Bottom text */
+.register-page p {
+  margin-top: 20px;
+  font-size: 14px;
 }
 
-.register-card .login-link a {
-  color: #228b22;
+.register-page a {
+  color: #138A36;
   text-decoration: none;
 }
+
+.register-page a:hover {
+  text-decoration: underline;
+}
+
+@media screen and (max-width: 600px) {
+  .register-page {
+    width: 90%;
+    padding: 20px 15px;
+    margin: 30px auto;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="file"] {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  button[type="submit"] {
+    padding: 14px;
+    font-size: 18px;
+  }
+
+  .remember-me {
+    font-size: 16px;
+  }
+}
+
