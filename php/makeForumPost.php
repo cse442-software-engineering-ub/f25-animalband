@@ -19,10 +19,10 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
     title VARCHAR(255),
     content TEXT,
     tags JSON,
-    liked BOOLEAN,
+    likesFrom INT,
     author VARCHAR(100),
     authorId INT,
-    likes INT DEFAULT 0,
+    likeCount INT DEFAULT 0,
     comments INT DEFAULT 0
 )");
 
@@ -33,17 +33,17 @@ $id = data['id'];
 $title = data['title'];
 $content = data['content'];
 $tags = data['tags'];
-$liked = data['liked'];
+$likeFrom = data['liked'];
 $author = data['author'];
 $authorId = data['authorId'];
 $likes = data['likes'];
 $comments = data['comments'];
 
 $stmt = $conn->prepare("INSERT INTO forumPosts 
-    (id, title, content, tags, liked, author, authorID, likes, comments) 
+    (id, title, content, tags, likesFrom, author, authorID, likeCount, comments) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
 );
-$stmt->bind_param("isssisiii", $id, $title, $content, $tags, $liked, $author, $authorId, $likes, $comments);
+$stmt->bind_param("isssisiii", $id, $title, $content, $tags, $likeFrom, $author, $authorId, $likes, $comments);
 
 if ($stmt->execute()) {
     echo json_encode(['message' => 'Post inserted successfully.'])
