@@ -335,7 +335,6 @@
     }
 }
 
-/* Make sizing predictable */
 .ea-page *, .ea-page *::before, .ea-page *::after {
     box-sizing: border-box;
 }

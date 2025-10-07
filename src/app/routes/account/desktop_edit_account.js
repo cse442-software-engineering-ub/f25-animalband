@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./edit_account.css";
+import "./desktop_edit_account.css";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
-export default function EditAccount() {
+export default function DesktopEditAccount() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    
+
     // Form states
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
@@ -16,12 +16,12 @@ export default function EditAccount() {
     const [newPwd, setNewPwd] = useState("");
     const [confirmPwd, setConfirmPwd] = useState("");
     const [msg, setMsg] = useState(null);
-    
+
     // Password visibility states
     const [showCurrent, setShowCurrent] = useState(false);
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
-    
+
     // User data for header
     const [user, setUser] = useState(null);
 
@@ -85,7 +85,7 @@ export default function EditAccount() {
                 setCurrentPwd("");
                 setNewPwd("");
                 setConfirmPwd("");
-                
+
                 // Update user data
                 setUser(prev => ({ ...prev, username: username.trim() }));
             } else {
@@ -103,7 +103,7 @@ export default function EditAccount() {
 
     return (
         <div className="ea-page">
-            {/* Header - Exactly like desktop_profile */}
+            {/* Header */}
             <header className="ea-header">
                 <div className="ea-logo-section" onClick={() => navigate("/")}>
                     <span className="material-symbols-outlined ea-paw-icon">pets</span>
