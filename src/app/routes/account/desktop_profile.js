@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import "./desktop_profile.css";
 
-export default function Profile() {
+export default function DesktopProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const fileInputRef = useRef(null);
@@ -79,12 +79,6 @@ export default function Profile() {
               src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
               alt="Profile"
               className="profile-pic"
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                objectFit: "cover",
-              }}
               onClick={() => navigate("/account")}
             />
           )}
@@ -100,33 +94,84 @@ export default function Profile() {
             <li><button onClick={() => console.log("My Posts")}>My Posts</button></li>
             <li><button onClick={() => console.log("My Recordings")}>My Recordings</button></li>
             <li><button onClick={() => navigate("/account/edit")}>Edit Account</button></li>
+            <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>
+            <li><button onClick={() => {
+              // ToDo: Add logout functionality here
+              console.log("Logout");
+              navigate("/login");
+            }}>Logout</button></li>
           </ul>
         </aside>
 
         {/* Main Profile Section */}
         <main className="profile-content">
           {user ? (
-            <div className="profile-pic-container" onClick={handleProfilePicClick}>
-              <img
-                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
-                alt="Profile"
-                className="profile-pic-large"
-              />
-              <div className="profile-pic-overlay">Edit</div>
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                onChange={handleProfilePicChange}
-              />
+            <>
+              <div className="profile-pic-container" onClick={handleProfilePicClick}>
+                <img
+                  src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                  alt="Profile"
+                  className="profile-pic-large"
+                />
+                <div className="profile-pic-overlay">Change Photo</div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  style={{ display: "none" }}
+                  onChange={handleProfilePicChange}
+                />
+              </div>
               <h2>{user.username}</h2>
-            </div>
+              
+              {/* Profile Information */}
+              <div className="profile-info">
+                <h3>Profile Information</h3>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Username:</span>
+                    <div className="info-value">{user.username}</div>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Email:</span>
+                    <div className="info-value">{user.email || "Not provided"}</div>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Member Since:</span>
+                    <div className="info-value">{user.joinDate || "Recently joined"}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Stats */}
+              <div className="profile-stats">
+                <h3>My Statistics</h3>
+                <div className="stats-container">
+                  <div className="stat-card">
+                    <div className="stat-number">15</div>
+                    <div className="stat-label">Posts</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-number">8</div>
+                    <div className="stat-label">Recordings</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-number">127</div>
+                    <div className="stat-label">Likes</div>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : (
             <p>Loading profile...</p>
           )}
         </main>
       </div>
+      {/* Material Icons Font */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
     </div>
   );
 }

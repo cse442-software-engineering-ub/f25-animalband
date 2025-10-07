@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./mobile_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
@@ -8,11 +8,43 @@ import Kangaroo from "../../../assets/kangaroo.jpeg";
 import Snake from "../../../assets/snake.jpeg";
 
 export default function MobileLanding() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
 
   // Stuff for carousel
   const slides = [Ostrich, Bird, Hamster, Kangaroo, Snake];
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+          { credentials: "include" }
+        );
+        const data = await res.json();
+        if (data.loggedIn) {
+          setUser(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user", err);
+      }
+    };
+    checkUser();
+  }, []);
+
+  const handleAccountClick = () => {
+    if (user) {
+      navigate("/account");
+    } else {
+      navigate("/login");
+    }
+  };
+
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
 
   useEffect(() => {
     const el = trackRef.current;
@@ -33,19 +65,29 @@ export default function MobileLanding() {
     el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
   };
 
-  // Page
   return (
     <div className="m-landing">
-      {/* Header */}
-      <header className="m-header">
+
+      <header className={`m-header ${user ? "is-logged-in" : ""}`}>
         <div className="m-site-title">
           <span className="material-symbols-outlined m-paw" aria-hidden>pets</span>
           <span className="m-name">ANIMALBAND</span>
         </div>
-        {/* Auth */}
-        <div className="m-auth">
-          <Link to="/login" className="m-btn m-btn-solid">Login</Link>
-          <Link to="/register" className="m-btn m-btn-outline">Register</Link>
+
+        <div className={`m-auth ${user ? "is-logged-in" : ""}`}>
+          {!user ? (
+            <>
+              <button className="m-btn m-btn-solid" onClick={() => navigate("/login")}>Login</button>
+              <button className="m-btn m-btn-outline" onClick={() => navigate("/register")}>Register</button>
+            </>
+          ) : (
+            <img
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              alt="Profile"
+              className="m-profile-pic"
+              onClick={handleAccountClick}
+            />
+          )}
         </div>
       </header>
 
@@ -83,7 +125,6 @@ export default function MobileLanding() {
 
         {/* Start Button */}
         <Link to="/stage" className="m-btn-start-band">Start Your Band</Link>
-
 
         {/* Features */}
         <section className="m-features">

@@ -73,8 +73,8 @@ export default function Landing() {
               className="profile-pic"
               onClick={handleAccountClick}
               style={{
-                width: "40px",
-                height: "40px",
+                width: "75px",
+                height: "75px",
                 borderRadius: "50%",
                 cursor: "pointer",
                 objectFit: "cover",
