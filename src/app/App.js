@@ -19,6 +19,9 @@ import MobileProfile from "./routes/account/mobile_profile.js";
 import DesktopEditAccount from "./routes/account/desktop_edit_account.js";
 import MobileEditAccount from "./routes/account/mobile_edit_account.js";
 
+import DesktopForum from "./routes/forum/desktop_forum.js";
+import MobileForum from "./routes/forum/mobile_forum.js";
+
 import "../App.css";
 
 function NotFound() {
@@ -37,6 +40,9 @@ function EditAccount(){
   return isMobile ? <MobileEditAccount /> : <DesktopEditAccount />;
 }
 
+function Forum(){
+  const isMobile = useIsMobile(852);
+  return isMobile ? <MobileForum /> : <DesktopForum />;
 function Stage(){
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileStage /> : <DesktopStage />;
