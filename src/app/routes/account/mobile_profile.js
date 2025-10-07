@@ -5,7 +5,7 @@ import "./mobile_profile.css";
 export default function MobileProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -66,95 +66,121 @@ export default function MobileProfile() {
     }
   };
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  const handleAccountClick = () => {
+    if (user) {
+      navigate("/account");
+    } else {
+      navigate("/login");
+    }
   };
 
-  const closeSidebar = () => {
-    setSidebarOpen(false);
-  };
-
-  const handleNavigation = (path) => {
-    navigate(path);
-    closeSidebar();
+  // Navigate to forum with specific view
+  const navigateToForum = (view) => {
+    navigate("/forum", { state: { activeView: view } });
+    setShowMobileMenu(false);
   };
 
   return (
     <div className="mobile-profile-page">
-      {/* Header */}
+      {/* Mobile Header */}
       <header className="mobile-header">
-        <button className="mobile-menu-toggle" onClick={toggleSidebar}>
-          <span className="material-symbols-outlined">menu</span>
-        </button>
-        
-        <Link to="/" className="mobile-logo-section">
-          <span className="material-symbols-outlined mobile-paw-icon">pets</span>
-          <h1 className="mobile-site-title">ANIMALBAND</h1>
-        </Link>
+        <div className="mobile-header-left">
+          <button 
+            className="mobile-menu-btn"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+          <Link to="/" className="mobile-logo">
+            <span className="material-symbols-outlined paw-icon">pets</span>
+            <span className="mobile-site-title">ANIMALBAND</span>
+          </Link>
+        </div>
+
+        <div className="mobile-header-right">
+          {user ? (
+            <img
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              alt="Profile"
+              className="mobile-profile-pic"
+              onClick={handleAccountClick}
+            />
+          ) : (
+            <button 
+              className="mobile-login-btn"
+              onClick={() => navigate("/login")}
+            >
+              Login
+            </button>
+          )}
+        </div>
       </header>
 
-      {/* Sidebar Overlay */}
-      <div 
-        className={`mobile-overlay ${sidebarOpen ? 'active' : ''}`}
-        onClick={closeSidebar}
-      />
-
-      {/* Mobile Sidebar */}
-      <aside className={`mobile-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="mobile-sidebar-header">
-          <h3>Menu</h3>
-          <button className="mobile-sidebar-close" onClick={closeSidebar}>
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        
-        <ul>
-          <li>
-            <button onClick={() => handleNavigation("/posts")}>
-              <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
-                article
-              </span>
+      {/* Mobile Navigation Menu */}
+      {showMobileMenu && (
+        <div className="mobile-nav-menu">
+          <div className="mobile-nav-header">
+            <h3>Menu</h3>
+            <button 
+              className="mobile-close-btn"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <nav className="mobile-nav">
+            <button 
+              className="mobile-nav-btn"
+              onClick={() => { navigate("/"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">home</span>
+              Home
+            </button>
+            <button 
+              className="mobile-nav-btn"
+              onClick={() => navigateToForum("community")}
+            >
+              <span className="material-symbols-outlined">forum</span>
+              Forum
+            </button>
+            <button 
+              className="mobile-nav-btn"
+              onClick={() => navigateToForum("my-posts")}
+            >
+              <span className="material-symbols-outlined">article</span>
               My Posts
             </button>
-          </li>
-          <li>
-            <button onClick={() => handleNavigation("/recordings")}>
-              <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
-                library_music
-              </span>
+            <button 
+              className="mobile-nav-btn"
+              onClick={() => navigateToForum("my-likes")}
+            >
+              <span className="material-symbols-outlined">favorite</span>
+              My Likes
+            </button>
+            <button 
+              className="mobile-nav-btn"
+              onClick={() => { navigate("/my-recordings"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">mic</span>
               My Recordings
             </button>
-          </li>
-          <li>
-            <button onClick={() => handleNavigation("/account/edit")}>
-              <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
-                edit
-              </span>
-              Edit Account
+            <button 
+              className="mobile-nav-btn active"
+              onClick={() => { navigate("/account"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">person</span>
+              My Profile
             </button>
-          </li>
-          <li>
-            <button onClick={() => handleNavigation("/stage")}>
-              <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
-                piano
-              </span>
-              Back to Stage
+            <button 
+              className="mobile-nav-btn logout"
+              onClick={() => { navigate("/login"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">logout</span>
+              Log Out
             </button>
-          </li>
-          <li>
-            <button onClick={() => {
-              // Add logout functionality here
-              console.log("Logout");
-              navigate("/login");
-            }}>
-              <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
-                logout
-              </span>
-              Logout
-            </button>
-          </li>
-        </ul>
-      </aside>
+          </nav>
+        </div>
+      )}
 
       {/* Main Profile Content */}
       <main className="mobile-profile-content">
