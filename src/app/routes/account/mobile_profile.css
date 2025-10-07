@@ -388,3 +388,36 @@
     min-height: auto;
   }
 }
+
+/* ===== EDIT PROFILE BUTTON ===== */
+.mobile-edit-profile-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #178c3a;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 1rem auto;
+  box-shadow: 0 2px 8px rgba(23, 140, 58, 0.3);
+  transition: all 0.3s ease;
+}
+
+.mobile-edit-profile-btn:hover {
+  background: #126c2d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(23, 140, 58, 0.4);
+}
+
+.mobile-edit-profile-btn:active {
+  transform: translateY(0);
+}
+
+.mobile-edit-profile-btn .material-symbols-outlined {
+  font-size: 1.1rem;
+}

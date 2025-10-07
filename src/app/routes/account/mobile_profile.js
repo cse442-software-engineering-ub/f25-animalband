@@ -74,6 +74,11 @@ export default function MobileProfile() {
     }
   };
 
+  // NEW: Handle edit profile button click
+  const handleEditProfile = () => {
+    navigate("/account/edit");
+  };
+
   // Navigate to forum with specific view
   const navigateToForum = (view) => {
     navigate("/forum", { state: { activeView: view } });
@@ -171,6 +176,14 @@ export default function MobileProfile() {
               <span className="material-symbols-outlined">person</span>
               My Profile
             </button>
+            {/* NEW: Edit Profile option in mobile menu */}
+            <button 
+              className="mobile-nav-btn"
+              onClick={() => { navigate("/account/edit"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">edit</span>
+              Edit Profile
+            </button>
             <button 
               className="mobile-nav-btn logout"
               onClick={() => { navigate("/login"); setShowMobileMenu(false); }}
@@ -202,6 +215,15 @@ export default function MobileProfile() {
               />
             </div>
             <h2>{user.username}</h2>
+            
+            {/* NEW: Edit Profile Button */}
+            <button 
+              className="mobile-edit-profile-btn"
+              onClick={handleEditProfile}
+            >
+              <span className="material-symbols-outlined">edit</span>
+              Edit Profile
+            </button>
             
             {/* Profile Information */}
             <div className="mobile-profile-info">
