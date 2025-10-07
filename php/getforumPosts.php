@@ -29,7 +29,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
 $selectPosts = "SELECT * FROM forumPosts";
 $result = $conn->query($selectPosts);
 
-$allPosts = []
+$allPosts = [];
 
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
