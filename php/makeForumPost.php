@@ -32,7 +32,7 @@ $data = json_decode($json, true);
 $id = $data['id'];
 $title = $data['title'];
 $content = $data['content'];
-$tags = $data['tags'];
+$tags = json_encode($data['tags']);
 $likeFrom = $data['liked'];
 $author = $data['author'];
 $authorId = $data['authorId'];
@@ -46,7 +46,7 @@ $stmt = $conn->prepare("INSERT INTO forumPosts
 $stmt->bind_param("isssisiii", $id, $title, $content, $tags, $likeFrom, $author, $authorId, $likes, $comments);
 
 if ($stmt->execute()) {
-    echo json_encode(["success" => true, 'message' => 'Post inserted successfully.'])
+    echo json_encode(["success" => true, 'message' => 'Post inserted successfully.']);
 } else {
     echo json_encode(["success" => false, 'message' => 'Error: ' . $stmt->error]);
 }
