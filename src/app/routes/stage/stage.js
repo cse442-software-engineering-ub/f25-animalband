@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SOUND_CONFIG } from "./stage_soundsConfig";
 import { loadSound, playSound, setMasterVolume } from "./stage_audioUtil";
@@ -21,6 +21,20 @@ export default function Stage() {
   const [volumes, setVolumes] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
   const [playingAnimals, setPlayingAnimals] = useState({});
+
+  // Recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordStartTime, setRecordStartTime] = useState(null);
+  const [recordedNotes, setRecordedNotes] = useState([]);
+
+  // AudioContext reference
+  const audioContextRef = useRef(null);
+
+  useEffect(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }, []);
 
   const ANIMAL_IMAGES = {
     hamster: [Hamster, HamsterPlaying],
@@ -49,38 +63,41 @@ export default function Stage() {
     loadAllSounds();
   }, []);
 
-  // Keyboard play and animation
+  // Keyboard play and animation + recording
   useEffect(() => {
     const handleKeyDown = (e) => {
-  const key = e.key.toLowerCase();
-  if (!sounds[key]) return;
+      const key = e.key.toLowerCase();
+      if (!sounds[key]) return;
 
-  const animalMap = {
-    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-    c: "bird", v: "bird", b: "bird", n: "bird",
-    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-    q: "snake", w: "snake", e: "snake", r: "snake",
-  };
+      const animalMap = {
+        a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+        c: "bird", v: "bird", b: "bird", n: "bird",
+        h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+        u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+        q: "snake", w: "snake", e: "snake", r: "snake",
+      };
 
-  const animal = animalMap[key];
-  if (!animal) return;
+      const animal = animalMap[key];
+      if (!animal) return;
 
-  // use the animal's volume
-  const volume = (volumes[animal] || 1) * masterVolume;
-  playSound(sounds[key], volume);
+      // Record key press if recording
+      if (isRecording) {
+        const timeSinceStart = performance.now() - recordStartTime;
+        setRecordedNotes((prev) => [...prev, { key, time: timeSinceStart }]);
+      }
 
-  // trigger animation
-  setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-  setTimeout(() => {
-    setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
-  }, 300);
-};
+      const volume = (volumes[animal] || 1) * masterVolume;
+      playSound(sounds[key], volume);
 
+      setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+      setTimeout(() => {
+        setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
+      }, 300);
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [sounds, volumes, masterVolume]);
+  }, [sounds, volumes, masterVolume, isRecording, recordStartTime]);
 
   // Master volume persistence
   useEffect(() => {
@@ -96,6 +113,55 @@ export default function Stage() {
   const handleVolumeChange = (key, value) => {
     setVolumes((prev) => ({ ...prev, [key]: parseFloat(value) }));
   };
+
+  // Playback recorded sequence with Web Audio API
+  const playRecording = () => {
+  if (recordedNotes.length === 0) return;
+
+  const audioContext = audioContextRef.current;
+  const startTime = audioContext.currentTime;
+
+  const animalMap = {
+    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+    c: "bird", v: "bird", b: "bird", n: "bird",
+    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+    q: "snake", w: "snake", e: "snake", r: "snake",
+  };
+
+  recordedNotes.forEach(({ key, time }) => {
+    const animal = animalMap[key];
+    if (!animal || !sounds[key]) return;
+
+    const volume = (volumes[animal] || 1) * masterVolume;
+
+    // Schedule sound
+    const source = audioContext.createBufferSource();
+    source.buffer = sounds[key];
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = volume;
+    source.connect(gainNode).connect(audioContext.destination);
+    source.start(startTime + time / 1000);
+
+    // Schedule animation using requestAnimationFrame
+    const scheduleAnimation = () => {
+      const currentTime = audioContext.currentTime;
+      const elapsed = (currentTime - startTime) * 1000; // in ms
+
+      if (elapsed >= time) {
+        // Trigger animation
+        setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+        setTimeout(() => {
+          setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
+        }, 300);
+      } else {
+        requestAnimationFrame(scheduleAnimation);
+      }
+    };
+    requestAnimationFrame(scheduleAnimation);
+  });
+};
+
 
   return (
     <div className="landing-page">
@@ -169,6 +235,37 @@ export default function Stage() {
             }}
           />
         </div>
+
+        {/* Recording Controls */}
+        <div className="record-controls">
+          {!isRecording ? (
+            <button
+              onClick={() => {
+                setRecordedNotes([]);
+                setRecordStartTime(performance.now());
+                setIsRecording(true);
+              }}
+              className="record-btn start"
+            >
+              Start Recording
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsRecording(false)}
+              className="record-btn stop"
+            >
+              Stop Recording
+            </button>
+          )}
+
+          <button
+            onClick={playRecording}
+            disabled={recordedNotes.length === 0}
+            className="record-btn play"
+          >
+            Play Recording
+          </button>
+        </div>
       </section>
 
       <link
@@ -178,3 +275,4 @@ export default function Stage() {
     </div>
   );
 }
+
