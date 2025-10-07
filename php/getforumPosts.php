@@ -14,6 +14,18 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+$conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
+    id INT,
+    title VARCHAR(255),
+    content TEXT,
+    tags JSON,
+    likesFrom INT,
+    author VARCHAR(100),
+    authorId INT,
+    likeCount INT DEFAULT 0,
+    comments INT DEFAULT 0
+)");
+
 $selectPosts = "SELECT * FROM forumPosts";
 $result = $conn->query($selectPosts);
 

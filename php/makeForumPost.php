@@ -46,9 +46,9 @@ $stmt = $conn->prepare("INSERT INTO forumPosts
 $stmt->bind_param("isssisiii", $id, $title, $content, $tags, $likeFrom, $author, $authorId, $likes, $comments);
 
 if ($stmt->execute()) {
-    echo json_encode(['message' => 'Post inserted successfully.'])
+    echo json_encode(["success" => true, 'message' => 'Post inserted successfully.'])
 } else {
-    echo json_encode(['message' => 'Error: ' . $stmt->error]);
+    echo json_encode(["success" => false, 'message' => 'Error: ' . $stmt->error]);
 }
 
 $stmt->close();

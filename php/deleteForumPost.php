@@ -14,4 +14,6 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+//TODO: functionality for deleting a post (remove from forumPosts)
+
 ?>
