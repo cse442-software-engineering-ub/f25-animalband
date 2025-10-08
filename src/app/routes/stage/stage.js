@@ -1,3 +1,180 @@
-export default function Stage(){
-    return <h2>Stage Goes Here ig</h2>;
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { SOUND_CONFIG } from "./stage_soundsConfig";
+import { loadSound, playSound, setMasterVolume } from "./stage_audioUtil";
+import "./stage.css";
+
+import Ostrich from "../../../assets/ostrich.jpeg";
+import OstrichPlaying from "../../../assets/ostrich_playing.jpeg";
+import Bird from "../../../assets/bird.jpeg";
+import BirdPlaying from "../../../assets/bird_playing.jpeg";
+import Hamster from "../../../assets/hamster.jpeg";
+import HamsterPlaying from "../../../assets/hamster_playing.jpeg";
+import Kangaroo from "../../../assets/kangaroo.jpeg";
+import KangarooPlaying from "../../../assets/kangaroo_playing.jpeg";
+import Snake from "../../../assets/snake.jpeg";
+import SnakePlaying from "../../../assets/snake_playing.jpeg";
+
+export default function Stage() {
+  const navigate = useNavigate();
+  const [sounds, setSounds] = useState({});
+  const [volumes, setVolumes] = useState({});
+  const [masterVolume, setMasterVol] = useState(1);
+  const [playingAnimals, setPlayingAnimals] = useState({});
+
+  const ANIMAL_IMAGES = {
+    hamster: [Hamster, HamsterPlaying],
+    bird: [Bird, BirdPlaying],
+    ostrich: [Ostrich, OstrichPlaying],
+    kangaroo: [Kangaroo, KangarooPlaying],
+    snake: [Snake, SnakePlaying],
+  };
+
+  // Load all sounds
+  useEffect(() => {
+    const loadAllSounds = async () => {
+      try {
+        const loadedSounds = {};
+        const initialVolumes = {};
+        for (const sound of SOUND_CONFIG) {
+          loadedSounds[sound.key] = await loadSound(sound.file);
+          initialVolumes[sound.key] = 1;
+        }
+        setSounds(loadedSounds);
+        setVolumes(initialVolumes);
+      } catch (e) {
+        console.error("[ERROR] Loading failed:", e);
+      }
+    };
+    loadAllSounds();
+  }, []);
+
+  // Keyboard play and animation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+  const key = e.key.toLowerCase();
+  if (!sounds[key]) return;
+
+  const animalMap = {
+    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+    c: "bird", v: "bird", b: "bird", n: "bird",
+    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+    q: "snake", w: "snake", e: "snake", r: "snake",
+  };
+
+  const animal = animalMap[key];
+  if (!animal) return;
+
+  // use the animal's volume
+  const volume = (volumes[animal] || 1) * masterVolume;
+  playSound(sounds[key], volume);
+
+  // trigger animation
+  setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+  setTimeout(() => {
+    setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
+  }, 300);
+};
+
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [sounds, volumes, masterVolume]);
+
+  // Master volume persistence
+  useEffect(() => {
+    const savedVol = parseFloat(localStorage.getItem("masterVolume") || "1");
+    setMasterVol(savedVol);
+    setMasterVolume(savedVol);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("masterVolume", masterVolume);
+  }, [masterVolume]);
+
+  const handleVolumeChange = (key, value) => {
+    setVolumes((prev) => ({ ...prev, [key]: parseFloat(value) }));
+  };
+
+  return (
+    <div className="landing-page">
+      <header className="header">
+        <Link to="/" className="logo-section">
+          <span className="material-symbols-outlined paw-icon">pets</span>
+          <h1 className="site-title">ANIMALBAND</h1>
+        </Link>
+
+        <nav className="nav-links">
+          <Link to="/stage" className="nav-item active">Stage</Link>
+          <Link to="/looping" className="nav-item">Looping & Recording</Link>
+          <Link to="/forum" className="nav-item">Forum</Link>
+        </nav>
+
+        <div className="header-buttons">
+          <button className="btn-login" onClick={() => navigate("/login")}>Login</button>
+          <button className="btn-register" onClick={() => navigate("/register")}>Register</button>
+        </div>
+      </header>
+
+      <section className="band-stage">
+        <h2 className="main-heading">Stage</h2>
+        <p className="subtitle">
+          Press your keyboard to play instruments. Adjust volumes below!
+        </p>
+
+        <div className="animals-container">
+          {Object.keys(ANIMAL_IMAGES).map((animal) => (
+            <div key={animal} className="animal-member">
+              <img
+                src={playingAnimals[animal] ? ANIMAL_IMAGES[animal][1] : ANIMAL_IMAGES[animal][0]}
+                alt={`${animal} instrument`}
+              />
+              <div className="animal-controls">
+                <p className="key-text">
+                  {Object.entries({
+                    hamster: "A S D F",
+                    bird: "C V B N",
+                    ostrich: "H J K L",
+                    kangaroo: "U I O P",
+                    snake: "Q W E R",
+                  })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]}
+                </p>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volumes[animal] || 1}
+                  onChange={(e) => handleVolumeChange(animal, e.target.value)}
+                  className="animal-volume-slider"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="master-volume">
+          <label>Master Volume: {(masterVolume * 100).toFixed(0)}%</label>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={masterVolume}
+            onChange={(e) => {
+              const newVol = parseFloat(e.target.value);
+              setMasterVol(newVol);
+              setMasterVolume(newVol);
+            }}
+          />
+        </div>
+      </section>
+
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
+    </div>
+  );
 }
