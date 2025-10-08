@@ -59,23 +59,23 @@ export default function Register() {
       <form onSubmit={handleRegister}>
         <label>
           Name
-          <input type="text" name="username" />
+          <input type="text" name="username" placeholder="Name" />
         </label>
         <label>
           Email
-          <input type="text" name="email" />
+          <input type="text" name="email" placeholder="Email" />
         </label>
         <label>
           Password
-          <input type="password" name="password" />
+          <input type="password" name="password" placeholder="Create a Password" />
         </label>
         <label>
           Confirm Password
-          <input type="password" name="password-conf" />
+          <input type="password" name="password-conf" placeholder="Confirm Password" />
         </label>
         <label>
           Profile Picture
-          <input type="file" name="profilePic" accept="image/*" />
+          <input type="file" name="profilePic" accept="image/*" className="file-input" />
         </label>
         <button type="submit">Register</button>
       </form>
