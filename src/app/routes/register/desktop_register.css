@@ -1,14 +1,12 @@
-/* Full page background */
 body, html {
   margin: 0;
   padding: 0;
   font-family: 'Arial', sans-serif;
-  background-color: #138A36; /* green background */
+  background-color: #138A36;
 }
 
-/* Center the registration form */
 .register-page {
-  background-color: #f0f0f0; /* light gray form background */
+  background-color: #f0f0f0;
   width: 320px;
   margin: 50px auto;
   padding: 30px 20px;
@@ -17,22 +15,39 @@ body, html {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Logo area */
-.register-page h2 {
-  font-size: 24px;
-  color: #4CAF50;
+/* Remove the emoji paw print */
+.register-page::before {
+  content: none;
+}
+
+/* Logo styling */
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 20px;
 }
 
-/* Top animal paw image (simulated with emoji if you want for now) */
-.register-page::before {
-  content: '🐾';
+.paw-icon {
   font-size: 40px;
-  display: block;
-  margin-bottom: 10px;
+  color: #138A36;
+  margin-bottom: 5px;
 }
 
-/* Form labels hidden for minimal design */
+.logo h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.logo h2 {
+  font-size: 20px;
+  color: #4CAF50;
+  margin-top: 5px;
+}
+
+/* Form styles */
 form label {
   display: block;
   text-align: left;
@@ -41,7 +56,6 @@ form label {
   color: #333;
 }
 
-/* Input fields */
 input[type="text"],
 input[type="password"],
 input[type="file"] {
@@ -55,17 +69,14 @@ input[type="file"] {
   font-size: 14px;
 }
 
-/* Hide the file input if not needed visually */
 input[type="file"] {
-  display: none; /* remove if you need to keep it visible */
+  display: none;
 }
 
-/* Checkbox styling */
 input[type="checkbox"] {
   margin-right: 5px;
 }
 
-/* "Remember Me" style (manually add this in JSX if you want) */
 .remember-me {
   display: flex;
   align-items: center;
@@ -74,7 +85,6 @@ input[type="checkbox"] {
   margin: 10px 0;
 }
 
-/* Register button */
 button[type="submit"] {
   width: 100%;
   padding: 12px;
@@ -92,7 +102,6 @@ button[type="submit"]:hover {
   background-color: #0f6d2a;
 }
 
-/* Bottom text */
 .register-page p {
   margin-top: 20px;
   font-size: 14px;
@@ -130,4 +139,3 @@ button[type="submit"]:hover {
     font-size: 16px;
   }
 }
-
