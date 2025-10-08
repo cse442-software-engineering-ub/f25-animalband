@@ -1,7 +1,8 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import "./desktop_register.css";
 
 export default function Register() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
     const handleRegister = async (e) => {
         e.preventDefault();
@@ -47,38 +48,43 @@ export default function Register() {
         }
     };
 
-    return (
-        <div className="register-page">
-            <h2>Register</h2>
-            <form onSubmit={handleRegister}>
-                <label>
-                    Name
-                    <input type="text" name="username" />
-                </label>
-                <br />
-                <label>
-                    Email
-                    <input type="text" name="email" />
-                </label>
-                <br />
-                <label>
-                    Password
-                    <input type="password" name="password" />
-                </label>
-                <br />
-                <label>
-                    Confirm Password
-                    <input type="password" name="password-conf" />
-                </label>
-                <br />
-                <label>
-                    Profile Picture
-                    <input type="file" name="profilePic" accept="image/*" />
-                </label>
-                <br />
-                <button type="submit">Register</button>
-            </form>
-        </div>
-    );
+  return (
+    <div className="register-page">
+      <div className="logo">
+        <span className="material-symbols-outlined paw-icon">pets</span>
+        <h1>ANIMALBAND</h1>
+        <h2>Register</h2>
+      </div>
+
+      <form onSubmit={handleRegister}>
+        <label>
+          Name
+          <input type="text" name="username" placeholder="Name" />
+        </label>
+        <label>
+          Email
+          <input type="text" name="email" placeholder="Email" />
+        </label>
+        <label>
+          Password
+          <input type="password" name="password" placeholder="Create a Password" />
+        </label>
+        <label>
+          Confirm Password
+          <input type="password" name="password-conf" placeholder="Confirm Password" />
+        </label>
+        <label>
+          Profile Picture
+          <input type="file" name="profilePic" accept="image/*" className="file-input" />
+        </label>
+        <button type="submit">Register</button>
+      </form>
+
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
+    </div>
+  );
 }
 
