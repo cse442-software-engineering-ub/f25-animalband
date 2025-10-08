@@ -47,15 +47,13 @@ export default function Login() {
         <form>
           <input type="text" name="email" placeholder="Email" />
           <input type="password" name="password" placeholder="Password" />
-          <div className="form-options">
-            <label className="remember-me">
-              <input type="checkbox" />
-              Remember Me
-            </label>
+
+          {/* Centered Forgot Password link */}
+          <p className="forgot-link-container">
             <Link to="/forgot-password" className="forgot-link">
-              Forget Password?
+              Forgot Password?
             </Link>
-          </div>
+          </p>
 
           <button type="button" onClick={handleLogin}>
             Login
