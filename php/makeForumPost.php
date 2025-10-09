@@ -14,7 +14,6 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Adjust your table schema once (do this once manually or in a migration script):
 $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255),
@@ -31,14 +30,14 @@ $json = file_get_contents('php://input');
 $data = json_decode($json, true);
 
 if ($data === null) {
-    echo json_encode(["success" => false, "message" => "Invalid JSON"]);
+    echo json_encode(["success" => false, "message" => "Data was null!"]);
     exit;
 }
 
 $title = $data['title'] ?? '';
 $content = $data['content'] ?? '';
 $tags = json_encode($data['tags'] ?? []);
-$likesFrom = [];
+$likesFrom = json_encode($data['likesFrom'] ?? []);;
 $author = $data['author'] ?? '';
 $authorId = $data['authorId'] ?? 0;
 $likeCount = $data['likes'] ?? 0;
