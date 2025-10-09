@@ -65,6 +65,25 @@ export default function DesktopProfile() {
     }
   };
 
+  // New logout handler
+  const handleLogout = async () => {
+    try {
+      await fetch(
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/logout.php",
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+      setUser(null);
+      navigate("/"); // redirect to homepage
+    } catch (err) {
+      console.error("Logout failed", err);
+      alert("Failed to log out. Please try again.");
+    }
+  };
+
   return (
     <div className="profile-page">
       {/* Header */}
@@ -95,11 +114,7 @@ export default function DesktopProfile() {
             <li><button onClick={() => console.log("My Recordings")}>My Recordings</button></li>
             <li><button onClick={() => navigate("/account/edit")}>Edit Account</button></li>
             <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>
-            <li><button onClick={() => {
-              // ToDo: Add logout functionality here
-              console.log("Logout");
-              navigate("/login");
-            }}>Logout</button></li>
+            <li><button onClick={handleLogout}>Logout</button></li>
           </ul>
         </aside>
 
