@@ -1,0 +1,145 @@
+/* Body and container styles remain global */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #228b22; /* Green background */
+}
+
+.login-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 🛡️ Scoped styles start here */
+.login-card {
+  background-color: #f0f0f0;
+  padding: 40px 30px;
+  border-radius: 8px;
+  width: 300px;
+  text-align: center;
+}
+
+.login-card .logo .paw-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.login-card .logo h1 {
+  margin: 0;
+  color: #2e8b57; /* dark green */
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.login-card .logo h2 {
+  margin: 5px 0 20px;
+  font-size: 20px;
+  color: #333;
+}
+
+.login-card form input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 20px;
+  box-sizing: border-box;
+}
+
+/* Center the forgot password link */
+.forgot-link-container {
+  margin: 10px 0 15px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.login-card .forgot-link {
+  color: #228b22;
+  text-decoration: none;
+}
+
+.login-card .forgot-link:hover {
+  text-decoration: underline;
+}
+
+.login-card button {
+  width: 100%;
+  padding: 10px;
+  background-color: #228b22;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+.login-card button:hover {
+  background-color: #1e7a1e;
+}
+
+.login-card .register-link {
+  font-size: 12px;
+}
+
+.login-card .register-link a {
+  color: #228b22;
+  text-decoration: none;
+}
+
+.login-card .register-link a:hover {
+  text-decoration: underline;
+}
+
+@media screen and (max-width: 600px) {
+  .login-container {
+    padding: 20px;
+    align-items: flex-start;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 90%;
+    padding: 25px 20px;
+    border-radius: 10px;
+    margin-top: 40px;
+  }
+
+  .login-card .logo h1 {
+    font-size: 20px;
+  }
+
+  .login-card .logo h2 {
+    font-size: 18px;
+  }
+
+  .login-card .paw-icon {
+    font-size: 36px;
+  }
+
+  .login-card form input {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .login-card button {
+    font-size: 18px;
+    padding: 12px;
+  }
+
+  .forgot-link-container {
+    font-size: 14px;
+  }
+
+  .login-card {
+    font-size: 14px;
+  }
+
+  .login-card .register-link {
+    font-size: 14px;
+  }
+}

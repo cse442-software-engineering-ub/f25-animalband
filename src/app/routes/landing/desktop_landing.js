@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import "./desktop_landing.css";
+
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
 import Hamster from "../../../assets/hamster.jpeg";
@@ -9,23 +10,38 @@ import Snake from "../../../assets/snake.jpeg";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+          { credentials: "include" }
+        );
+        const data = await res.json();
+        if (data.loggedIn) {
+          setUser(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user", err);
+      }
+    };
+    checkUser();
+  }, []);
 
   const handleAccountClick = () => {
-    // Check if auth_token cookie exists
-    const hasAuthToken = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("auth_token="));
-
-    if (hasAuthToken) {
+    if (user) {
       navigate("/account");
     } else {
       navigate("/login");
     }
-  }
+  };
 
   const handleNavigation = (path) => {
     navigate(path);
   };
+
   return (
     <div className="landing-page">
       {/* Header */}
@@ -35,9 +51,36 @@ export default function Landing() {
           <h1 className="site-title">ANIMALBAND</h1>
         </Link>
         <div className="header-buttons">
-          <button className="btn-login" onClick={() => handleNavigation("/login")}>Login</button>
-          <button className="btn-register" onClick={() => handleNavigation("/register")}>Register</button>
-          <button className="btn-account" onClick={() => handleAccountClick()}>Account</button>
+          {!user ? (
+            <>
+              <button
+                className="btn-login"
+                onClick={() => handleNavigation("/login")}
+              >
+                Login
+              </button>
+              <button
+                className="btn-register"
+                onClick={() => handleNavigation("/register")}
+              >
+                Register
+              </button>
+            </>
+          ) : (
+            <img
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              alt="Profile"
+              className="profile-pic"
+              onClick={handleAccountClick}
+              style={{
+                width: "75px",
+                height: "75px",
+                borderRadius: "50%",
+                cursor: "pointer",
+                objectFit: "cover",
+              }}
+            />
+          )}
         </div>
       </header>
 
@@ -45,43 +88,41 @@ export default function Landing() {
       <section className="main-description">
         <h2 className="main-heading">Create Music with Animals</h2>
         <p className="subtitle">
-          Play music with your animal bandmates on a stage. Layer beats,
-          record music, and share it all with a friendly community.
+          Play music with your animal bandmates on a stage. Layer beats, record
+          music, and share it all with a friendly community.
         </p>
       </section>
 
       {/* Animal Stage */}
       <section className="band-stage">
-        {/* Animal Images */}
-        <div className="animals-container">  
+        <div className="animals-container">
           <div className="animal-member">
             <div className="hamster">
-              <img src={Hamster} alt="Hamster"/>
+              <img src={Hamster} alt="Hamster" />
             </div>
           </div>
           <div className="animal-member">
             <div className="snake">
-              <img src={Snake} alt="Snake"/>
+              <img src={Snake} alt="Snake" />
             </div>
           </div>
           <div className="animal-member">
             <div className="bird">
-              <img src={Bird} alt="Bird"/>
+              <img src={Bird} alt="Bird" />
             </div>
           </div>
           <div className="animal-member">
             <div className="kangaroo">
-              <img src={Kangaroo} alt="Kangaroo"/>
+              <img src={Kangaroo} alt="Kangaroo" />
             </div>
           </div>
           <div className="animal-member">
             <div className="ostrich">
-              <img src={Ostrich} alt="Ostrich"/>
+              <img src={Ostrich} alt="Ostrich" />
             </div>
           </div>
         </div>
-        {/* Button */}
-        <button className="btn-start-band">Start Your Band</button>
+        <Link to="/stage" className="btn-start-band">Start Your Band</Link>
       </section>
 
       {/* Features */}
@@ -95,7 +136,9 @@ export default function Landing() {
           </Link>
           {/* Looping */}
           <Link to="/looping" className="feature-card">
-            <span className="material-symbols-outlined feature-icon">instant_mix</span>
+            <span className="material-symbols-outlined feature-icon">
+              instant_mix
+            </span>
             <h3>Looping</h3>
             <p>Layer beats & notes with a visual mixer.</p>
           </Link>
@@ -113,7 +156,7 @@ export default function Landing() {
           </Link>
         </div>
       </section>
-      
+
       {/* Stats */}
       <section className="stats-section">
         <div className="stats-container">
@@ -137,13 +180,11 @@ export default function Landing() {
         <h3>Register for free and rock out with your animals today!</h3>
       </footer>
 
-      
       {/* Material Icons Font */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
       />
-
     </div>
   );
 }
