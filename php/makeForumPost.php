@@ -20,7 +20,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
     title VARCHAR(255),
     content TEXT,
     tags JSON,
-    likesFrom TINYINT(1),
+    likesFrom JSON,
     author VARCHAR(100),
     authorId INT,
     likeCount INT DEFAULT 0,
@@ -38,7 +38,7 @@ if ($data === null) {
 $title = $data['title'] ?? '';
 $content = $data['content'] ?? '';
 $tags = json_encode($data['tags'] ?? []);
-$likesFrom = isset($data['liked']) ? ($data['liked'] ? 1 : 0) : 0;
+$likesFrom = [];
 $author = $data['author'] ?? '';
 $authorId = $data['authorId'] ?? 0;
 $likeCount = $data['likes'] ?? 0;
@@ -54,9 +54,7 @@ if (!$stmt) {
     exit;
 }
 
-// bind_param types:
-// s = string, i = int
-$stmt->bind_param("sssisiii", $title, $content, $tags, $likesFrom, $author, $authorId, $likeCount, $comments);
+$stmt->bind_param("sssssiii", $title, $content, $tags, $likesFrom, $author, $authorId, $likeCount, $comments);
 
 if ($stmt->execute()) {
     echo json_encode(["success" => true, 'message' => 'Post inserted successfully.']);

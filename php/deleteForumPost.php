@@ -15,5 +15,6 @@ if ($conn->connect_error) {
 }
 
 //TODO: functionality for deleting a post (remove from forumPosts)
+//feature for future sprint?
 
 ?>

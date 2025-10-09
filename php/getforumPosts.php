@@ -19,7 +19,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
     title VARCHAR(255),
     content TEXT,
     tags JSON,
-    likesFrom TINYINT(1),
+    likesFrom JSON,
     author VARCHAR(100),
     authorId INT,
     likeCount INT DEFAULT 0,
@@ -35,6 +35,9 @@ if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         if (isset($row['tags'])) {
             $row['tags'] = json_decode($row['tags']);
+        }
+        if (isset($row['likesFrom'])) {
+            $row['likesFrom'] = json_decode($row['likesFrom']);
         }
         $allPosts[] = $row;
     }
