@@ -20,7 +20,6 @@ export default function DesktopStage() {
 
   const navigate = useNavigate();
   const [sounds, setSounds] = useState({});
-  const [volumes, setVolumes] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
   const [playingAnimals, setPlayingAnimals] = useState({});
 
@@ -51,20 +50,13 @@ export default function DesktopStage() {
   useEffect(() => {
     const loadAllSounds = async () => {
       const loadedSounds = {};
-      const initialVolumes = {};
       for (const sound of SOUND_CONFIG) {
         loadedSounds[sound.key] = await loadSound(sound.file);
-        initialVolumes[sound.key] = 1;
       }
       setSounds(loadedSounds);
-      setVolumes(initialVolumes);
     };
     loadAllSounds();
   }, []);
-
-  const handleVolumeChange = (key, value) => {
-    setVolumes((prev) => ({ ...prev, [key]: parseFloat(value) }));
-  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -87,8 +79,7 @@ export default function DesktopStage() {
         setRecordedNotes((prev) => [...prev, { key, time: timeSinceStart }]);
       }
 
-      const volume = (volumes[animal] || 1) * masterVolume;
-      playSound(sounds[key], volume);
+      playSound(sounds[key], masterVolume);
 
       setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
       setTimeout(() => {
@@ -98,7 +89,7 @@ export default function DesktopStage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [sounds, volumes, masterVolume, isRecording, recordStartTime]);
+  }, [sounds, masterVolume, isRecording, recordStartTime]);
 
   useEffect(() => {
     const savedVol = parseFloat(localStorage.getItem("masterVolume") || "1");
@@ -110,7 +101,6 @@ export default function DesktopStage() {
     localStorage.setItem("masterVolume", masterVolume);
   }, [masterVolume]);
 
-  // Playback recorded sequence
   const playRecording = () => {
     if (recordedNotes.length === 0 || !audioContextRef.current) return;
 
@@ -128,12 +118,10 @@ export default function DesktopStage() {
       const animal = animalMap[key];
       if (!animal || !sounds[key]) return;
 
-      const volume = (volumes[animal] || 1) * masterVolume;
-
       const source = audioContext.createBufferSource();
       source.buffer = sounds[key];
       const gainNode = audioContext.createGain();
-      gainNode.gain.value = volume;
+      gainNode.gain.value = masterVolume;
       source.connect(gainNode).connect(audioContext.destination);
       source.start(audioContext.currentTime + time / 1000);
 
@@ -145,61 +133,53 @@ export default function DesktopStage() {
       }, time);
     });
 
-    // Reset play state after last note
     const totalTime = recordedNotes[recordedNotes.length - 1].time + 400;
     setTimeout(() => setIsPlaying(false), totalTime);
   };
 
-  // 🧠 --- WAV Export Logic ---
   const exportRecording = async () => {
-  if (recordedNotes.length === 0 || !audioContextRef.current) return;
+    if (recordedNotes.length === 0 || !audioContextRef.current) return;
 
-  // Ask user for a file name
-  const fileName = prompt("Enter a name for your recording:", "animalband_recording");
-  if (!fileName) return; // user canceled
+    const fileName = prompt("Enter a name for your recording:", "animalband_recording");
+    if (!fileName) return;
 
-  const duration =
-    (recordedNotes[recordedNotes.length - 1].time + 1000) / 1000;
-  const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
+    const duration =
+      (recordedNotes[recordedNotes.length - 1].time + 1000) / 1000;
+    const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
 
-  const animalMap = {
-    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-    c: "bird", v: "bird", b: "bird", n: "bird",
-    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-    q: "snake", w: "snake", e: "snake", r: "snake",
+    const animalMap = {
+      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+      c: "bird", v: "bird", b: "bird", n: "bird",
+      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+      q: "snake", w: "snake", e: "snake", r: "snake",
+    };
+
+    for (const { key, time } of recordedNotes) {
+      const buffer = sounds[key];
+      if (!buffer) continue;
+
+      const source = offlineCtx.createBufferSource();
+      source.buffer = buffer;
+
+      const gainNode = offlineCtx.createGain();
+      gainNode.gain.value = masterVolume;
+
+      source.connect(gainNode).connect(offlineCtx.destination);
+      source.start(time / 1000);
+    }
+
+    const renderedBuffer = await offlineCtx.startRendering();
+    const wavBlob = bufferToWav(renderedBuffer);
+
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${fileName.trim() || "animalband_recording"}.wav`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  for (const { key, time } of recordedNotes) {
-    const buffer = sounds[key];
-    if (!buffer) continue;
-
-    const source = offlineCtx.createBufferSource();
-    source.buffer = buffer;
-
-    const gainNode = offlineCtx.createGain();
-    const animal = animalMap[key];
-    const volume = (volumes[animal] || 1) * masterVolume;
-    gainNode.gain.value = volume;
-
-    source.connect(gainNode).connect(offlineCtx.destination);
-    source.start(time / 1000);
-  }
-
-  const renderedBuffer = await offlineCtx.startRendering();
-  const wavBlob = bufferToWav(renderedBuffer);
-
-  // Create download link with custom file name
-  const url = URL.createObjectURL(wavBlob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${fileName.trim() || "animalband_recording"}.wav`;
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-
-  // 🧩 --- Helper: Convert AudioBuffer to WAV Blob ---
   function bufferToWav(buffer) {
     const numOfChan = buffer.numberOfChannels;
     const length = buffer.length * numOfChan * 2 + 44;
@@ -270,7 +250,7 @@ export default function DesktopStage() {
       <section className="band-stage">
         <h2 className="main-heading">Stage</h2>
         <p className="subtitle">
-          Press your keyboard to play instruments. Adjust volumes below!
+          Press your keyboard to play instruments.
         </p>
 
         <div className="animals-container">
@@ -292,15 +272,6 @@ export default function DesktopStage() {
                     })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]
                   }
                 </p>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={volumes[animal] || 1}
-                  onChange={(e) => handleVolumeChange(animal, e.target.value)}
-                  className="animal-volume-slider"
-                />
               </div>
             </div>
           ))}
