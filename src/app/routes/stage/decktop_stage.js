@@ -150,6 +150,105 @@ export default function DesktopStage() {
     setTimeout(() => setIsPlaying(false), totalTime);
   };
 
+  // 🧠 --- WAV Export Logic ---
+  const exportRecording = async () => {
+  if (recordedNotes.length === 0 || !audioContextRef.current) return;
+
+  // Ask user for a file name
+  const fileName = prompt("Enter a name for your recording:", "animalband_recording");
+  if (!fileName) return; // user canceled
+
+  const duration =
+    (recordedNotes[recordedNotes.length - 1].time + 1000) / 1000;
+  const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
+
+  const animalMap = {
+    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+    c: "bird", v: "bird", b: "bird", n: "bird",
+    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+    q: "snake", w: "snake", e: "snake", r: "snake",
+  };
+
+  for (const { key, time } of recordedNotes) {
+    const buffer = sounds[key];
+    if (!buffer) continue;
+
+    const source = offlineCtx.createBufferSource();
+    source.buffer = buffer;
+
+    const gainNode = offlineCtx.createGain();
+    const animal = animalMap[key];
+    const volume = (volumes[animal] || 1) * masterVolume;
+    gainNode.gain.value = volume;
+
+    source.connect(gainNode).connect(offlineCtx.destination);
+    source.start(time / 1000);
+  }
+
+  const renderedBuffer = await offlineCtx.startRendering();
+  const wavBlob = bufferToWav(renderedBuffer);
+
+  // Create download link with custom file name
+  const url = URL.createObjectURL(wavBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${fileName.trim() || "animalband_recording"}.wav`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+
+  // 🧩 --- Helper: Convert AudioBuffer to WAV Blob ---
+  function bufferToWav(buffer) {
+    const numOfChan = buffer.numberOfChannels;
+    const length = buffer.length * numOfChan * 2 + 44;
+    const bufferArray = new ArrayBuffer(length);
+    const view = new DataView(bufferArray);
+
+    const writeString = (view, offset, string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    let offset = 0;
+
+    writeString(view, offset, "RIFF"); offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "WAVE"); offset += 4;
+    writeString(view, offset, "fmt "); offset += 4;
+    view.setUint32(offset, 16, true); offset += 4;
+    view.setUint16(offset, 1, true); offset += 2;
+    view.setUint16(offset, numOfChan, true); offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
+    view.setUint16(offset, numOfChan * 2, true); offset += 2;
+    view.setUint16(offset, 16, true); offset += 2;
+    writeString(view, offset, "data"); offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
+
+    const interleaved = interleave(buffer);
+    let index = 44;
+    for (let i = 0; i < interleaved.length; i++, index += 2) {
+      const sample = Math.max(-1, Math.min(1, interleaved[i]));
+      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+    }
+
+    return new Blob([view], { type: "audio/wav" });
+  }
+
+  function interleave(buffer) {
+    const inputL = buffer.getChannelData(0);
+    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const interleaved = new Float32Array(buffer.length * 2);
+    for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
+      interleaved[j] = inputL[i];
+      interleaved[j + 1] = inputR[i];
+    }
+    return interleaved;
+  }
+
   return (
     <div className="landing-page">
       <header className="header">
@@ -248,6 +347,16 @@ export default function DesktopStage() {
             <span className="record-symbol">►</span>
             {isPlaying ? "Playing..." : "Play Recording"}
           </button>
+
+          <button
+            onClick={exportRecording}
+            disabled={recordedNotes.length === 0}
+            className="record-btn export"
+          >
+            <span className="material-symbols-outlined export-icon">file_download</span>
+            Export to WAV
+          </button>
+
         </div>
       </section>
 

@@ -240,3 +240,45 @@
     padding: 2rem 1rem;
   }
 }
+
+/* --- Export button styling --- */
+.record-btn.export {
+  background-color: #178C3A; /* same as .record-btn.start */
+  color: white;
+  border: none;
+  border-radius: 9999px;     /* same pill shape */
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s, transform 0.15s;
+}
+
+.record-btn.export:hover {
+  background-color: #15803d; /* same hover as .start */
+  transform: scale(1.05);
+}
+
+.record-btn.export:active {
+  background-color: #11632f; /* slightly darker on press */
+  transform: scale(0.98);
+}
+
+.record-btn.export:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Icon style */
+.export-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  transform: translateY(-0.1rem);
+}
+
