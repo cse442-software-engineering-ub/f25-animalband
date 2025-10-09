@@ -248,11 +248,6 @@ export default function DesktopStage() {
       </header>
 
       <section className="band-stage">
-        <h2 className="main-heading">Stage</h2>
-        <p className="subtitle">
-          Press your keyboard to play instruments.
-        </p>
-
         <div className="animals-container">
           {Object.keys(ANIMAL_IMAGES).map((animal) => (
             <div key={animal} className="animal-member">
@@ -338,3 +333,4 @@ export default function DesktopStage() {
     </div>
   );
 }
+
