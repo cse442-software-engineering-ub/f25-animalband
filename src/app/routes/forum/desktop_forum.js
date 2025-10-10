@@ -539,7 +539,14 @@ export default function DesktopForum() {
                                         </div>
                                         {/* Time since posted */}
                                         {post.created_at && (
-                                            <span className="post-time">Created {timeAgo(post.created_at, nowTick)} ago</span>
+                                            (() => {
+                                                const ta = timeAgo(post.created_at, nowTick);
+                                                return (
+                                                    <span className="post-time">
+                                                        Created {ta === "just now" ? ta : `${ta} ago`}
+                                                    </span>
+                                                );
+                                            })()
                                         )}
                                     </div>
                                     <p className="post-content">{post.content}</p>
