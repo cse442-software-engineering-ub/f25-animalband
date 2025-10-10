@@ -23,7 +23,8 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
     author VARCHAR(100),
     authorId INT,
     likeCount INT DEFAULT 0,
-    comments INT DEFAULT 0
+    comments INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
 $json = file_get_contents('php://input');

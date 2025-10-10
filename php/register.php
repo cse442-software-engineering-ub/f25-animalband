@@ -21,6 +21,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS authTokens (
 )");
 
 $conn->query("CREATE TABLE IF NOT EXISTS accountCredentials (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
     Name VARCHAR(50),
     Email VARCHAR(50),
     Password VARCHAR(255),

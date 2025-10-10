@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
@@ -8,19 +8,115 @@ export default function DesktopForum() {
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTags, setSelectedTags] = useState([]);
     const [sortBy, setSortBy] = useState("recent");
     const [user, setUser] = useState(null);
     const [activeView, setActiveView] = useState("community");
 
-    // Tags and sorting stuff
+    // ========== New post popup ==========
+    const [showNewPostPopup, setShowNewPostPopup] = useState(false);
+    const [newPostTitle, setNewPostTitle] = useState("");
+    const [newPostContent, setNewPostContent] = useState("");
+    const [newPostTags, setNewPostTags] = useState([]);
+
+    // ========== Tags and sorting stuff ==========
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
     const soundTags = ["Song Recording"];
     const sortOptions = ["recent", "likes"];
 
+    // ========== Date and Time whatnot ==========
+    const [nowTick, setNowTick] = useState(Date.now());
+    function parseDbTimestamp(s) {
+        if (!s) return null;
+        const iso = s.replace(' ', 'T');
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    function timeAgo(createdAt, now = Date.now()) {
+        const d = typeof createdAt === 'string' ? parseDbTimestamp(createdAt) :
+            createdAt instanceof Date ? createdAt : null;
+        if (!d) return '';
+
+        const diffMs = Math.max(0, now - d.getTime());
+        const sec = Math.floor(diffMs / 1000);
+        const min = Math.floor(sec / 60);
+        const hr = Math.floor(min / 60);
+        const day = Math.floor(hr / 24);
+
+        if (sec < 45) return 'just now';
+        if (min < 60) return `${min}m`;
+        if (hr < 24) return `${hr}h`;
+        if (day === 1) return 'yesterday';
+        if (day < 7) return `${day}d`;
+
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
     useEffect(() => {
-        // Fetch user data
+        const id = setInterval(() => setNowTick(Date.now()), 60_000);
+        return () => clearInterval(id);
+    }, []);
+
+
+
+
+    // ========== Fetch Posts ==========
+    const fetchPosts = useCallback(async (opts = { refresh: false }) => {
+        const { refresh } = opts;
+        refresh ? setRefreshing(true) : setLoading(true);
+        try {
+            const res = await fetch(`${PHP_URL}/getforumPosts.php`, {
+                credentials: "include",
+                cache: "no-store",
+            });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const rows = await res.json();
+
+            setPosts(prev => {
+                const prevById = new Map(prev.map(p => [p.id, p]));
+
+                return rows.map(p => {
+                    const likesFrom = Array.isArray(p.likesFrom) ? p.likesFrom : [];
+                    const base = {
+                        id: Number(p.id),
+                        title: p.title || "",
+                        content: p.content || "",
+                        tags: Array.isArray(p.tags) ? p.tags : [],
+                        author: p.author || "",
+                        authorId: Number(p.authorId ?? 0),
+                        likes: Number(p.likeCount ?? 0),
+                        comments: Number(p.comments ?? 0),
+                        created_at: p.created_at || null,
+                        likesFrom,
+                    };
+
+                    const prevLiked = prevById.get(base.id)?.liked ?? false;
+                    const liked = user ? likesFrom.includes(user.username) : prevLiked;
+                    return { ...base, liked };
+                });
+            });
+        } catch (e) {
+            console.error("Failed to fetch posts:", e);
+            if (!refresh) setPosts([]);
+        } finally {
+            refresh ? setRefreshing(false) : setLoading(false);
+        }
+    }, [user?.username]);
+
+    // ========== Don't jump pls when refresh ty ==========
+    const refreshNoJump = useCallback(async () => {
+        const y = window.scrollY;
+        await fetchPosts({ refresh: true });
+        window.scrollTo({ top: y, behavior: "instant" });
+    }, [fetchPosts]);
+
+    // ========== Fetch user data ========== 
+    useEffect(() => {
         const checkUser = async () => {
             try {
                 const res = await fetch(
@@ -31,75 +127,48 @@ export default function DesktopForum() {
                 if (data.loggedIn) {
                     setUser(data);
                 }
-                else{
+                else {
                     navigate("/login");
                 }
             } catch (err) {
                 console.error("Failed to fetch user", err);
             }
         };
-        // Fetch Posts
-        const fetchPosts = async () => {
-            try {
-                // TODO: backend
-                const tempPosts = [
-                    {
-                        id: 1,
-                        title: "Title1",
-                        content: "Hello there",
-                        tags: ["Hamster"],
-                        liked: false,
-                        author: "test",
-                        authorId: 1,
-                        likes: 15,
-                        comments: 3,
-                    },
-                    {
-                        id: 2,
-                        title: "Title2",
-                        content: "General Kenobi",
-                        tags: ["Cockatiel"],
-                        liked: true,
-                        author: "AnimalLover2",
-                        authorId: 2,
-                        likes: 42,
-                        comments: 7,
-                    },
-                    {
-                        id: 3,
-                        title: "Title3",
-                        content: "You are",
-                        tags: ["Emu"],
-                        liked: false,
-                        author: "AnimalLover3",
-                        authorId: 3,
-                        likes: 28,
-                        comments: 4,
-                    },
-                    {
-                        id: 4,
-                        title: "Title4",
-                        content: "A bold one",
-                        tags: ["Kangaroo"],
-                        liked: true,
-                        author: "AnimalLover4",
-                        authorId: 4,
-                        likes: 67,
-                        comments: 12,
-                    }
-                ];
-                setPosts(tempPosts);
-            } catch (error) {
-                console.error("Failed to fetch posts:", error);
-                setPosts([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+
 
         checkUser();
         fetchPosts();
-    }, []);
+    }, [navigate, fetchPosts]);
+
+    // ========== Compute liked ==========
+    useEffect(() => {
+        if (!user) return;
+        setPosts((prev) =>
+            prev.map((p) => ({
+                ...p,
+                liked: Array.isArray(p.likesFrom) && p.likesFrom.includes(user.username),
+            }))
+        );
+    }, [user]);
+
+    // ========== Server event polling ==========
+    useEffect(() => {
+        const es = new EventSource(`${PHP_URL}/postsStream.php`, { withCredentials: false });
+
+        const onMsg = (e) => {
+            fetchPosts({ refresh: true });
+        };
+        const onErr = () => {
+            console.warn("SSE disconnected");
+        };
+
+        es.addEventListener("posts", onMsg);
+        es.onmessage = onMsg;
+        es.onerror = onErr;
+
+        return () => es.close();
+    }, [fetchPosts]);
+
 
     const handleAccountClick = () => {
         if (user) {
@@ -109,25 +178,62 @@ export default function DesktopForum() {
         }
     };
 
-    // Like Button:
+    // ========== Like Button ==========
     const toggleLike = async (postId) => {
+        if (!user) return;
+
+        setPosts(prev => prev.map(p => {
+            if (p.id !== postId) return p;
+            const goingToLike = !p.liked;
+            const nextLikesFrom = goingToLike
+                ? Array.from(new Set([...(p.likesFrom || []), user.username]))
+                : (p.likesFrom || []).filter(u => u !== user.username);
+
+            return {
+                ...p,
+                liked: goingToLike,
+                likesFrom: nextLikesFrom,
+                likes: nextLikesFrom.length,
+            };
+        }));
+
         try {
-            // TODO: Implement like btn backend
-            setPosts(prev => prev.map(post =>
-                post.id === postId
-                    ? {
-                        ...post,
-                        liked: !post.liked,
-                        likes: post.liked ? post.likes - 1 : post.likes + 1
-                    }
-                    : post
+            const res = await fetch(`${PHP_URL}/likeForumPost.php`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ postId }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+            setPosts(prev => prev.map(p =>
+                p.id === postId
+                    ? { ...p, likes: data.likeCount, liked: data.liked, likesFrom: data.likesFrom }
+                    : p
             ));
-        } catch (error) {
-            console.error("Failed to toggle like:", error);
+        } catch (err) {
+            console.error("toggleLike failed:", err);
+            setPosts(prev => prev.map(p => {
+                if (p.id !== postId) return p;
+                const rolledBack = !p.liked;
+                const nextLikesFrom = rolledBack
+                    ? Array.from(new Set([...(p.likesFrom || []), user.username]))
+                    : (p.likesFrom || []).filter(u => u !== user.username);
+
+                return {
+                    ...p,
+                    liked: rolledBack,
+                    likesFrom: nextLikesFrom,
+                    likes: nextLikesFrom.length,
+                };
+            }));
+            alert("Failed to like/unlike. Please try again.");
         }
     };
 
-    // Tags
+
+    // ========== Tags ==========
     const handleTagClick = (tag) => {
         setSelectedTags(prev =>
             prev.includes(tag)
@@ -136,12 +242,93 @@ export default function DesktopForum() {
         );
     };
 
-    // ToDo: New Post stuff
+    // ========== New Post ==========
     const handleNewPost = () => {
-        console.log("New Post btn works");
+        setShowNewPostPopup(true);
     };
 
-    // Filtering
+    const handleClosePopup = () => {
+        setShowNewPostPopup(false);
+        setNewPostTitle("");
+        setNewPostContent("");
+        setNewPostTags([]);
+    };
+
+    const handleTagSelect = (tag) => {
+        setNewPostTags(prev =>
+            prev.includes(tag)
+                ? prev.filter(t => t !== tag)
+                : [...prev, tag]
+        );
+    };
+    // ========== Handle post submission ==========
+    const handleSubmitPost = async (e) => {
+        if (e && typeof e.preventDefault === "function") e.preventDefault();
+        if (!user) {
+            return;
+        }
+        if (!user.id) {
+            return;
+        }
+        const payload = {
+            title: newPostTitle.trim(),
+            content: newPostContent.trim(),
+            tags: newPostTags,
+            likesFrom: [user.username],
+            author: user.username,
+            authorId: user.id,
+            likes: 1,
+
+        };
+
+        // console.log("New Post Data Saved:", {
+        //     title: title,
+        //     content: content,
+        //     tags: tags,
+        //     likesFrom: likesFrom,
+        //     author: author,
+        //     authorId: authorId,
+        //     likeCount: likeCount
+
+        // });
+        const tempId = Date.now();
+        const optimistic = {
+            id: tempId,
+            title: newPostTitle.trim(),
+            content: newPostContent.trim(),
+            tags: newPostTags,
+            author: user.username,
+            authorId: user.id,
+            likes: 1,
+            comments: 0,
+            created_at: new Date().toISOString(),
+            likesFrom: [user.username],
+            liked: true,
+        };
+        setPosts(prev => [optimistic, ...prev]);
+        try {
+            const url = `${PHP_URL}/makeForumPost.php`;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(payload),
+            });
+            const text = await response.text();
+            if (!response.ok) {
+                throw new Error(`Request failed. Status ${response.status}`);
+            }
+            await refreshNoJump();
+        } catch (err) {
+            setPosts(prev => prev.filter(p => p.id !== tempId));
+            console.error(err);
+            alert("Post failed");
+        }
+
+        handleClosePopup();
+    };
+
+    // ========== Filtering ==========
     const filteredPosts = Array.isArray(posts) ? posts.filter(post => {
         if (activeView === "my-posts" && user) {
             if (post.author !== user.username) return false;
@@ -149,20 +336,20 @@ export default function DesktopForum() {
             if (!post.liked) return false;
         }
 
-        // Search filter
+        // ========== Search filter ==========
         const matchesSearch = searchTerm === "" ||
             (post.title && post.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.content && post.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.author && post.author.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        // Tag filter
+        // ========== Tag filter ==========
         const matchesTags = selectedTags.length === 0 ||
             selectedTags.some(tag => post.tags && post.tags.includes(tag));
 
         return matchesSearch && matchesTags;
     }) : [];
 
-    // Sort posts
+    // ========== Sort posts ==========
     const sortedPosts = Array.isArray(filteredPosts) ? [...filteredPosts].sort((a, b) => {
         switch (sortBy) {
             case "likes":
@@ -185,9 +372,6 @@ export default function DesktopForum() {
         }
     };
 
-    if (loading) {
-        return <div className="loading">Loading...</div>;
-    }
 
     return (
         <div className="forum-page">
@@ -353,6 +537,17 @@ export default function DesktopForum() {
                                                 <span className="author-name">by {post.author}</span>
                                             </div>
                                         </div>
+                                        {/* Time since posted */}
+                                        {post.created_at && (
+                                            (() => {
+                                                const ta = timeAgo(post.created_at, nowTick);
+                                                return (
+                                                    <span className="post-time">
+                                                        Created {ta === "just now" ? ta : `${ta} ago`}
+                                                    </span>
+                                                );
+                                            })()
+                                        )}
                                     </div>
                                     <p className="post-content">{post.content}</p>
                                     <div className="post-tags">
@@ -379,6 +574,72 @@ export default function DesktopForum() {
                     </div>
                 </main>
             </div>
+
+            {/* New Post Popup */}
+            {showNewPostPopup && (
+                <div className="popup-overlay">
+                    <div className="popup-content">
+                        <div className="popup-header">
+                            <h2>Create New Post</h2>
+                            <button className="close-btn" onClick={handleClosePopup}>×</button>
+                        </div>
+                        <div className="popup-body">
+                            <div className="form-group">
+                                <label>Title:</label>
+                                <input
+                                    type="text"
+                                    value={newPostTitle}
+                                    onChange={(e) => setNewPostTitle(e.target.value)}
+                                    placeholder="Enter post title"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Content:</label>
+                                <textarea
+                                    value={newPostContent}
+                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    placeholder="Enter post content"
+                                    rows="4"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Tags:</label>
+                                <div className="tag-selection">
+                                    {animalTags.map(tag => (
+                                        <span
+                                            key={tag}
+                                            className={`tag ${newPostTags.includes(tag) ? 'active' : ''}`}
+                                            onClick={() => handleTagSelect(tag)}
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                    {soundTags.map(tag => (
+                                        <span
+                                            key={tag}
+                                            className={`tag ${newPostTags.includes(tag) ? 'active' : ''}`}
+                                            onClick={() => handleTagSelect(tag)}
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="popup-footer">
+                            <button className="cancel-btn" onClick={handleClosePopup}>Cancel</button>
+                            <button
+                                type="button"
+                                className="submit-btn"
+                                onClick={handleSubmitPost}
+                                disabled={!user?.id || !newPostTitle.trim() || !newPostContent.trim()}
+                            >
+                                Create Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Material Icons */}
             <link

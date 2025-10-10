@@ -18,7 +18,7 @@ if (!isset($_COOKIE["auth_token"])) {
 
 $token = $_COOKIE["auth_token"];
 
-$stmt = $conn->prepare("SELECT accountCredentials.Name, accountCredentials.Email, accountCredentials.ProfilePic
+$stmt = $conn->prepare("SELECT accountCredentials.ID, accountCredentials.Name, accountCredentials.Email, accountCredentials.ProfilePic
                         FROM authTokens 
                         JOIN accountCredentials ON authTokens.Email = accountCredentials.Email
                         WHERE authTokens.Token = ?");
@@ -31,7 +31,8 @@ if ($row = $result->fetch_assoc()) {
         "loggedIn" => true,
         "username" => $row["Name"],
         "email" => $row["Email"],
-        "profilePic" => $row["ProfilePic"]
+        "profilePic" => $row["ProfilePic"],
+        "id" => $row["ID"]
     ]);
 } else {
     echo json_encode(["loggedIn" => false]);
