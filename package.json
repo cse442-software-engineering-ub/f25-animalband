@@ -2,7 +2,7 @@
   "name": "f25-animalband",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/",
+  "homepage": "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",

@@ -1,19 +1,20 @@
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import DeleteAccountModal from "../../components/DeleteAccountModal";
 import "./desktop_profile.css";
+
+const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php";
 
 export default function DesktopProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
-          { credentials: "include" }
-        );
+        const res = await fetch(`${PHP_BASE}/getUser.php`, { credentials: "include" });
         const data = await res.json();
         if (data.loggedIn) {
           setUser(data);
@@ -28,11 +29,7 @@ export default function DesktopProfile() {
     fetchUser();
   }, [navigate]);
 
-  const handleProfilePicClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
+  const handleProfilePicClick = () => fileInputRef.current?.click();
 
   const handleProfilePicChange = async (e) => {
     const file = e.target.files[0];
@@ -42,20 +39,14 @@ export default function DesktopProfile() {
     formData.append("profilePic", file);
 
     try {
-      const res = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
-        {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
       const data = await res.json();
       if (data.success) {
-        setUser((prev) => ({
-          ...prev,
-          profilePic: data.profilePic, // updated filepath
-        }));
+        setUser((prev) => ({ ...prev, profilePic: data.profilePic }));
       } else {
         alert("Failed to update profile picture.");
       }
@@ -65,22 +56,34 @@ export default function DesktopProfile() {
     }
   };
 
-  // New logout handler
   const handleLogout = async () => {
     try {
-      await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/logout.php",
-        {
-          method: "POST",
-          credentials: "include",
-        }
-      );
-
+      await fetch(`${PHP_BASE}/logout.php`, { method: "POST", credentials: "include" });
       setUser(null);
-      navigate("/"); // redirect to homepage
+      navigate("/");
     } catch (err) {
       console.error("Logout failed", err);
       alert("Failed to log out. Please try again.");
+    }
+  };
+
+  // Called when user confirms deletion in modal.
+  const handleDelete = async () => {
+    try {
+      const res = await fetch(`${PHP_BASE}/deleteAccount.php`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        window.location.href = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/"; // redirect home after deletion
+      } else {
+        alert(data.message || "Failed to delete account.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting account.");
     }
   };
 
@@ -113,10 +116,26 @@ export default function DesktopProfile() {
             <li><button onClick={() => console.log("My Posts")}>My Posts</button></li>
             <li><button onClick={() => console.log("My Recordings")}>My Recordings</button></li>
             <li><button onClick={() => navigate("/account/edit")}>Edit Account</button></li>
+            <li><button onClick={() => setModalOpen(true)}>Delete Account</button></li>
             <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>
             <li><button onClick={handleLogout}>Logout</button></li>
           </ul>
         </aside>
+
+        {/* Modal */}
+        <DeleteAccountModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onConfirm={async () => {
+            // Wrap call so the modal can handle error/loading states
+            try {
+              await handleDelete();
+            } catch (err) {
+              // Re-throw so DeleteAccountModal catches and shows error
+              throw err;
+            }
+          }}
+        />
 
         {/* Main Profile Section */}
         <main className="profile-content">
@@ -138,8 +157,7 @@ export default function DesktopProfile() {
                 />
               </div>
               <h2>{user.username}</h2>
-              
-              {/* Profile Information */}
+
               <div className="profile-info">
                 <h3>Profile Information</h3>
                 <div className="info-grid">
@@ -158,7 +176,6 @@ export default function DesktopProfile() {
                 </div>
               </div>
 
-              {/* Profile Stats */}
               <div className="profile-stats">
                 <h3>My Statistics</h3>
                 <div className="stats-container">
@@ -182,11 +199,9 @@ export default function DesktopProfile() {
           )}
         </main>
       </div>
+
       {/* Material Icons Font */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-        rel="stylesheet"
-      />
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     </div>
   );
 }
