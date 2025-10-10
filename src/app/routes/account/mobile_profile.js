@@ -1,18 +1,22 @@
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import DeleteAccountModal from "../../components/DeleteAccountModal";
 import "./mobile_profile.css";
+
+const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php";
 
 export default function MobileProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/getUser.php",
+          `${PHP_BASE}/getUser.php`,
           { credentials: "include" }
         );
         const data = await res.json();
@@ -44,7 +48,7 @@ export default function MobileProfile() {
 
     try {
       const res = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/updateProfilePic.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
         {
           method: "POST",
           body: formData,
@@ -74,9 +78,33 @@ export default function MobileProfile() {
     setSidebarOpen(false);
   };
 
+  const modelOpen = () => {
+    setModalOpen(true);
+    closeSidebar();
+  };
+
   const handleNavigation = (path) => {
     navigate(path);
     closeSidebar();
+  };
+
+  const handleDelete = async () => {
+    try {
+      const res = await fetch(`${PHP_BASE}/deleteAccount.php`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        window.location.href = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/"; // redirect home after deletion
+      } else {
+        alert(data.message || "Failed to delete account.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting account.");
+    }
   };
 
   return (
@@ -134,6 +162,14 @@ export default function MobileProfile() {
             </button>
           </li>
           <li>
+            <button onClick={modelOpen}>
+              <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
+                delete
+              </span>
+              Delete Account
+            </button>
+          </li>
+          <li>
             <button onClick={() => handleNavigation("/stage")}>
               <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
                 piano
@@ -155,6 +191,20 @@ export default function MobileProfile() {
           </li>
         </ul>
       </aside>
+          
+      <DeleteAccountModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onConfirm={async () => {
+            // Wrap call so the modal can handle error/loading states
+            try {
+              await handleDelete();
+            } catch (err) {
+              // Re-throw so DeleteAccountModal catches and shows error
+              throw err;
+            }
+          }}
+        />
 
       {/* Main Profile Content */}
       <main className="mobile-profile-content">
@@ -162,7 +212,7 @@ export default function MobileProfile() {
           <>
             <div className="mobile-profile-pic-container" onClick={handleProfilePicClick}>
               <img
-                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/${user.profilePic}`}
+                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
                 alt="Profile"
                 className="mobile-profile-pic-large"
               />
