@@ -21,6 +21,8 @@ import MobileEditAccount from "./routes/account/mobile_edit_account.js";
 import DesktopForum from "./routes/forum/desktop_forum.js";
 import MobileForum from "./routes/forum/mobile_forum.js";
 
+import MyRecordings from "./routes/account/recordings.js";
+
 import "../App.css";
 
 function NotFound() {
@@ -61,6 +63,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/account" element={<Account />} />
           <Route path="/account/edit" element={<EditAccount />} />
+          <Route path="/my-recordings" element={<MyRecordings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
