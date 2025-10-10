@@ -32,6 +32,12 @@ export default function DesktopStage() {
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
 
+  //Local save state
+  const [showSaveForm, setShowSaveForm] = useState(false);
+  const [recordingTitle, setRecordingTitle] = useState("");
+  const [recordingDescription, setRecordingDescription] = useState("");
+
+
   const audioContextRef = useRef(null);
 
   useEffect(() => {
@@ -197,6 +203,36 @@ export default function DesktopStage() {
   a.click();
   URL.revokeObjectURL(url);
 };
+  const saveRecordingLocally = async () => {
+    const cookies = document.cookie.split("; ");
+    const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
+    const authCookie = cookieObj["auth_token"] || "";
+    try {
+      const response = await fetch("http://localhost:3001/api/recordings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recording: recordedNotes,
+          title: recordingTitle,
+          description: recordingDescription,
+          userToken: authCookie,
+        }),
+      });
+
+      if (response.ok) {
+        alert("Recording saved!");
+        setShowSaveForm(false);
+        setRecordingTitle("");
+        setRecordingDescription("");
+      } else {
+        alert("Failed to save recording.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error saving recording.");
+    }
+  };
+
 
 
   // 🧩 --- Helper: Convert AudioBuffer to WAV Blob ---
@@ -261,7 +297,10 @@ export default function DesktopStage() {
           <button className="btn-login" onClick={() => navigate("/login")}>
             Login
           </button>
-          <button className="btn-register" onClick={() => navigate("/register")}>
+          <button
+            className="btn-register"
+            onClick={() => navigate("/register")}
+          >
             Register
           </button>
         </div>
@@ -277,7 +316,11 @@ export default function DesktopStage() {
           {Object.keys(ANIMAL_IMAGES).map((animal) => (
             <div key={animal} className="animal-member">
               <img
-                src={playingAnimals[animal] ? ANIMAL_IMAGES[animal][1] : ANIMAL_IMAGES[animal][0]}
+                src={
+                  playingAnimals[animal]
+                    ? ANIMAL_IMAGES[animal][1]
+                    : ANIMAL_IMAGES[animal][0]
+                }
                 alt={`${animal} instrument`}
               />
               <div className="animal-controls">
@@ -353,12 +396,53 @@ export default function DesktopStage() {
             disabled={recordedNotes.length === 0}
             className="record-btn export"
           >
-            <span className="material-symbols-outlined export-icon">file_download</span>
+            <span className="material-symbols-outlined export-icon">
+              file_download
+            </span>
             Export to WAV
           </button>
 
+          <button
+            onClick={() => setShowSaveForm(true)}
+            disabled={recordedNotes.length === 0}
+            className="record-btn export"
+          >
+            <span className="material-symbols-outlined export-icon">
+              file_download
+            </span>
+            Save My Recording
+          </button>
         </div>
       </section>
+
+      {showSaveForm && (
+        <div className="save-form-popup">
+          <div className="save-form">
+            <h3>Save Your Recording</h3>
+            <label>
+              Title:
+              <input
+                type="text"
+                value={recordingTitle}
+                onChange={(e) => setRecordingTitle(e.target.value)}
+                placeholder="Your Recording"
+              />
+            </label>
+            <label>
+              Description:
+              <textarea
+                value={recordingDescription}
+                onChange={(e) => setRecordingDescription(e.target.value)}
+                placeholder="Description of your recording."
+              />
+            </label>
+            <div className="form-buttons">
+              <button onClick={() => setShowSaveForm(false)}>Cancel</button>
+              <button onClick={saveRecordingLocally}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
