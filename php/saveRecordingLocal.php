@@ -39,12 +39,15 @@ $title = $data['title'] ?? '';
 $description = $data['description'] ?? '';
 $recordingJson = json_encode($data['recording'] ?? []);
 
-$tokenLookupSQL = "SELECT Email FROM authTokens WHERE Token = '$auth_token'";
-$result = $conn->query($tokenLookupSQL);
+$tokenLookupSQL = "SELECT Email FROM authTokens WHERE Token = ?";
+$tokenStmt = $conn->prepare($tokenLookupSQL);
+$tokenStmt->bind_param("s", $auth_token);
+$tokenStmt->execute();
+$result = $tokenStmt->get_result();
 
 if ($result && $result->num_rows > 0) {
     $row = $result->fetch_assoc();
-    $email = $conn->real_escape_string($row['email']);
+    $email = $conn->real_escape_string($row['Email']);
 } else {
     http_response_code(401);
     echo json_encode(['error' => 'Invalid or missing auth token']);
