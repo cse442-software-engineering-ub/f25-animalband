@@ -15,18 +15,18 @@ export default function DesktopForum() {
     const [user, setUser] = useState(null);
     const [activeView, setActiveView] = useState("community");
 
-    // New post popup 
+    // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
     const [newPostTitle, setNewPostTitle] = useState("");
     const [newPostContent, setNewPostContent] = useState("");
     const [newPostTags, setNewPostTags] = useState([]);
 
-    // Tags and sorting stuff
+    // ========== Tags and sorting stuff ==========
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
     const soundTags = ["Song Recording"];
     const sortOptions = ["recent", "likes"];
 
-    // Fetch Posts
+    // ========== Fetch Posts ==========
     const fetchPosts = useCallback(async (opts = { refresh: false }) => {
         const { refresh } = opts;
         refresh ? setRefreshing(true) : setLoading(true);
@@ -35,38 +35,50 @@ export default function DesktopForum() {
                 credentials: "include",
                 cache: "no-store",
             });
+
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
             const rows = await res.json();
-            const normalized = rows.map((p) => ({
-                id: Number(p.id),
-                title: p.title || "",
-                content: p.content || "",
-                tags: Array.isArray(p.tags) ? p.tags : [],
-                author: p.author || "",
-                authorId: Number(p.authorId ?? 0),
-                likes: Number(p.likeCount ?? 0),
-                comments: Number(p.comments ?? 0),
-                created_at: p.created_at || null,
-                likesFrom: Array.isArray(p.likesFrom) ? p.likesFrom : [],
-                liked: false,
-            }));
-            setPosts(normalized);
+
+            setPosts(prev => {
+                const prevById = new Map(prev.map(p => [p.id, p]));
+
+                return rows.map(p => {
+                    const likesFrom = Array.isArray(p.likesFrom) ? p.likesFrom : [];
+                    const base = {
+                        id: Number(p.id),
+                        title: p.title || "",
+                        content: p.content || "",
+                        tags: Array.isArray(p.tags) ? p.tags : [],
+                        author: p.author || "",
+                        authorId: Number(p.authorId ?? 0),
+                        likes: Number(p.likeCount ?? 0),
+                        comments: Number(p.comments ?? 0),
+                        created_at: p.created_at || null,
+                        likesFrom,
+                    };
+
+                    const prevLiked = prevById.get(base.id)?.liked ?? false;
+                    const liked = user ? likesFrom.includes(user.username) : prevLiked;
+                    return { ...base, liked };
+                });
+            });
         } catch (e) {
             console.error("Failed to fetch posts:", e);
-            if (!refresh) setPosts([]); // keep old posts when refresh fails
+            if (!refresh) setPosts([]);
         } finally {
             refresh ? setRefreshing(false) : setLoading(false);
         }
-    }, []);
+    }, [user?.username]);
 
-    // Don't jump pls when refresh ty
+    // ========== Don't jump pls when refresh ty ==========
     const refreshNoJump = useCallback(async () => {
         const y = window.scrollY;
         await fetchPosts({ refresh: true });
         window.scrollTo({ top: y, behavior: "instant" });
     }, [fetchPosts]);
 
-    // Fetch user data
+    // ========== Fetch user data ========== 
     useEffect(() => {
         const checkUser = async () => {
             try {
@@ -91,7 +103,7 @@ export default function DesktopForum() {
         fetchPosts();
     }, [navigate, fetchPosts]);
 
-    // Compute liked
+    // ========== Compute liked ==========
     useEffect(() => {
         if (!user) return;
         setPosts((prev) =>
@@ -102,7 +114,7 @@ export default function DesktopForum() {
         );
     }, [user]);
 
-    // Server event polling
+    // ========== Server event polling ==========
     useEffect(() => {
         const es = new EventSource(`${PHP_URL}/postsStream.php`, { withCredentials: false });
 
@@ -129,25 +141,62 @@ export default function DesktopForum() {
         }
     };
 
-    // Like Button:
+    // ========== Like Button ==========
     const toggleLike = async (postId) => {
+        if (!user) return;
+
+        setPosts(prev => prev.map(p => {
+            if (p.id !== postId) return p;
+            const goingToLike = !p.liked;
+            const nextLikesFrom = goingToLike
+                ? Array.from(new Set([...(p.likesFrom || []), user.username]))
+                : (p.likesFrom || []).filter(u => u !== user.username);
+
+            return {
+                ...p,
+                liked: goingToLike,
+                likesFrom: nextLikesFrom,
+                likes: nextLikesFrom.length,
+            };
+        }));
+
         try {
-            // TODO: Implement like btn backend
-            setPosts(prev => prev.map(post =>
-                post.id === postId
-                    ? {
-                        ...post,
-                        liked: !post.liked,
-                        likes: post.liked ? post.likes - 1 : post.likes + 1
-                    }
-                    : post
+            const res = await fetch(`${PHP_URL}/likeForumPost.php`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ postId }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+            setPosts(prev => prev.map(p =>
+                p.id === postId
+                    ? { ...p, likes: data.likeCount, liked: data.liked, likesFrom: data.likesFrom }
+                    : p
             ));
-        } catch (error) {
-            console.error("Failed to toggle like:", error);
+        } catch (err) {
+            console.error("toggleLike failed:", err);
+            setPosts(prev => prev.map(p => {
+                if (p.id !== postId) return p;
+                const rolledBack = !p.liked;
+                const nextLikesFrom = rolledBack
+                    ? Array.from(new Set([...(p.likesFrom || []), user.username]))
+                    : (p.likesFrom || []).filter(u => u !== user.username);
+
+                return {
+                    ...p,
+                    liked: rolledBack,
+                    likesFrom: nextLikesFrom,
+                    likes: nextLikesFrom.length,
+                };
+            }));
+            alert("Failed to like/unlike. Please try again.");
         }
     };
 
-    // Tags
+
+    // ========== Tags ==========
     const handleTagClick = (tag) => {
         setSelectedTags(prev =>
             prev.includes(tag)
@@ -156,14 +205,13 @@ export default function DesktopForum() {
         );
     };
 
-    // New Post
+    // ========== New Post ==========
     const handleNewPost = () => {
         setShowNewPostPopup(true);
     };
 
     const handleClosePopup = () => {
         setShowNewPostPopup(false);
-        // Reset form fields
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostTags([]);
@@ -176,7 +224,7 @@ export default function DesktopForum() {
                 : [...prev, tag]
         );
     };
-    // Handle post submission
+    // ========== Handle post submission ==========
     const handleSubmitPost = async (e) => {
         if (e && typeof e.preventDefault === "function") e.preventDefault();
         if (!user) {
@@ -243,7 +291,7 @@ export default function DesktopForum() {
         handleClosePopup();
     };
 
-    // Filtering
+    // ========== Filtering ==========
     const filteredPosts = Array.isArray(posts) ? posts.filter(post => {
         if (activeView === "my-posts" && user) {
             if (post.author !== user.username) return false;
@@ -251,20 +299,20 @@ export default function DesktopForum() {
             if (!post.liked) return false;
         }
 
-        // Search filter
+        // ========== Search filter ==========
         const matchesSearch = searchTerm === "" ||
             (post.title && post.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.content && post.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.author && post.author.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        // Tag filter
+        // ========== Tag filter ==========
         const matchesTags = selectedTags.length === 0 ||
             selectedTags.some(tag => post.tags && post.tags.includes(tag));
 
         return matchesSearch && matchesTags;
     }) : [];
 
-    // Sort posts
+    // ========== Sort posts ==========
     const sortedPosts = Array.isArray(filteredPosts) ? [...filteredPosts].sort((a, b) => {
         switch (sortBy) {
             case "likes":
