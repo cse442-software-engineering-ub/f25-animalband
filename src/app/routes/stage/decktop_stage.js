@@ -208,16 +208,19 @@ export default function DesktopStage() {
     const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
     const authCookie = cookieObj["auth_token"] || "";
     try {
-      const response = await fetch("", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recording: recordedNotes,
-          title: recordingTitle,
-          description: recordingDescription,
-          userToken: authCookie,
-        }),
-      });
+      const response = await fetch(
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/saveRecordingsLocal.php",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recording: recordedNotes,
+            title: recordingTitle,
+            description: recordingDescription,
+            userToken: authCookie,
+          }),
+        }
+      );
 
       if (response.ok) {
         alert("Recording saved!");
