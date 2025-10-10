@@ -103,12 +103,11 @@ html, body {
 .animals-container {
   display: flex;
   justify-content: center;
-  gap: 2rem;           /* spacing between animals */
-  flex-wrap: nowrap;    /* keep images in one row */
-  overflow-x: auto;     /* allow horizontal scroll if needed */
-  padding: 0 1rem;      /* small breathing room */
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  gap: 2rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: visible; /* allow vertical overflow for jump */
+  padding: 0 1rem;
 }
 .animals-container::-webkit-scrollbar { display: none; }
 
@@ -219,4 +218,14 @@ html, body {
   .header { flex-direction: column; gap: 1rem; }
   .animals-container { gap: 1rem; }
   .band-stage { padding: 0 0.5rem; }
+}
+
+@keyframes swell {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.animal-member img.playing {
+  animation: swell 0.3s ease-in-out;
 }

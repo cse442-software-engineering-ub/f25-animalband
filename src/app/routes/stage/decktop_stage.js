@@ -81,6 +81,7 @@ export default function DesktopStage() {
 
       playSound(sounds[key], masterVolume);
 
+      // Trigger playing + swelling
       setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
       setTimeout(() => {
         setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
@@ -254,6 +255,7 @@ export default function DesktopStage() {
               <img
                 src={playingAnimals[animal] ? ANIMAL_IMAGES[animal][1] : ANIMAL_IMAGES[animal][0]}
                 alt={`${animal} instrument`}
+                className={playingAnimals[animal] ? "playing" : ""}
               />
               <div className="animal-controls">
                 <p className="key-text">
@@ -330,3 +332,4 @@ export default function DesktopStage() {
     </div>
   );
 }
+
