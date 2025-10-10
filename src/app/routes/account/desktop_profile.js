@@ -109,6 +109,7 @@ export default function DesktopProfile() {
 
       {/* Body Layout */}
       <div className="profile-layout">
+        
         {/* Sidebar */}
         <aside className="sidebar">
           <h3>Menu</h3>
