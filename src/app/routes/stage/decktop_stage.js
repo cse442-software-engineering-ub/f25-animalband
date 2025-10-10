@@ -419,8 +419,8 @@ export default function DesktopStage() {
       </section>
 
       {showSaveForm && (
-        <div className="save-form-popup">
-          <div className="save-form">
+        <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <h3>Save Your Recording</h3>
             <label>
               Title:
