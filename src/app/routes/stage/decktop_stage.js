@@ -209,7 +209,7 @@ export default function DesktopStage() {
     const authCookie = cookieObj["auth_token"] || "";
     try {
       const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/saveRecordingLocal.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php/saveRecordingLocal.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
