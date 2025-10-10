@@ -208,7 +208,7 @@ export default function DesktopStage() {
     const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
     const authCookie = cookieObj["auth_token"] || "";
     try {
-      const response = await fetch("http://localhost:3001/api/recordings", {
+      const response = await fetch("", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
