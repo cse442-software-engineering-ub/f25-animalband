@@ -231,6 +231,7 @@ export default function DesktopStage() {
   }
 
   return (
+    <div class="stagestuff">
     <div className="landing-page">
       <header className="header">
         <Link to="/" className="logo-section">
@@ -329,6 +330,7 @@ export default function DesktopStage() {
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
       />
+    </div>
     </div>
   );
 }

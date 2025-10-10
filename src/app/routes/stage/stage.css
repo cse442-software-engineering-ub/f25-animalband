@@ -14,26 +14,26 @@ html, body {
 }
 
 /* =================== Landing Page =================== */
-.landing-page {
+.stagestuff .landing-page {
   height: 100vh; /* full viewport height */
   display: flex;
   flex-direction: column;
-  background-color: #E4E2E2;
+  background-color: #ffffff;
   overflow: hidden; /* lock scrolling only on landing page */
 }
 
 /* =================== Header =================== */
-.header {
+.stagestuff .header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   padding: 1rem 2rem;
-  background-color: #D9D9D9;
+  background-color: #ffffff;
   position: relative;
   flex-shrink: 0; /* prevent shrinking */
 }
 
-.logo-section {
+.stagestuff .logo-section {
   text-decoration: none;
   color: inherit;
   cursor: pointer;
@@ -45,25 +45,25 @@ html, body {
   gap: 0.5rem;
 }
 
-.paw-icon {
+.stagestuff .paw-icon {
   font-size: 5rem !important;
   color: #735442;
 }
 
-.site-title {
+.stagestuff .site-title {
   font-size: 2.5rem;
   font-weight: bold;
   color: #000;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
 }
 
-.header-buttons {
+.stagestuff .header-buttons {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.btn-login {
+.stagestuff .btn-login {
   padding: 0.75rem 2rem;
   background-color: #178C3A;
   color: white;
@@ -74,9 +74,9 @@ html, body {
   cursor: pointer;
   transition: background-color 0.2s;
 }
-.btn-login:hover { background-color: #15803d; }
+.stagestuff .btn-login:hover { background-color: #15803d; }
 
-.btn-register {
+.stagestuff .btn-register {
   padding: 0.75rem 2rem;
   background-color: transparent;
   color: #178C3A;
@@ -87,10 +87,10 @@ html, body {
   cursor: pointer;
   transition: background-color 0.2s;
 }
-.btn-register:hover { background-color: #afd6bb; }
+.stagestuff .btn-register:hover { background-color: #afd6bb; }
 
 /* =================== Band Stage =================== */
-.band-stage {
+.stagestuff .band-stage {
   flex: 1; /* take remaining space */
   display: flex;
   justify-content: center;
@@ -100,7 +100,7 @@ html, body {
   padding: 0;         /* no horizontal padding to avoid cutting off images */
 }
 
-.animals-container {
+.stagestuff .animals-container {
   display: flex;
   justify-content: center;
   gap: 2rem;
@@ -109,16 +109,16 @@ html, body {
   overflow-y: visible; /* allow vertical overflow for jump */
   padding: 0 1rem;
 }
-.animals-container::-webkit-scrollbar { display: none; }
+.stagestuff .animals-container::-webkit-scrollbar { display: none; }
 
-.animal-member {
+.stagestuff .animal-member {
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 120px; /* responsive minimum width */
 }
 
-.animal-member img {
+.stagestuff .animal-member img {
   width: 250px; /* default size */
   height: 250px;
   max-height: calc(100vh - 200px); /* leave room for header + bottom controls */
@@ -129,33 +129,33 @@ html, body {
 
 /* Ensure animals fit horizontally on smaller screens */
 @media (max-width: 1200px) {
-  .animal-member img {
+  .stagestuff .animal-member img {
     width: 200px;
     height: 200px;
   }
 }
 
 @media (max-width: 768px) {
-  .animal-member img {
+  .stagestuff .animal-member img {
     width: 150px;
     height: 150px;
   }
 }
 
-.animal-controls {
+.stagestuff .animal-controls {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
 }
 
-.key-text {
+.stagestuff .key-text {
   font-weight: bold;
   font-size: 0.9rem;
 }
 
 /* ================= Bottom Controls ================= */
-.bottom-controls {
+.stagestuff .bottom-controls {
   position: fixed;
   bottom: 1rem;
   left: 50%;
@@ -170,17 +170,17 @@ html, body {
   z-index: 100;
 }
 
-.volume-slider {
+.stagestuff .volume-slider {
   width: 150px;
   accent-color: #178C3A;
 }
 
-.circle-buttons {
+.stagestuff .circle-buttons {
   display: flex;
   gap: 0.5rem;
 }
 
-.circle-btn {
+.stagestuff .circle-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -195,29 +195,29 @@ html, body {
 }
 
 /* Record */
-.circle-btn.record { background-color: #178C3A; }
-.circle-btn.record:hover { background-color: #15803d; transform: scale(1.1); }
+.stagestuff .circle-btn.record { background-color: #178C3A; }
+.stagestuff .circle-btn.record:hover { background-color: #15803d; transform: scale(1.1); }
 
 /* Stop */
-.circle-btn.stop { background-color: #b91c1c; }
-.circle-btn.stop:hover { background-color: #991b1b; transform: scale(1.1); }
+.stagestuff .circle-btn.stop { background-color: #b91c1c; }
+.stagestuff .circle-btn.stop:hover { background-color: #991b1b; transform: scale(1.1); }
 
 /* Play */
-.circle-btn.play { background-color: #6e6e6e; }
-.circle-btn.play.playing { background-color: #178C3A; }
-.circle-btn.play:hover { background-color: #8a8a8a; transform: scale(1.1); }
-.circle-btn.play:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.stagestuff .circle-btn.play { background-color: #6e6e6e; }
+.stagestuff .circle-btn.play.playing { background-color: #178C3A; }
+.stagestuff .circle-btn.play:hover { background-color: #8a8a8a; transform: scale(1.1); }
+.stagestuff .circle-btn.play:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 /* Export */
-.circle-btn.export { background-color: #178C3A; }
-.circle-btn.export:hover { background-color: #15803d; transform: scale(1.1); }
-.circle-btn.export:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.stagestuff .circle-btn.export { background-color: #178C3A; }
+.stagestuff .circle-btn.export:hover { background-color: #15803d; transform: scale(1.1); }
+.stagestuff .circle-btn.export:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 /* ================= Responsive ================= */
 @media (max-width: 1024px) {
-  .header { flex-direction: column; gap: 1rem; }
-  .animals-container { gap: 1rem; }
-  .band-stage { padding: 0 0.5rem; }
+  .stagestuff .header { flex-direction: column; gap: 1rem; }
+  .stagestuff .animals-container { gap: 1rem; }
+  .stagestuff .band-stage { padding: 0 0.5rem; }
 }
 
 @keyframes swell {
@@ -226,6 +226,6 @@ html, body {
   100% { transform: scale(1); }
 }
 
-.animal-member img.playing {
+.stagestuff .animal-member img.playing {
   animation: swell 0.3s ease-in-out;
 }
