@@ -34,7 +34,7 @@ if (!$data) {
     exit;
 }
 
-$auth_token = $data['auth_token'] ?? '';
+$auth_token = $data['userToken'] ?? '';
 $title = $data['title'] ?? '';
 $description = $data['description'] ?? '';
 $recordingJson = json_encode($data['recording'] ?? []);
