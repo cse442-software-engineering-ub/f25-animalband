@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
 
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 export default function DesktopForum() {
     const navigate = useNavigate();
@@ -25,6 +25,43 @@ export default function DesktopForum() {
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
     const soundTags = ["Song Recording"];
     const sortOptions = ["recent", "likes"];
+
+    // ========== Date and Time whatnot ==========
+    const [nowTick, setNowTick] = useState(Date.now());
+    function parseDbTimestamp(s) {
+        if (!s) return null;
+        const iso = s.replace(' ', 'T');
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    function timeAgo(createdAt, now = Date.now()) {
+        const d = typeof createdAt === 'string' ? parseDbTimestamp(createdAt) :
+            createdAt instanceof Date ? createdAt : null;
+        if (!d) return '';
+
+        const diffMs = Math.max(0, now - d.getTime());
+        const sec = Math.floor(diffMs / 1000);
+        const min = Math.floor(sec / 60);
+        const hr = Math.floor(min / 60);
+        const day = Math.floor(hr / 24);
+
+        if (sec < 45) return 'just now';
+        if (min < 60) return `${min}m`;
+        if (hr < 24) return `${hr}h`;
+        if (day === 1) return 'yesterday';
+        if (day < 7) return `${day}d`;
+
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    useEffect(() => {
+        const id = setInterval(() => setNowTick(Date.now()), 60_000);
+        return () => clearInterval(id);
+    }, []);
+
+
+
 
     // ========== Fetch Posts ==========
     const fetchPosts = useCallback(async (opts = { refresh: false }) => {
@@ -500,6 +537,10 @@ export default function DesktopForum() {
                                                 <span className="author-name">by {post.author}</span>
                                             </div>
                                         </div>
+                                        {/* Time since posted */}
+                                        {post.created_at && (
+                                            <span className="post-time">Created {timeAgo(post.created_at, nowTick)} ago</span>
+                                        )}
                                     </div>
                                     <p className="post-content">{post.content}</p>
                                     <div className="post-tags">
