@@ -6,22 +6,46 @@ export default function MyRecordings() {
   const [selectedRecording, setSelectedRecording] = useState(null);
 
   useEffect(() => {
-    // TODO: Replace this with actual API call to your backend
-    setRecordings([
-      {
-        id: 1,
-        title: "Meeting Notes",
-        description: "Team discussion on Q4 goals.",
-        audioUrl: "/example-audio-1.mp3",
-      },
-      {
-        id: 2,
-        title: "Idea Dump",
-        description: "Brainstorming session with self.",
-        audioUrl: "/example-audio-2.mp3",
-      },
-    ]);
+    // Replace with actual API call to your backend
+    const fetchRecordings = async () => {
+      try {
+        const response = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php/getLocalRecordings.php",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              auth_token: "user-auth-token", // replace this with actual token from your app's context or cookies
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.recordings) {
+            const formattedRecordings = data.recordings.map((rec) => ({
+              id: rec.id,
+              title: rec.title,
+              description: rec.description,
+              audioUrl: rec.recording, // Assuming 'recording' contains the audio file URL
+            }));
+            setRecordings(formattedRecordings);
+          } else {
+            console.error("Failed to fetch recordings:", data.error);
+          }
+        } else {
+          console.error("Failed to fetch recordings:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching recordings:", error);
+      }
+    };
+
+    fetchRecordings();
   }, []);
+
 
   const openModal = (recording) => {
     setSelectedRecording(recording);
