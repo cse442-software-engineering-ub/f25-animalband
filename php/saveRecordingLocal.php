@@ -56,7 +56,7 @@ $insertSQL = "
     VALUES (?, ?, ?, ?)
 ";
 $insertStmt = $conn->prepare($insertSQL);
-$insertStmt->bind_param("ssss", $email, $title, $description, $recording);
+$insertStmt->bind_param("ssss", $email, $title, $description, $recordingJson);
 
 
 if ($insertStmt->execute()) {
