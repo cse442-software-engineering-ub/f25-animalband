@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
 
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
 
 export default function DesktopForum() {
     const navigate = useNavigate();
@@ -14,10 +14,51 @@ export default function DesktopForum() {
     const [user, setUser] = useState(null);
     const [activeView, setActiveView] = useState("community");
 
+    // New post popup 
+    const [showNewPostPopup, setShowNewPostPopup] = useState(false);
+    const [newPostTitle, setNewPostTitle] = useState("");
+    const [newPostContent, setNewPostContent] = useState("");
+    const [newPostTags, setNewPostTags] = useState([]);
+
     // Tags and sorting stuff
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
     const soundTags = ["Song Recording"];
     const sortOptions = ["recent", "likes"];
+
+    // Fetch Posts
+    const fetchPosts = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`${PHP_URL}/getforumPosts.php`, {
+                credentials: "include",
+                cache: "no-store",
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const rows = await res.json();
+
+            const normalized = rows.map((p) => ({
+                id: Number(p.id),
+                title: p.title || "",
+                content: p.content || "",
+                tags: Array.isArray(p.tags) ? p.tags : [],
+                author: p.author || "",
+                authorId: Number(p.authorId ?? 0),
+                likes: Number(p.likeCount ?? 0),
+                comments: Number(p.comments ?? 0),
+                created_at: p.created_at || null,
+                likesFrom: Array.isArray(p.likesFrom) ? p.likesFrom : [],
+                liked: false,
+            }));
+            setPosts(normalized);
+        } catch (err) {
+            console.error("Failed to fetch posts:", err);
+            setPosts([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+
 
     useEffect(() => {
         // Fetch user data
@@ -31,75 +72,35 @@ export default function DesktopForum() {
                 if (data.loggedIn) {
                     setUser(data);
                 }
-                else{
+                else {
                     navigate("/login");
                 }
             } catch (err) {
                 console.error("Failed to fetch user", err);
             }
         };
-        // Fetch Posts
-        const fetchPosts = async () => {
-            try {
-                // TODO: backend
-                const tempPosts = [
-                    {
-                        id: 1,
-                        title: "Title1",
-                        content: "Hello there",
-                        tags: ["Hamster"],
-                        liked: false,
-                        author: "test",
-                        authorId: 1,
-                        likes: 15,
-                        comments: 3,
-                    },
-                    {
-                        id: 2,
-                        title: "Title2",
-                        content: "General Kenobi",
-                        tags: ["Cockatiel"],
-                        liked: true,
-                        author: "AnimalLover2",
-                        authorId: 2,
-                        likes: 42,
-                        comments: 7,
-                    },
-                    {
-                        id: 3,
-                        title: "Title3",
-                        content: "You are",
-                        tags: ["Emu"],
-                        liked: false,
-                        author: "AnimalLover3",
-                        authorId: 3,
-                        likes: 28,
-                        comments: 4,
-                    },
-                    {
-                        id: 4,
-                        title: "Title4",
-                        content: "A bold one",
-                        tags: ["Kangaroo"],
-                        liked: true,
-                        author: "AnimalLover4",
-                        authorId: 4,
-                        likes: 67,
-                        comments: 12,
-                    }
-                ];
-                setPosts(tempPosts);
-            } catch (error) {
-                console.error("Failed to fetch posts:", error);
-                setPosts([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+
 
         checkUser();
         fetchPosts();
-    }, []);
+    }, [navigate, fetchPosts]);
+
+    // Compute liked
+    useEffect(() => {
+        if (!user) return;
+        setPosts((prev) =>
+            prev.map((p) => ({
+                ...p,
+                liked: Array.isArray(p.likesFrom) && p.likesFrom.includes(user.username),
+            }))
+        );
+    }, [user]);
+
+    // Polling
+    useEffect(() => {
+        const t = setInterval(fetchPosts, 15000);
+        return () => clearInterval(t);
+    }, [fetchPosts]);
 
     const handleAccountClick = () => {
         if (user) {
@@ -136,9 +137,75 @@ export default function DesktopForum() {
         );
     };
 
-    // ToDo: New Post stuff
+    // New Post
     const handleNewPost = () => {
-        console.log("New Post btn works");
+        setShowNewPostPopup(true);
+    };
+
+    const handleClosePopup = () => {
+        setShowNewPostPopup(false);
+        // Reset form fields
+        setNewPostTitle("");
+        setNewPostContent("");
+        setNewPostTags([]);
+    };
+
+    const handleTagSelect = (tag) => {
+        setNewPostTags(prev =>
+            prev.includes(tag)
+                ? prev.filter(t => t !== tag)
+                : [...prev, tag]
+        );
+    };
+    // Handle post submission
+    const handleSubmitPost = async (e) => {
+        if (e && typeof e.preventDefault === "function") e.preventDefault();
+        if (!user) {
+            return;
+        }
+        if (!user.id) {
+            return;
+        }
+        const payload = {
+            title: newPostTitle.trim(),
+            content: newPostContent.trim(),
+            tags: newPostTags,
+            likesFrom: user.username,
+            author: user.username,
+            authorId: user.id,
+            likes: 1,
+
+        };
+
+        // console.log("New Post Data Saved:", {
+        //     title: title,
+        //     content: content,
+        //     tags: tags,
+        //     likesFrom: likesFrom,
+        //     author: author,
+        //     authorId: authorId,
+        //     likeCount: likeCount
+
+        // });
+
+        try {
+            const url = `${PHP_URL}/makeForumPost.php`;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(payload),
+            });
+            const text = await response.text();
+            if (!response.ok) {
+                throw new Error(`Request failed. Status ${response.status}`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Post failed");
+        }
+
+        handleClosePopup();
     };
 
     // Filtering
@@ -379,6 +446,72 @@ export default function DesktopForum() {
                     </div>
                 </main>
             </div>
+
+            {/* New Post Popup */}
+            {showNewPostPopup && (
+                <div className="popup-overlay">
+                    <div className="popup-content">
+                        <div className="popup-header">
+                            <h2>Create New Post</h2>
+                            <button className="close-btn" onClick={handleClosePopup}>×</button>
+                        </div>
+                        <div className="popup-body">
+                            <div className="form-group">
+                                <label>Title:</label>
+                                <input
+                                    type="text"
+                                    value={newPostTitle}
+                                    onChange={(e) => setNewPostTitle(e.target.value)}
+                                    placeholder="Enter post title"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Content:</label>
+                                <textarea
+                                    value={newPostContent}
+                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    placeholder="Enter post content"
+                                    rows="4"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Tags:</label>
+                                <div className="tag-selection">
+                                    {animalTags.map(tag => (
+                                        <span
+                                            key={tag}
+                                            className={`tag ${newPostTags.includes(tag) ? 'active' : ''}`}
+                                            onClick={() => handleTagSelect(tag)}
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                    {soundTags.map(tag => (
+                                        <span
+                                            key={tag}
+                                            className={`tag ${newPostTags.includes(tag) ? 'active' : ''}`}
+                                            onClick={() => handleTagSelect(tag)}
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="popup-footer">
+                            <button className="cancel-btn" onClick={handleClosePopup}>Cancel</button>
+                            <button
+                                type="button"
+                                className="submit-btn"
+                                onClick={handleSubmitPost}
+                                disabled={!user?.id || !newPostTitle.trim() || !newPostContent.trim()}
+                            >
+                                Create Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Material Icons */}
             <link

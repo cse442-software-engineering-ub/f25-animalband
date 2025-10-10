@@ -3,6 +3,8 @@
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
 
 $servername = "localhost";
 $username = "ikimos";
@@ -23,22 +25,28 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
     author VARCHAR(100),
     authorId INT,
     likeCount INT DEFAULT 0,
-    comments INT DEFAULT 0
+    comments INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
-$selectPosts = "SELECT * FROM forumPosts";
+$selectPosts = "SELECT id, title, content, tags, likesFrom, author, authorId, likeCount, comments, created_at
+                FROM forumPosts
+                ORDER BY created_at DESC, id DESC";
 $result = $conn->query($selectPosts);
 
 $allPosts = [];
 
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        if (isset($row['tags'])) {
-            $row['tags'] = json_decode($row['tags']);
-        }
-        if (isset($row['likesFrom'])) {
-            $row['likesFrom'] = json_decode($row['likesFrom']);
-        }
+        // if (isset($row['tags'])) {
+        //     $row['tags'] = json_decode($row['tags']);
+        // }
+        // if (isset($row['likesFrom'])) {
+        //     $row['likesFrom'] = json_decode($row['likesFrom']);
+        // }
+        $row['tags'] = isset($row['tags']) ? (json_decode($row['tags'], true) ?: []) : [];
+        $row['likesFrom'] = isset($row['likesFrom']) ? (json_decode($row['likesFrom'], true) ?: []) : [];
+
         $allPosts[] = $row;
     }
 }

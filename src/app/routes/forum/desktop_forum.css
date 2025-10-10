@@ -437,6 +437,242 @@
   margin: 0;
 }
 
+
+/* ===== NEW POST POPUP ===== */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.popup-content {
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: popupSlideIn 0.3s ease-out;
+}
+
+@keyframes popupSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 2px solid #e4e2e2;
+  background: #f8f9fa;
+  border-radius: 12px 12px 0 0;
+}
+
+.popup-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #e4e2e2;
+  color: #333;
+}
+
+.popup-body {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: #fafafa;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #178c3a;
+  box-shadow: 0 0 0 3px rgba(23, 140, 58, 0.1);
+  background: white;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+.tag-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tag-selection .tag {
+  padding: 0.4rem 0.8rem;
+  background: white;
+  border: 2px solid #178c3a;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #178c3a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.tag-selection .tag:hover {
+  background: #e8f5e8;
+  transform: translateY(-1px);
+}
+
+.tag-selection .tag.active {
+  background: #178c3a;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(23, 140, 58, 0.3);
+}
+
+.popup-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 2px solid #e4e2e2;
+  background: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+}
+
+.cancel-btn,
+.submit-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.cancel-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+.submit-btn {
+  background: #178c3a;
+  color: white;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #106e2b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(23, 140, 58, 0.3);
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive design for popup */
+@media (max-width: 768px) {
+  .popup-content {
+    width: 95%;
+    margin: 1rem;
+  }
+  
+  .popup-header {
+    padding: 1.25rem 1.25rem 0.75rem;
+  }
+  
+  .popup-body {
+    padding: 1.25rem;
+  }
+  
+  .popup-footer {
+    padding: 0.75rem 1.25rem 1.25rem;
+    flex-direction: column;
+  }
+  
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+  }
+}
+
+.popup-overlay {
+  z-index: 9999;
+}
+
+body.popup-open {
+  overflow: hidden;
+}
+
+
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 1024px) {
   .forum-sidebar {
