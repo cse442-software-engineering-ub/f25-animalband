@@ -36,7 +36,6 @@ export default function Login() {
     }
   };
 
-  // Function to handle the Forgot Password link click
   const handleForgotPassword = async () => {
     try {
       const response = await fetch(
@@ -46,14 +45,13 @@ export default function Login() {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include", // To include the auth_token cookie
+          credentials: "include",
         }
       );
 
       const data = await response.json();
 
       if (data.success) {
-        // Redirect to the password-code page after the request is successful
         navigate("/password-code");
       } else {
         alert("Something went wrong, please try again later.");
@@ -74,10 +72,11 @@ export default function Login() {
         <form>
           <input type="text" name="email" placeholder="Email" />
           <input type="password" name="password" placeholder="Password" />
+
           <p className="forgot-link-container">
-            <Link to="/forgot-password" className="forgot-link">
+            <span onClick={handleForgotPassword} className="forgot-link">
               Forgot Password?
-            </Link>
+            </span>
           </p>
 
           <button type="button" onClick={handleLogin}>
@@ -88,9 +87,7 @@ export default function Login() {
           Don’t have an account? <Link to="/register">Register</Link>
         </p>
       </div>
-      <button onClick={handleForgotPassword} className="forgot-password-btn">
-        Forgot Password?
-      </button>
+
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"

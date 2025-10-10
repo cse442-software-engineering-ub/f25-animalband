@@ -1,5 +1,4 @@
 import { HashRouter, Routes, Route } from "react-router-dom";
-import { HashRouter, Routes, Route } from "react-router-dom";
 import useIsMobile from "../hook/useIsMobile.js";
 
 import MobileLanding from "./routes/landing/mobile_landing.js"
@@ -66,6 +65,7 @@ export default function App() {
           <Route path="/account" element={<Account />} />
           <Route path="/password-code" element={<PwdCode />} />
           <Route path="/reset-password" element={<ResetPwd />} />
+          <Route path="/forgot-password" element={<PwdCode />} />
           <Route path="/account/edit" element={<EditAccount />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

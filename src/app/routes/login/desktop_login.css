@@ -142,4 +142,15 @@ body {
   .login-card .register-link {
     font-size: 14px;
   }
+
+  .forgot-link {
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: none;
+  }
+
+  .forgot-link:hover {
+    text-decoration: underline;
+  }
+
 }
