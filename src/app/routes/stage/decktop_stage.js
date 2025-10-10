@@ -271,24 +271,25 @@ export default function DesktopStage() {
             </div>
           ))}
         </div>
+      </section>
 
-        <div className="master-volume">
-          <label>Master Volume: {(masterVolume * 100).toFixed(0)}%</label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={masterVolume}
-            onChange={(e) => {
-              const newVol = parseFloat(e.target.value);
-              setMasterVol(newVol);
-              setMasterVolume(newVol);
-            }}
-          />
-        </div>
+      {/* Bottom controls */}
+      <div className="bottom-controls">
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={masterVolume}
+          onChange={(e) => {
+            const newVol = parseFloat(e.target.value);
+            setMasterVol(newVol);
+            setMasterVolume(newVol);
+          }}
+          className="volume-slider"
+        />
 
-        <div className="record-controls">
+        <div className="circle-buttons">
           <button
             onClick={() => {
               if (!isRecording) {
@@ -299,32 +300,28 @@ export default function DesktopStage() {
                 setIsRecording(false);
               }
             }}
-            className={`record-btn ${isRecording ? "stop" : "start"}`}
+            className={`circle-btn ${isRecording ? "stop" : "record"}`}
           >
-            <span className="record-symbol">{isRecording ? "■" : "●"}</span>
-            {isRecording ? "Stop Recording" : "Start Recording"}
+            {isRecording ? "■" : "●"}
           </button>
 
           <button
             onClick={playRecording}
             disabled={isRecording || recordedNotes.length === 0}
-            className={`record-btn play ${isPlaying ? "playing" : ""}`}
+            className={`circle-btn play ${isPlaying ? "playing" : ""}`}
           >
-            <span className="record-symbol">►</span>
-            {isPlaying ? "Playing..." : "Play Recording"}
+            ►
           </button>
 
           <button
             onClick={exportRecording}
             disabled={recordedNotes.length === 0}
-            className="record-btn export"
+            className="circle-btn export"
           >
-            <span className="material-symbols-outlined export-icon">file_download</span>
-            Export to WAV
+            ⬇
           </button>
-
         </div>
-      </section>
+      </div>
 
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
@@ -333,4 +330,3 @@ export default function DesktopStage() {
     </div>
   );
 }
-

@@ -1,4 +1,4 @@
-/* Reset and base styles */
+/* =================== CSS =================== */
 * {
   margin: 0;
   padding: 0;
@@ -13,7 +13,7 @@
     sans-serif;
 }
 
-/* ========== Header (Landing style) ========== */
+/* Header */
 .header {
   display: flex;
   align-items: center;
@@ -64,7 +64,6 @@
   cursor: pointer;
   transition: background-color 0.2s;
 }
-
 .btn-login:hover { background-color: #15803d; }
 
 .btn-register {
@@ -78,10 +77,9 @@
   cursor: pointer;
   transition: background-color 0.2s;
 }
-
 .btn-register:hover { background-color: #afd6bb; }
 
-/* ========== Stage Section ========== */
+/* Band Stage */
 .band-stage {
   text-align: center;
   padding: 1rem 0 2rem;
@@ -96,13 +94,10 @@
   flex-wrap: nowrap;
   overflow-x: auto;
   padding-bottom: 1rem;
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
-.animals-container::-webkit-scrollbar {
-  display: none;              /* Chrome, Safari, Opera */
-}
+.animals-container::-webkit-scrollbar { display: none; }
 
 .animal-member {
   display: flex;
@@ -131,154 +126,73 @@
   font-size: 0.9rem;
 }
 
-.animal-controls input[type="range"] {
-  width: 100px;
+/* ================= Bottom Controls ================= */
+.bottom-controls {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(228, 226, 226, 0.95);
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  z-index: 100;
+}
+
+.volume-slider {
+  width: 150px;
   accent-color: #178C3A;
 }
 
-/* Master Volume */
-.master-volume {
-  margin-top: 2rem;
-  text-align: center;
+.circle-buttons {
+  display: flex;
+  gap: 0.5rem;
 }
 
-.master-volume input[type="range"] {
-  width: 300px;
-  margin-top: 0.5rem;
-  accent-color: #178C3A;
-}
-
-/* ========== Recording and Playback Buttons ========== */
-.record-controls {
+.circle-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.record-btn {
-  padding: 0.75rem 2rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  border: none;
-  color: white;
-  display: flex;
-  align-items: center;   /* center symbol with text */
-  gap: 0.5rem;           /* spacing between symbol and text */
-  transition: background-color 0.2s, transform 0.15s;
-}
-
-.record-symbol {
-  font-size: 1.5rem;          /* symbol size */
-  line-height: 1;
-  display: inline-flex;
   align-items: center;
-  transform: translateY(-0.1rem);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.15s, background-color 0.2s;
+  color: white;
 }
 
-/* Record button states */
-.record-btn.start {
-  background-color: #178C3A;
-}
-.record-btn.start:hover {
-  background-color: #15803d;
-  transform: scale(1.05);
-}
+/* Record */
+.circle-btn.record { background-color: #178C3A; }
+.circle-btn.record:hover { background-color: #15803d; transform: scale(1.1); }
 
-.record-btn.stop {
-  background-color: #b91c1c;
-}
-.record-btn.stop:hover {
-  background-color: #991b1b;
-  transform: scale(1.05);
-}
+/* Stop */
+.circle-btn.stop { background-color: #b91c1c; }
+.circle-btn.stop:hover { background-color: #991b1b; transform: scale(1.1); }
 
-/* Play button states */
-.record-btn.play {
-  background-color: #6e6e6e;
-}
-.record-btn.play.playing {
-  background-color: #178C3A;
-}
-.record-btn.play:hover {
-  background-color: #8a8a8a;
-  transform: scale(1.05);
-}
-.record-btn.play:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
+/* Play */
+.circle-btn.play { background-color: #6e6e6e; }
+.circle-btn.play.playing { background-color: #178C3A; }
+.circle-btn.play:hover { background-color: #8a8a8a; transform: scale(1.1); }
+.circle-btn.play:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-/* ========== Responsive ========== */
+/* Export */
+.circle-btn.export { background-color: #178C3A; }
+.circle-btn.export:hover { background-color: #15803d; transform: scale(1.1); }
+.circle-btn.export:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Responsive */
 @media (max-width: 1024px) {
-  .animal-member img {
-    width: 120px;
-    height: 120px;
-  }
+  .animal-member img { width: 120px; height: 120px; }
 }
 
 @media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .animals-container {
-    gap: 1rem;
-    overflow-x: scroll;
-  }
-
-  .animal-member img {
-    width: 100px;
-    height: 100px;
-  }
-
-  .band-stage {
-    padding: 2rem 1rem;
-  }
+  .header { flex-direction: column; gap: 1rem; }
+  .animals-container { gap: 1rem; overflow-x: scroll; }
+  .animal-member img { width: 100px; height: 100px; }
+  .band-stage { padding: 2rem 1rem; }
 }
-
-/* --- Export button styling --- */
-.record-btn.export {
-  background-color: #178C3A; /* same as .record-btn.start */
-  color: white;
-  border: none;
-  border-radius: 9999px;     /* same pill shape */
-  padding: 0.75rem 2rem;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.2s, transform 0.15s;
-}
-
-.record-btn.export:hover {
-  background-color: #15803d; /* same hover as .start */
-  transform: scale(1.05);
-}
-
-.record-btn.export:active {
-  background-color: #11632f; /* slightly darker on press */
-  transform: scale(0.98);
-}
-
-.record-btn.export:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Icon style */
-.export-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  transform: translateY(-0.1rem);
-}
-
