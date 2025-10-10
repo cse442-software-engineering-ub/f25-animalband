@@ -38,12 +38,6 @@ $allPosts = [];
 
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        // if (isset($row['tags'])) {
-        //     $row['tags'] = json_decode($row['tags']);
-        // }
-        // if (isset($row['likesFrom'])) {
-        //     $row['likesFrom'] = json_decode($row['likesFrom']);
-        // }
         $row['tags'] = isset($row['tags']) ? (json_decode($row['tags'], true) ?: []) : [];
         $row['likesFrom'] = isset($row['likesFrom']) ? (json_decode($row['likesFrom'], true) ?: []) : [];
 

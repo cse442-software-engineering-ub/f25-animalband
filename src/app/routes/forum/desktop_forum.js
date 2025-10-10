@@ -8,6 +8,7 @@ export default function DesktopForum() {
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTags, setSelectedTags] = useState([]);
     const [sortBy, setSortBy] = useState("recent");
@@ -26,8 +27,9 @@ export default function DesktopForum() {
     const sortOptions = ["recent", "likes"];
 
     // Fetch Posts
-    const fetchPosts = useCallback(async () => {
-        setLoading(true);
+    const fetchPosts = useCallback(async (opts = { refresh: false }) => {
+        const { refresh } = opts;
+        refresh ? setRefreshing(true) : setLoading(true);
         try {
             const res = await fetch(`${PHP_URL}/getforumPosts.php`, {
                 credentials: "include",
@@ -35,7 +37,6 @@ export default function DesktopForum() {
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const rows = await res.json();
-
             const normalized = rows.map((p) => ({
                 id: Number(p.id),
                 title: p.title || "",
@@ -50,18 +51,23 @@ export default function DesktopForum() {
                 liked: false,
             }));
             setPosts(normalized);
-        } catch (err) {
-            console.error("Failed to fetch posts:", err);
-            setPosts([]);
+        } catch (e) {
+            console.error("Failed to fetch posts:", e);
+            if (!refresh) setPosts([]); // keep old posts when refresh fails
         } finally {
-            setLoading(false);
+            refresh ? setRefreshing(false) : setLoading(false);
         }
     }, []);
 
+    // Don't jump pls when refresh ty
+    const refreshNoJump = useCallback(async () => {
+        const y = window.scrollY;
+        await fetchPosts({ refresh: true });
+        window.scrollTo({ top: y, behavior: "instant" });
+    }, [fetchPosts]);
 
-
+    // Fetch user data
     useEffect(() => {
-        // Fetch user data
         const checkUser = async () => {
             try {
                 const res = await fetch(
@@ -96,11 +102,24 @@ export default function DesktopForum() {
         );
     }, [user]);
 
-    // Polling
+    // Server event polling
     useEffect(() => {
-        const t = setInterval(fetchPosts, 15000);
-        return () => clearInterval(t);
+        const es = new EventSource(`${PHP_URL}/postsStream.php`, { withCredentials: false });
+
+        const onMsg = (e) => {
+            fetchPosts({ refresh: true });
+        };
+        const onErr = () => {
+            console.warn("SSE disconnected");
+        };
+
+        es.addEventListener("posts", onMsg);
+        es.onmessage = onMsg;
+        es.onerror = onErr;
+
+        return () => es.close();
     }, [fetchPosts]);
+
 
     const handleAccountClick = () => {
         if (user) {
@@ -170,7 +189,7 @@ export default function DesktopForum() {
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
             tags: newPostTags,
-            likesFrom: user.username,
+            likesFrom: [user.username],
             author: user.username,
             authorId: user.id,
             likes: 1,
@@ -187,7 +206,21 @@ export default function DesktopForum() {
         //     likeCount: likeCount
 
         // });
-
+        const tempId = Date.now();
+        const optimistic = {
+            id: tempId,
+            title: newPostTitle.trim(),
+            content: newPostContent.trim(),
+            tags: newPostTags,
+            author: user.username,
+            authorId: user.id,
+            likes: 1,
+            comments: 0,
+            created_at: new Date().toISOString(),
+            likesFrom: [user.username],
+            liked: true,
+        };
+        setPosts(prev => [optimistic, ...prev]);
         try {
             const url = `${PHP_URL}/makeForumPost.php`;
             const response = await fetch(url, {
@@ -200,7 +233,9 @@ export default function DesktopForum() {
             if (!response.ok) {
                 throw new Error(`Request failed. Status ${response.status}`);
             }
+            await refreshNoJump();
         } catch (err) {
+            setPosts(prev => prev.filter(p => p.id !== tempId));
             console.error(err);
             alert("Post failed");
         }
@@ -252,9 +287,6 @@ export default function DesktopForum() {
         }
     };
 
-    if (loading) {
-        return <div className="loading">Loading...</div>;
-    }
 
     return (
         <div className="forum-page">
