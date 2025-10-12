@@ -36,12 +36,12 @@ export default function DesktopStage() {
   const [recordingTitle, setRecordingTitle] = useState("");
   const [recordingDescription, setRecordingDescription] = useState("");
 
-
   const audioContextRef = useRef(null);
 
   useEffect(() => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
     }
   }, []);
 
@@ -70,11 +70,26 @@ export default function DesktopStage() {
       if (!sounds[key]) return;
 
       const animalMap = {
-        a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-        c: "bird", v: "bird", b: "bird", n: "bird",
-        h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-        u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-        q: "snake", w: "snake", e: "snake", r: "snake",
+        a: "hamster",
+        s: "hamster",
+        d: "hamster",
+        f: "hamster",
+        c: "bird",
+        v: "bird",
+        b: "bird",
+        n: "bird",
+        h: "ostrich",
+        j: "ostrich",
+        k: "ostrich",
+        l: "ostrich",
+        u: "kangaroo",
+        i: "kangaroo",
+        o: "kangaroo",
+        p: "kangaroo",
+        q: "snake",
+        w: "snake",
+        e: "snake",
+        r: "snake",
       };
 
       const animal = animalMap[key];
@@ -87,7 +102,6 @@ export default function DesktopStage() {
 
       playSound(sounds[key], masterVolume);
 
-      // Trigger playing + swelling
       setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
       setTimeout(() => {
         setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
@@ -114,11 +128,26 @@ export default function DesktopStage() {
     setIsPlaying(true);
     const audioContext = audioContextRef.current;
     const animalMap = {
-      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-      c: "bird", v: "bird", b: "bird", n: "bird",
-      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-      q: "snake", w: "snake", e: "snake", r: "snake",
+      a: "hamster",
+      s: "hamster",
+      d: "hamster",
+      f: "hamster",
+      c: "bird",
+      v: "bird",
+      b: "bird",
+      n: "bird",
+      h: "ostrich",
+      j: "ostrich",
+      k: "ostrich",
+      l: "ostrich",
+      u: "kangaroo",
+      i: "kangaroo",
+      o: "kangaroo",
+      p: "kangaroo",
+      q: "snake",
+      w: "snake",
+      e: "snake",
+      r: "snake",
     };
 
     recordedNotes.forEach(({ key, time }) => {
@@ -147,7 +176,10 @@ export default function DesktopStage() {
   const exportRecording = async () => {
     if (recordedNotes.length === 0 || !audioContextRef.current) return;
 
-    const fileName = prompt("Enter a name for your recording:", "animalband_recording");
+    const fileName = prompt(
+      "Enter a name for your recording:",
+      "animalband_recording"
+    );
     if (!fileName) return;
 
     const duration =
@@ -155,11 +187,26 @@ export default function DesktopStage() {
     const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
 
     const animalMap = {
-      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-      c: "bird", v: "bird", b: "bird", n: "bird",
-      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-      q: "snake", w: "snake", e: "snake", r: "snake",
+      a: "hamster",
+      s: "hamster",
+      d: "hamster",
+      f: "hamster",
+      c: "bird",
+      v: "bird",
+      b: "bird",
+      n: "bird",
+      h: "ostrich",
+      j: "ostrich",
+      k: "ostrich",
+      l: "ostrich",
+      u: "kangaroo",
+      i: "kangaroo",
+      o: "kangaroo",
+      p: "kangaroo",
+      q: "snake",
+      w: "snake",
+      e: "snake",
+      r: "snake",
     };
 
     for (const { key, time } of recordedNotes) {
@@ -186,6 +233,7 @@ export default function DesktopStage() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
   const saveRecordingLocally = async () => {
     const cookies = document.cookie.split("; ");
     const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
@@ -219,7 +267,6 @@ export default function DesktopStage() {
     }
   };
 
-
   function bufferToWav(buffer) {
     const numOfChan = buffer.numberOfChannels;
     const length = buffer.length * numOfChan * 2 + 44;
@@ -234,25 +281,42 @@ export default function DesktopStage() {
 
     let offset = 0;
 
-    writeString(view, offset, "RIFF"); offset += 4;
-    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
-    writeString(view, offset, "WAVE"); offset += 4;
-    writeString(view, offset, "fmt "); offset += 4;
-    view.setUint32(offset, 16, true); offset += 4;
-    view.setUint16(offset, 1, true); offset += 2;
-    view.setUint16(offset, numOfChan, true); offset += 2;
-    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
-    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
-    view.setUint16(offset, numOfChan * 2, true); offset += 2;
-    view.setUint16(offset, 16, true); offset += 2;
-    writeString(view, offset, "data"); offset += 4;
-    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "RIFF");
+    offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true);
+    offset += 4;
+    writeString(view, offset, "WAVE");
+    offset += 4;
+    writeString(view, offset, "fmt ");
+    offset += 4;
+    view.setUint32(offset, 16, true);
+    offset += 4;
+    view.setUint16(offset, 1, true);
+    offset += 2;
+    view.setUint16(offset, numOfChan, true);
+    offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true);
+    offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
+    offset += 4;
+    view.setUint16(offset, numOfChan * 2, true);
+    offset += 2;
+    view.setUint16(offset, 16, true);
+    offset += 2;
+    writeString(view, offset, "data");
+    offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true);
+    offset += 4;
 
     const interleaved = interleave(buffer);
     let index = 44;
     for (let i = 0; i < interleaved.length; i++, index += 2) {
       const sample = Math.max(-1, Math.min(1, interleaved[i]));
-      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      view.setInt16(
+        index,
+        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+        true
+      );
     }
 
     return new Blob([view], { type: "audio/wav" });
@@ -260,7 +324,8 @@ export default function DesktopStage() {
 
   function interleave(buffer) {
     const inputL = buffer.getChannelData(0);
-    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const inputR =
+      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
     const interleaved = new Float32Array(buffer.length * 2);
     for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
       interleaved[j] = inputL[i];
@@ -270,157 +335,157 @@ export default function DesktopStage() {
   }
 
   return (
-    <div class="stagestuff">
-    <div className="landing-page">
-      <header className="header">
-        <Link to="/" className="logo-section">
-          <span className="material-symbols-outlined paw-icon">pets</span>
-          <h1 className="site-title">ANIMALBAND</h1>
-        </Link>
+    <div className="stagestuff">
+      <div className="landing-page">
+        <header className="header">
+          <Link to="/" className="logo-section">
+            <span className="material-symbols-outlined paw-icon">pets</span>
+            <h1 className="site-title">ANIMALBAND</h1>
+          </Link>
+          <div className="header-buttons">
+            <button className="btn-login" onClick={() => navigate("/login")}>
+              Login
+            </button>
+            <button
+              className="btn-register"
+              onClick={() => navigate("/register")}
+            >
+              Register
+            </button>
+          </div>
+        </header>
 
-        <div className="header-buttons">
-          <button className="btn-login" onClick={() => navigate("/login")}>
-            Login
-          </button>
-          <button
-            className="btn-register"
-            onClick={() => navigate("/register")}
-          >
-            Register
-          </button>
-        </div>
-      </header>
-
-      <section className="band-stage">
-        <div className="animals-container">
-          {Object.keys(ANIMAL_IMAGES).map((animal) => (
-            <div key={animal} className="animal-member">
-              <img
-                src={
-                  playingAnimals[animal]
-                    ? ANIMAL_IMAGES[animal][1]
-                    : ANIMAL_IMAGES[animal][0]
-                }
-                alt={`${animal} instrument`}
-                className={playingAnimals[animal] ? "playing" : ""}
-              />
-              <div className="animal-controls">
-                <p className="key-text">
-                  {
-                    Object.entries({
-                      hamster: "A S D F",
-                      bird: "C V B N",
-                      ostrich: "H J K L",
-                      kangaroo: "U I O P",
-                      snake: "Q W E R",
-                    })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]
+        <section className="band-stage">
+          <div className="animals-container">
+            {Object.keys(ANIMAL_IMAGES).map((animal) => (
+              <div key={animal} className="animal-member">
+                <img
+                  src={
+                    playingAnimals[animal]
+                      ? ANIMAL_IMAGES[animal][1]
+                      : ANIMAL_IMAGES[animal][0]
                   }
-                </p>
+                  alt={`${animal} instrument`}
+                  className={playingAnimals[animal] ? "playing" : ""}
+                />
+                <div className="animal-controls">
+                  <p className="key-text">
+                    {
+                      Object.entries({
+                        hamster: "A S D F",
+                        bird: "C V B N",
+                        ostrich: "H J K L",
+                        kangaroo: "U I O P",
+                        snake: "Q W E R",
+                      })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]
+                    }
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="bottom-controls">
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={masterVolume}
+            onChange={(e) => {
+              const newVol = parseFloat(e.target.value);
+              setMasterVol(newVol);
+              setMasterVolume(newVol);
+            }}
+            className="volume-slider"
+          />
+
+          <div className="circle-buttons">
+            <button
+              onClick={() => {
+                if (!isRecording) {
+                  setRecordedNotes([]);
+                  setRecordStartTime(performance.now());
+                  setIsRecording(true);
+                } else {
+                  setIsRecording(false);
+                }
+              }}
+              className={`circle-btn ${isRecording ? "stop" : "record"}`}
+            >
+              {isRecording ? "■" : "●"}
+            </button>
+
+            <button
+              onClick={playRecording}
+              disabled={isRecording || recordedNotes.length === 0}
+              className={`circle-btn play ${isPlaying ? "playing" : ""}`}
+            >
+              ►
+            </button>
+
+            <button
+              onClick={exportRecording}
+              disabled={recordedNotes.length === 0}
+              className="circle-btn export"
+            >
+              <span className="material-symbols-outlined export-icon">
+                file_download
+              </span>
+              Export to WAV
+            </button>
+
+            <button
+              onClick={() => setShowSaveForm(true)}
+              disabled={recordedNotes.length === 0}
+              className="record-btn export"
+            >
+              <span className="material-symbols-outlined export-icon">
+                file_download
+              </span>
+              Save My Recording
+            </button>
+          </div>
+
+          {showSaveForm && (
+            <div
+              className="modal-overlay"
+              onClick={() => setShowSaveForm(false)}
+            >
+              <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+                <h3>Save Your Recording</h3>
+                <label>
+                  Title:
+                  <input
+                    type="text"
+                    value={recordingTitle}
+                    onChange={(e) => setRecordingTitle(e.target.value)}
+                    placeholder="Your Recording"
+                  />
+                </label>
+                <label>
+                  Description:
+                  <textarea
+                    value={recordingDescription}
+                    onChange={(e) => setRecordingDescription(e.target.value)}
+                    placeholder="Description of your recording."
+                  />
+                </label>
+                <div className="form-buttons">
+                  <button onClick={() => setShowSaveForm(false)}>Cancel</button>
+                  <button onClick={saveRecordingLocally}>Save</button>
+                </div>
               </div>
             </div>
-          ))}
+          )}
         </div>
-      </section>
-
-      {/* Bottom controls */}
-      <div className="bottom-controls">
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={masterVolume}
-          onChange={(e) => {
-            const newVol = parseFloat(e.target.value);
-            setMasterVol(newVol);
-            setMasterVolume(newVol);
-          }}
-          className="volume-slider"
-        />
-
-        <div className="circle-buttons">
-          <button
-            onClick={() => {
-              if (!isRecording) {
-                setRecordedNotes([]);
-                setRecordStartTime(performance.now());
-                setIsRecording(true);
-              } else {
-                setIsRecording(false);
-              }
-            }}
-            className={`circle-btn ${isRecording ? "stop" : "record"}`}
-          >
-            {isRecording ? "■" : "●"}
-          </button>
-
-          <button
-            onClick={playRecording}
-            disabled={isRecording || recordedNotes.length === 0}
-            className={`circle-btn play ${isPlaying ? "playing" : ""}`}
-          >
-            ►
-          </button>
-
-          <button
-            onClick={exportRecording}
-            disabled={recordedNotes.length === 0}
-            className="circle-btn export"
-          >
-            <span className="material-symbols-outlined export-icon">
-              file_download
-            </span>
-            Export to WAV
-          </button>
-
-          <button
-            onClick={() => setShowSaveForm(true)}
-            disabled={recordedNotes.length === 0}
-            className="record-btn export"
-          >
-            <span className="material-symbols-outlined export-icon">
-              file_download
-            </span>
-            Save My Recording
-          </button>
-        </div>
-      </section>
-
-      {showSaveForm && (
-        <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3>Save Your Recording</h3>
-            <label>
-              Title:
-              <input
-                type="text"
-                value={recordingTitle}
-                onChange={(e) => setRecordingTitle(e.target.value)}
-                placeholder="Your Recording"
-              />
-            </label>
-            <label>
-              Description:
-              <textarea
-                value={recordingDescription}
-                onChange={(e) => setRecordingDescription(e.target.value)}
-                placeholder="Description of your recording."
-              />
-            </label>
-            <div className="form-buttons">
-              <button onClick={() => setShowSaveForm(false)}>Cancel</button>
-              <button onClick={saveRecordingLocally}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
 
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
       />
     </div>
-    </div>
   );
 }
-
