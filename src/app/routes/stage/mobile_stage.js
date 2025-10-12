@@ -140,6 +140,95 @@ export default function MobileStage() {
     localStorage.setItem("masterVolume", masterVolume);
   }, [masterVolume]);
 
+  // Helper: Convert AudioBuffer to WAV Blob
+  function bufferToWav(abuffer) {
+    const numOfChan = abuffer.numberOfChannels;
+    const length = abuffer.length * numOfChan * 2 + 44;
+    const buffer = new ArrayBuffer(length);
+    const view = new DataView(buffer);
+    const channels = [];
+    let pos = 0;
+
+    function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
+    function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
+
+    setUint32(0x46464952); // "RIFF"
+    setUint32(length - 8);
+    setUint32(0x45564157); // "WAVE"
+
+    setUint32(0x20746d66); // "fmt "
+    setUint32(16);
+    setUint16(1);
+    setUint16(numOfChan);
+    setUint32(abuffer.sampleRate);
+    setUint32(abuffer.sampleRate * 2 * numOfChan);
+    setUint16(numOfChan * 2);
+    setUint16(16);
+
+    setUint32(0x61746164); // "data"
+    setUint32(length - pos - 4);
+
+    for (let i = 0; i < numOfChan; i++) {
+      channels.push(abuffer.getChannelData(i));
+    }
+
+    let offset = 0;
+    while (pos < length) {
+      for (let i = 0; i < numOfChan; i++) {
+        let sample = Math.max(-1, Math.min(1, channels[i][offset]));
+        view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        pos += 2;
+      }
+      offset++;
+    }
+
+    return new Blob([buffer], { type: "audio/wav" });
+  }
+
+  const exportRecording = async () => {
+    if (recordedNotes.length === 0 || !audioContextRef.current) return;
+
+    const fileName = prompt("Enter a name for your recording:", "animalband_recording");
+    if (!fileName) return; // user canceled
+
+    const duration = (recordedNotes[recordedNotes.length - 1].time + 1000) / 1000;
+    const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
+
+    const animalMap = {
+      a:"hamster", s:"hamster", d:"hamster", f:"hamster",
+      c:"bird", v:"bird", b:"bird", n:"bird",
+      h:"ostrich", j:"ostrich", k:"ostrich", l:"ostrich",
+      u:"kangaroo", i:"kangaroo", o:"kangaroo", p:"kangaroo",
+      q:"snake", w:"snake", e:"snake", r:"snake",
+    };
+
+    for (const { key, time } of recordedNotes) {
+      const buffer = sounds[key];
+      if (!buffer) continue;
+
+      const source = offlineCtx.createBufferSource();
+      source.buffer = buffer;
+
+      const gainNode = offlineCtx.createGain();
+      const animal = animalMap[key];
+      const volume = (volumes[animal] || 1) * masterVolume;
+      gainNode.gain.value = volume;
+
+      source.connect(gainNode).connect(offlineCtx.destination);
+      source.start(time / 1000);
+    }
+
+    const renderedBuffer = await offlineCtx.startRendering();
+    const wavBlob = bufferToWav(renderedBuffer);
+
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${fileName.trim() || "animalband_recording"}.wav`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="m-landing-page">
       <header className="m-header">
@@ -218,6 +307,15 @@ export default function MobileStage() {
           >
             <span className="record-symbol">►</span>
             {isPlaying ? "Playing..." : "Play Recording"}
+          </button>
+
+          <button
+            onClick={exportRecording}
+            disabled={isRecording || recordedNotes.length === 0}
+            className="record-btn export"
+          >
+            <span className="material-symbols-outlined export-icon">file_download</span>
+            Export Recording
           </button>
         </div>
       </section>

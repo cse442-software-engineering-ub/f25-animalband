@@ -7,7 +7,6 @@ import DesktopLanding from "./routes/landing/desktop_landing.js";
 import DesktopStage from "./routes/stage/decktop_stage.js";
 import MobileStage from "./routes/stage/mobile_stage.js";
 
-// import Forum from "./routes/forum/forum.js";
 import Looping from "./routes/looping/looping.js";
 
 import Register from "./routes/register/desktop_register.js";

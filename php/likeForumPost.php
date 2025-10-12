@@ -1,36 +1,103 @@
 <?php
-// Allow cross-origin requests
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: https://aptitude.cse.buffalo.edu");
+header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
 $servername = "localhost";
-$username = "ikimos";
-$password = "50445468";
+$username   = "ikimos";
+$password   = "50445468";
+$dbname     = "cse442_2025_fall_team_h_db";
 
-$conn = new mysqli($servername, $username, $password, "cse442_2025_fall_team_h_db");
-
+$conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-$data = json_decode(file_get_contents("php://input"), true);
-$postId = intval($data["postId"] ?? 0);
-$action = $data["action"] ?? "";
-
-if (!$postId || !in_array($action, ["like", "unlike"])) {
-    http_response_code(400);
-    echo json_encode(["success" => false, "message" => "Invalid input"]);
+    http_response_code(500);
+    echo json_encode(["ok"=>false,"error"=>"DB connection failed"]);
     exit;
 }
 
-$change = ($action === "like") ? 1 : -1;
+if (!isset($_COOKIE["auth_token"])) {
+    http_response_code(401);
+    echo json_encode(["ok"=>false,"error"=>"Not logged in"]);
+    exit;
+}
+$token = $_COOKIE["auth_token"];
 
-// Update likes count
-$query = "UPDATE forumPosts SET likeCount = GREATEST(likes + ?, 0) WHERE id = ?";
-$stmt = $conn->prepare($query);
-$stmt->execute([$change, $postId]);
+$stmt = $conn->prepare("
+    SELECT accountCredentials.Name
+    FROM authTokens 
+    JOIN accountCredentials ON authTokens.Email = accountCredentials.Email
+    WHERE authTokens.Token = ?
+");
+$stmt->bind_param("s", $token);
+$stmt->execute();
+$res = $stmt->get_result();
+$userRow = $res->fetch_assoc();
+$stmt->close();
 
-echo json_encode(["success" => true]);
+if (!$userRow) {
+    http_response_code(401);
+    echo json_encode(["ok"=>false,"error"=>"Invalid token"]);
+    exit;
+}
+$usernameLike = $userRow["Name"];
 
-?>
+$raw = file_get_contents('php://input');
+$data = json_decode($raw, true);
+$postId = isset($data['postId']) ? intval($data['postId']) : 0;
+if ($postId <= 0) {
+    http_response_code(400);
+    echo json_encode(["ok"=>false,"error"=>"Bad postId"]);
+    exit;
+}
+
+$stmt = $conn->prepare("SELECT id, likesFrom, likeCount FROM forumPosts WHERE id = ?");
+$stmt->bind_param("i", $postId);
+$stmt->execute();
+$res = $stmt->get_result();
+$post = $res->fetch_assoc();
+$stmt->close();
+
+if (!$post) {
+    http_response_code(404);
+    echo json_encode(["ok"=>false,"error"=>"Post not found"]);
+    exit;
+}
+
+$likesFrom = [];
+if (!empty($post["likesFrom"])) {
+    $decoded = json_decode($post["likesFrom"], true);
+    if (is_array($decoded)) $likesFrom = $decoded;
+}
+
+$idx = array_search($usernameLike, $likesFrom, true);
+if ($idx !== false) {
+    array_splice($likesFrom, $idx, 1);
+    $liked = false;
+} 
+else {
+    $likesFrom[] = $usernameLike;
+    $liked = true;
+}
+
+$newLikesFromJson = json_encode(array_values($likesFrom));
+$newLikeCount = count($likesFrom);
+
+$stmt = $conn->prepare("UPDATE forumPosts SET likesFrom = ?, likeCount = ? WHERE id = ?");
+$stmt->bind_param("sii", $newLikesFromJson, $newLikeCount, $postId);
+$ok = $stmt->execute();
+$stmt->close();
+
+if (!$ok) {
+    http_response_code(500);
+    echo json_encode(["ok"=>false,"error"=>"Update failed"]);
+    exit;
+}
+
+echo json_encode([
+    "ok" => true,
+    "postId" => $postId,
+    "liked" => $liked,
+    "likeCount" => $newLikeCount,
+    "likesFrom" => $likesFrom
+]);

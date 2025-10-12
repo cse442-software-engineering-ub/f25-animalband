@@ -6,6 +6,11 @@
     sans-serif;
 }
 
+html, body, #root {
+  height: 100%;
+  background: #E4E2E2;
+}
+
 /* ==========Header========== */
 .header {
   display: flex;
@@ -70,6 +75,7 @@
   margin: 2rem auto;
   gap: 2rem;
   padding: 0 1rem;
+  overflow: auto
 }
 
 /* ==========Sidebar========== */

@@ -1,29 +1,39 @@
-/* Reset and base styles */
+/* =================== Reset =================== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-.landing-page {
-  min-height: 100vh;
-  background-color: #E4E2E2;
+html, body {
+  height: 100%;
+  overflow: auto; /* allow normal scrolling on other pages */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
 }
 
-/* ========== Header (Landing style) ========== */
-.header {
+/* =================== Landing Page =================== */
+.stagestuff .landing-page {
+  height: 100vh; /* full viewport height */
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  overflow: hidden; /* lock scrolling only on landing page */
+}
+
+/* =================== Header =================== */
+.stagestuff .header {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   padding: 1rem 2rem;
-  background-color: #D9D9D9;
+  background-color: #ffffff;
   position: relative;
+  flex-shrink: 0; /* prevent shrinking */
 }
 
-.logo-section {
+.stagestuff .logo-section {
   text-decoration: none;
   color: inherit;
   cursor: pointer;
@@ -35,25 +45,25 @@
   gap: 0.5rem;
 }
 
-.paw-icon {
+.stagestuff .paw-icon {
   font-size: 5rem !important;
   color: #735442;
 }
 
-.site-title {
+.stagestuff .site-title {
   font-size: 2.5rem;
   font-weight: bold;
   color: #000;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
 }
 
-.header-buttons {
+.stagestuff .header-buttons {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.btn-login {
+.stagestuff .btn-login {
   padding: 0.75rem 2rem;
   background-color: #178C3A;
   color: white;
@@ -64,10 +74,9 @@
   cursor: pointer;
   transition: background-color 0.2s;
 }
+.stagestuff .btn-login:hover { background-color: #15803d; }
 
-.btn-login:hover { background-color: #15803d; }
-
-.btn-register {
+.stagestuff .btn-register {
   padding: 0.75rem 2rem;
   background-color: transparent;
   color: #178C3A;
@@ -78,165 +87,145 @@
   cursor: pointer;
   transition: background-color 0.2s;
 }
+.stagestuff .btn-register:hover { background-color: #afd6bb; }
 
-.btn-register:hover { background-color: #afd6bb; }
-
-/* ========== Stage Section ========== */
-.band-stage {
-  text-align: center;
-  padding: 1rem 0 2rem;
-  max-width: 100%;
-  margin: 0 auto;
-}
-
-.animals-container {
+/* =================== Band Stage =================== */
+.stagestuff .band-stage {
+  flex: 1; /* take remaining space */
   display: flex;
   justify-content: center;
-  gap: 1.5rem;
+  align-items: center; /* vertical centering */
+  text-align: center;
+  width: 100vw;       /* full viewport width */
+  padding: 0;         /* no horizontal padding to avoid cutting off images */
+}
+
+.stagestuff .animals-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
   flex-wrap: nowrap;
   overflow-x: auto;
-  padding-bottom: 1rem;
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;      /* Firefox */
+  overflow-y: visible; /* allow vertical overflow for jump */
+  padding: 0 1rem;
 }
+.stagestuff .animals-container::-webkit-scrollbar { display: none; }
 
-.animals-container::-webkit-scrollbar {
-  display: none;              /* Chrome, Safari, Opera */
-}
-
-.animal-member {
+.stagestuff .animal-member {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 150px;
+  min-width: 120px; /* responsive minimum width */
 }
 
-.animal-member img {
-  width: 150px;
-  height: 150px;
+.stagestuff .animal-member img {
+  width: 250px; /* default size */
+  height: 250px;
+  max-height: calc(100vh - 200px); /* leave room for header + bottom controls */
   border-radius: 0.5rem;
   object-fit: cover;
   margin-bottom: 0.5rem;
 }
 
-.animal-controls {
+/* Ensure animals fit horizontally on smaller screens */
+@media (max-width: 1200px) {
+  .stagestuff .animal-member img {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stagestuff .animal-member img {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+.stagestuff .animal-controls {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
 }
 
-.key-text {
+.stagestuff .key-text {
   font-weight: bold;
   font-size: 0.9rem;
 }
 
-.animal-controls input[type="range"] {
-  width: 100px;
+/* ================= Bottom Controls ================= */
+.stagestuff .bottom-controls {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(228, 226, 226, 0.95);
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  z-index: 100;
+}
+
+.stagestuff .volume-slider {
+  width: 150px;
   accent-color: #178C3A;
 }
 
-/* Master Volume */
-.master-volume {
-  margin-top: 2rem;
-  text-align: center;
+.stagestuff .circle-buttons {
+  display: flex;
+  gap: 0.5rem;
 }
 
-.master-volume input[type="range"] {
-  width: 300px;
-  margin-top: 0.5rem;
-  accent-color: #178C3A;
-}
-
-/* ========== Recording and Playback Buttons ========== */
-.record-controls {
+.stagestuff .circle-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.record-btn {
-  padding: 0.75rem 2rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  border: none;
-  color: white;
-  display: flex;
-  align-items: center;   /* center symbol with text */
-  gap: 0.5rem;           /* spacing between symbol and text */
-  transition: background-color 0.2s, transform 0.15s;
-}
-
-.record-symbol {
-  font-size: 1.5rem;          /* symbol size */
-  line-height: 1;
-  display: inline-flex;
   align-items: center;
-  transform: translateY(-0.1rem);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.15s, background-color 0.2s;
+  color: white;
 }
 
-/* Record button states */
-.record-btn.start {
-  background-color: #178C3A;
-}
-.record-btn.start:hover {
-  background-color: #15803d;
-  transform: scale(1.05);
-}
+/* Record */
+.stagestuff .circle-btn.record { background-color: #178C3A; }
+.stagestuff .circle-btn.record:hover { background-color: #15803d; transform: scale(1.1); }
 
-.record-btn.stop {
-  background-color: #b91c1c;
-}
-.record-btn.stop:hover {
-  background-color: #991b1b;
-  transform: scale(1.05);
-}
+/* Stop */
+.stagestuff .circle-btn.stop { background-color: #b91c1c; }
+.stagestuff .circle-btn.stop:hover { background-color: #991b1b; transform: scale(1.1); }
 
-/* Play button states */
-.record-btn.play {
-  background-color: #6e6e6e;
-}
-.record-btn.play.playing {
-  background-color: #178C3A;
-}
-.record-btn.play:hover {
-  background-color: #8a8a8a;
-  transform: scale(1.05);
-}
-.record-btn.play:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
+/* Play */
+.stagestuff .circle-btn.play { background-color: #6e6e6e; }
+.stagestuff .circle-btn.play.playing { background-color: #178C3A; }
+.stagestuff .circle-btn.play:hover { background-color: #8a8a8a; transform: scale(1.1); }
+.stagestuff .circle-btn.play:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-/* ========== Responsive ========== */
+/* Export */
+.stagestuff .circle-btn.export { background-color: #178C3A; }
+.stagestuff .circle-btn.export:hover { background-color: #15803d; transform: scale(1.1); }
+.stagestuff .circle-btn.export:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ================= Responsive ================= */
 @media (max-width: 1024px) {
-  .animal-member img {
-    width: 120px;
-    height: 120px;
-  }
+  .stagestuff .header { flex-direction: column; gap: 1rem; }
+  .stagestuff .animals-container { gap: 1rem; }
+  .stagestuff .band-stage { padding: 0 0.5rem; }
 }
 
-@media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    gap: 1rem;
-  }
+@keyframes swell {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
 
-  .animals-container {
-    gap: 1rem;
-    overflow-x: scroll;
-  }
-
-  .animal-member img {
-    width: 100px;
-    height: 100px;
-  }
-
-  .band-stage {
-    padding: 2rem 1rem;
-  }
+.stagestuff .animal-member img.playing {
+  animation: swell 0.3s ease-in-out;
 }
