@@ -1,47 +1,42 @@
-/* ResetEmail.css */
+/* reset_email.css */
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: sans-serif;
-}
-
-.reset-email-container {
-  background-color: #178744; /* green background */
+.reset-email-page {
+  background-color: #178744;
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  font-family: sans-serif;
 }
 
-.reset-email-box {
-  background-color: #d9d9d9; /* light gray box */
+.reset-email-page .box {
+  background-color: #d9d9d9;
   padding: 40px 30px;
   border-radius: 8px;
   text-align: center;
   width: 300px;
 }
 
-.paw-icon {
+.reset-email-page .paw-icon {
   font-size: 48px;
-  color: #4a2c18; /* brown */
+  color: #4a2c18;
   margin-bottom: 10px;
 }
 
-.title {
+.reset-email-page .title {
   margin: 0;
   font-size: 24px;
   font-weight: bold;
   color: #178744;
 }
 
-.subtitle {
+.reset-email-page .subtitle {
   margin: 5px 0 20px;
   font-size: 18px;
   color: #444;
 }
 
-.email-form input {
+.reset-email-page .email-form input {
   width: 100%;
   padding: 10px;
   border: none;
@@ -51,13 +46,13 @@ body {
   text-align: center;
 }
 
-.instructions {
+.reset-email-page .instructions {
   font-size: 12px;
   color: #333;
   margin-bottom: 20px;
 }
 
-.email-form button {
+.reset-email-page .email-form button {
   background-color: #178744;
   color: white;
   padding: 10px 15px;
@@ -68,6 +63,13 @@ body {
   width: 100%;
 }
 
-.email-form button:hover {
+.reset-email-page .email-form button:hover {
   background-color: #126a36;
+}
+
+.reset-email-page .error-text {
+  color: red;
+  font-size: 12px;
+  margin-top: -10px;
+  margin-bottom: 10px;
 }

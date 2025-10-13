@@ -37,8 +37,8 @@ export default function ResetEmail() {
   };
 
   return (
-    <div className="reset-email-container">
-      <div className="reset-email-box">
+    <div className="reset-email-page">
+      <div className="box">
         <span className="material-symbols-outlined paw-icon">pets</span>
         <h2 className="title">ANIMALBAND</h2>
         <p className="subtitle">Account Email</p>
@@ -61,6 +61,7 @@ export default function ResetEmail() {
         </form>
       </div>
 
+      {/* Ensure Material Symbols are available */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"

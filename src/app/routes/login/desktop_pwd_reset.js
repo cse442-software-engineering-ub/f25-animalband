@@ -33,7 +33,7 @@ export default function ResetPwd() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        navigate("/"); // Redirect to login page
+        navigate("/login"); // Redirect to login page
       } else {
         setError(data.message || "Failed to reset password.");
       }
