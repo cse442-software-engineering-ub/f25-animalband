@@ -36,30 +36,30 @@ export default function Login() {
     }
   };
 
-  const handleForgotPassword = async () => {
-    try {
-      const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/isabelTest/php/forgot-password.php",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
-      );
+  // const handleForgotPassword = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/php/forgot-password.php",
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         credentials: "include",
+  //       }
+  //     );
 
-      const data = await response.json();
+  //     const data = await response.json();
 
-      if (data.success) {
-        navigate("/password-code");
-      } else {
-        alert("Something went wrong, please try again later.");
-      }
-    } catch {
-      alert("Error sending request. Please try again later.");
-    }
-  };
+  //     if (data.success) {
+  //       navigate("/password-code");
+  //     } else {
+  //       alert("Something went wrong, please try again later.");
+  //     }
+  //   } catch {
+  //     alert("Error sending request. Please try again later.");
+  //   }
+  // };
 
   return (
     <div className="login-container">
@@ -74,9 +74,9 @@ export default function Login() {
           <input type="password" name="password" placeholder="Password" />
 
           <p className="forgot-link-container">
-            <span onClick={handleForgotPassword} className="forgot-link">
+            <Link to="/account-email" className="forgot-link">
               Forgot Password?
-            </span>
+            </Link>
           </p>
 
           <button type="button" onClick={handleLogin}>
