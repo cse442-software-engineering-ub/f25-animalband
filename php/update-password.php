@@ -1,58 +1,43 @@
 <?php
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Headers: Content-Type");
-    header("Content-Type: application/json");
+session_start();
+header('Content-Type: application/json');
 
-// 1. Read input
-$input = json_decode(file_get_contents("php://input"), true);
+// === DB CONFIG ===
+$host = "localhost";
+$db = "cse442_2025_fall_team_h_db";
+$user = "ikimos";
+$pass = "50445468";
 
-if (!isset($input['auth_token']) || !isset($input['new_password'])) {
-    echo json_encode(["success" => false, "message" => "Missing required fields."]);
+// === Validate Session Email ===
+if (!isset($_SESSION['reset-email'])) {
+    echo json_encode(["success" => false, "message" => "Session expired or invalid."]);
     exit;
 }
 
-$authToken = $input['auth_token'];
-$newPassword = $input['new_password'];
+$email = $_SESSION['reset-email'];
 
-// 2. Connect to DB
-$servername = "localhost";
-$username = "ikimos";  // your DB username
-$password = "50445468";  // your DB password
-$database = "cse442_2025_fall_team_h_db";
+// === Read JSON body ===
+$data = json_decode(file_get_contents("php://input"), true);
+$password = isset($data["new_password"]) ? $data["new_password"] : "";
 
-$conn = new mysqli($servername, $username, $password, $database);
+// === Hash the new password ===
+$hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
+// === Connect to DB ===
+$conn = new mysqli($host, $user, $pass, $db);
 if ($conn->connect_error) {
     echo json_encode(["success" => false, "message" => "Database connection failed."]);
     exit;
 }
 
-// 3. Get email from authTokens
-$stmt = $conn->prepare("SELECT Email FROM authTokens WHERE Token = ?");
-$stmt->bind_param("s", $authToken);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
-    echo json_encode(["success" => false, "message" => "Invalid authentication token."]);
-    $stmt->close();
-    $conn->close();
-    exit;
-}
-
-$row = $result->fetch_assoc();
-$email = $row['Email'];
-$stmt->close();
-
-// 4. Hash the new password
-$hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-
-// 5. Update password in accountCredentials
-$stmt = $conn->prepare("UPDATE accountCredentials SET Password = ? WHERE Email = ?");
+// === Update password in DB ===
+$stmt = $conn->prepare("UPDATE accountCredentials SET password = ? WHERE email = ?");
 $stmt->bind_param("ss", $hashedPassword, $email);
 
 if ($stmt->execute()) {
-    echo json_encode(["success" => true, "message" => "Password updated successfully."]);
+    // Optionally: clean up session
+    unset($_SESSION['reset-email']);
+    echo json_encode(["success" => true]);
 } else {
     echo json_encode(["success" => false, "message" => "Failed to update password."]);
 }

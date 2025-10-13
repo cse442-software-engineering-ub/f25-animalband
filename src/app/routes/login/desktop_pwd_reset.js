@@ -3,29 +3,22 @@ import { useNavigate } from "react-router-dom";
 import "./desktop_pwd_reset.css";
 
 export default function ResetPwd() {
-    const navigate=useNavigate();
+  const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState(""); // New: error message state
 
   const handleReset = async () => {
+    setError(""); // Clear previous error
+
     if (password !== confirmPassword) {
-      alert("Passwords do not match.");
-      return;
-    }
-
-    const authToken = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("auth_token="))
-      ?.split("=")[1];
-
-    if (!authToken) {
-      alert("Authentication token not found.");
+      setError("Passwords do not match.");
       return;
     }
 
     try {
       const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/isabelTest/php/update-password.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/php/update-password.php",
         {
           method: "POST",
           headers: {
@@ -33,7 +26,6 @@ export default function ResetPwd() {
           },
           body: JSON.stringify({
             new_password: password,
-            auth_token: authToken,
           }),
         }
       );
@@ -41,14 +33,13 @@ export default function ResetPwd() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Redirect if desired
-        navigate("/");
+        navigate("/"); // Redirect to login page
       } else {
-        alert(data.message || "Failed to reset password.");
+        setError(data.message || "Failed to reset password.");
       }
     } catch (error) {
       console.error("Error resetting password:", error);
-      alert("An error occurred. Please try again.");
+      setError("An error occurred. Please try again.");
     }
   };
 
@@ -72,6 +63,10 @@ export default function ResetPwd() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
         />
+
+        {/* Show error message if present */}
+        {error && <p className="resetpwd-error">{error}</p>}
+
         <button className="resetpwd-button" onClick={handleReset}>
           Reset Password
         </button>

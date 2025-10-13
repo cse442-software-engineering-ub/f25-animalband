@@ -5,19 +5,11 @@ import "./desktop_pwd_code.css";
 export default function PwdCode() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
+  const [error, setError] = useState(false); // for displaying inline error
 
   const handleVerify = async () => {
     try {
-      // Get the auth_token from cookies
-      const authToken = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("auth_token="))
-        ?.split("=")[1];
-
-      if (!authToken) {
-        alert("Authentication token not found.");
-        return;
-      }
+      setError(false); // clear error before retrying
 
       const response = await fetch(
         "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/isabelTest/php/reset-password.php",
@@ -28,7 +20,6 @@ export default function PwdCode() {
           },
           body: JSON.stringify({
             verification_code: code,
-            auth_token: authToken,
           }),
         }
       );
@@ -38,11 +29,11 @@ export default function PwdCode() {
       if (response.ok && data.success) {
         navigate("/reset-password");
       } else {
-        alert(data.message || "Verification failed. Please try again.");
+        setError(true); // show error message
       }
     } catch (error) {
       console.error("Verification error:", error);
-      alert("An error occurred. Please try again later.");
+      setError(true); // show error message on exception
     }
   };
 
@@ -59,6 +50,7 @@ export default function PwdCode() {
           value={code}
           onChange={(e) => setCode(e.target.value)}
         />
+        {error && <p className="changepwd-error">Invalid verification code</p>}
         <p className="changepwd-info">
           A Verification Code has been sent to <br />
           the email associated with your account.

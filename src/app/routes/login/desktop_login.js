@@ -15,7 +15,7 @@ export default function Login() {
 
     try {
       const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/isabelTest/php/login.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/php/login.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
