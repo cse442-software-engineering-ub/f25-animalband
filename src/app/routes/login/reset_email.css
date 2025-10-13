@@ -1,0 +1,73 @@
+/* ResetEmail.css */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+.reset-email-container {
+  background-color: #178744; /* green background */
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.reset-email-box {
+  background-color: #d9d9d9; /* light gray box */
+  padding: 40px 30px;
+  border-radius: 8px;
+  text-align: center;
+  width: 300px;
+}
+
+.paw-icon {
+  font-size: 48px;
+  color: #4a2c18; /* brown */
+  margin-bottom: 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #178744;
+}
+
+.subtitle {
+  margin: 5px 0 20px;
+  font-size: 18px;
+  color: #444;
+}
+
+.email-form input {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.instructions {
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.email-form button {
+  background-color: #178744;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.email-form button:hover {
+  background-color: #126a36;
+}
