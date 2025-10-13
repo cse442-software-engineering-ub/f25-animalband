@@ -36,38 +36,13 @@ export default function Login() {
     }
   };
 
-  // const handleForgotPassword = async () => {
-  //   try {
-  //     const response = await fetch(
-  //       "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/php/forgot-password.php",
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         credentials: "include",
-  //       }
-  //     );
-
-  //     const data = await response.json();
-
-  //     if (data.success) {
-  //       navigate("/password-code");
-  //     } else {
-  //       alert("Something went wrong, please try again later.");
-  //     }
-  //   } catch {
-  //     alert("Error sending request. Please try again later.");
-  //   }
-  // };
-
   return (
-    <div className="login-container">
+    <div className="login-page">
       <div className="login-card">
         <div className="logo">
           <span className="material-symbols-outlined paw-icon">pets</span>
           <h1>ANIMALBAND</h1>
-          <h2 style={{ color: "#2e8b57" }}>Login</h2>
+          <h2>Login</h2>
         </div>
         <form>
           <input type="text" name="email" placeholder="Email" />
