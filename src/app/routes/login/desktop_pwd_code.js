@@ -5,12 +5,12 @@ import "./desktop_pwd_code.css";
 export default function PwdCode() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
-  const [error, setError] = useState(false); // for displaying inline error
+  const [error, setError] = useState(false);
 
   const handleVerify = async () => {
-    try {
-      setError(false); // clear error before retrying
+    setError(false);
 
+    try {
       const response = await fetch(
         "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/php/reset-password.php",
         {
@@ -18,9 +18,7 @@ export default function PwdCode() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            verification_code: code,
-          }),
+          body: JSON.stringify({ verification_code: code }),
         }
       );
 
@@ -29,33 +27,37 @@ export default function PwdCode() {
       if (response.ok && data.success) {
         navigate("/reset-password");
       } else {
-        setError(true); // show error message
+        setError(true);
       }
     } catch (error) {
       console.error("Verification error:", error);
-      setError(true); // show error message on exception
+      setError(true);
     }
   };
 
   return (
-    <div className="changepwd-container">
-      <div className="changepwd-card">
-        <div className="changepwd-logo">🐾</div>
-        <h1 className="changepwd-title">ANIMALBAND</h1>
-        <h2 className="changepwd-subtitle">Verify Account</h2>
+    <div className="pwd-code-page">
+      <div className="card">
+        <div className="logo">🐾</div>
+        <h1 className="title">ANIMALBAND</h1>
+        <h2 className="subtitle">Verify Account</h2>
+
         <input
           type="text"
           placeholder="Enter the Verification Code"
-          className="changepwd-input"
+          className="input"
           value={code}
           onChange={(e) => setCode(e.target.value)}
         />
-        {error && <p className="changepwd-error">Invalid verification code</p>}
-        <p className="changepwd-info">
+
+        {error && <p className="error">Invalid verification code</p>}
+
+        <p className="info">
           A Verification Code has been sent to <br />
           the email associated with your account.
         </p>
-        <button className="changepwd-button" onClick={handleVerify}>
+
+        <button className="button" onClick={handleVerify}>
           Verify Account to Reset Password
         </button>
       </div>

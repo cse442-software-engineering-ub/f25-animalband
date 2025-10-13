@@ -1,15 +1,16 @@
-/* desktop_pwd_code.css */
+/* ===== Scoped Styles for Password Code Verification Page ===== */
 
-.changepwd-container {
+.pwd-code-page {
   background-color: #108c3a;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 20px;
+  font-family: Arial, sans-serif;
 }
 
-.changepwd-card {
+.pwd-code-page .card {
   background-color: #eeeeee;
   padding: 40px 30px;
   border-radius: 8px;
@@ -19,26 +20,26 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.changepwd-logo {
+.pwd-code-page .logo {
   font-size: 48px;
   margin-bottom: 10px;
 }
 
-.changepwd-title {
+.pwd-code-page .title {
   color: #108c3a;
   margin: 0;
   font-weight: bold;
   font-size: 26px;
 }
 
-.changepwd-subtitle {
+.pwd-code-page .subtitle {
   color: #555;
   margin-top: 8px;
   font-size: 18px;
   font-weight: 500;
 }
 
-.changepwd-input {
+.pwd-code-page .input {
   margin-top: 25px;
   padding: 12px 16px;
   width: 100%;
@@ -49,18 +50,18 @@
   transition: border-color 0.2s ease;
 }
 
-.changepwd-input:focus {
+.pwd-code-page .input:focus {
   border-color: #108c3a;
 }
 
-.changepwd-info {
+.pwd-code-page .info {
   margin-top: 12px;
   font-size: 14px;
   color: #444;
   line-height: 1.4;
 }
 
-.changepwd-button {
+.pwd-code-page .button {
   margin-top: 20px;
   background-color: #108c3a;
   color: white;
@@ -73,11 +74,11 @@
   transition: background-color 0.3s ease;
 }
 
-.changepwd-button:hover {
+.pwd-code-page .button:hover {
   background-color: #0d6f2c;
 }
 
-.changepwd-error {
+.pwd-code-page .error {
   margin-top: 10px;
   color: red;
   font-size: 14px;
@@ -85,40 +86,40 @@
 }
 
 @media screen and (max-width: 600px) {
-  .changepwd-container {
+  .pwd-code-page {
     padding: 10px;
     align-items: flex-start;
   }
 
-  .changepwd-card {
+  .pwd-code-page .card {
     width: 100%;
     padding: 30px 20px;
     margin-top: 40px;
   }
 
-  .changepwd-logo {
+  .pwd-code-page .logo {
     font-size: 42px;
   }
 
-  .changepwd-title {
+  .pwd-code-page .title {
     font-size: 22px;
   }
 
-  .changepwd-subtitle {
+  .pwd-code-page .subtitle {
     font-size: 16px;
   }
 
-  .changepwd-input {
+  .pwd-code-page .input {
     font-size: 16px;
     padding: 12px 16px;
   }
 
-  .changepwd-info {
+  .pwd-code-page .info {
     font-size: 14px;
     line-height: 1.4;
   }
 
-  .changepwd-button {
+  .pwd-code-page .button {
     font-size: 16px;
     padding: 14px 18px;
   }
