@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./ResetEmail.css";
+import "./reset_email.css";
 
 export default function ResetEmail() {
   const [email, setEmail] = useState("");
@@ -13,7 +13,7 @@ export default function ResetEmail() {
 
     try {
       const response = await fetch(
-        "https://yourdomain.com/path/to/checkEmail.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/verifyEmail.php",
         {
           method: "POST",
           headers: {
@@ -41,7 +41,7 @@ export default function ResetEmail() {
       <div className="reset-email-box">
         <span className="material-symbols-outlined paw-icon">pets</span>
         <h2 className="title">ANIMALBAND</h2>
-        <p className="subtitle">Enter Account Email</p>
+        <p className="subtitle">Account Email</p>
 
         <form onSubmit={handleSubmit} className="email-form">
           <input
