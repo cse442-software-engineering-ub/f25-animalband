@@ -231,7 +231,7 @@ export default function DesktopStage() {
   }
 
   return (
-    <div class="stagestuff">
+    <div className="stagestuff">
     <div className="landing-page">
       <header className="header">
         <Link to="/" className="logo-section">
