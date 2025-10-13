@@ -1,78 +1,63 @@
-/* General reset for body and html */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ===== Scoped Styles for Reset Password Page ===== */
 
-html, body {
-  height: 100%;
-  font-family: 'Arial', sans-serif;
-}
-
-/* Center the reset password card container */
-.resetpwd-container {
+.resetpwd-page {
+  background-color: #4CAF50;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* Make it fill the entire viewport */
-  background-color: #4CAF50; /* Green background */
+  padding: 20px;
+  font-family: Arial, sans-serif;
 }
 
-/* The card that contains all form elements */
-.resetpwd-card {
-  background-color: #f7f7f7; /* Light grey background */
+.resetpwd-page .card {
+  background-color: #f7f7f7;
   padding: 30px 50px;
-  border-radius: 15px; /* Rounded corners */
+  border-radius: 15px;
   width: 100%;
-  max-width: 400px; /* Max width for the card */
+  max-width: 400px;
   text-align: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* The logo of the application */
-.resetpwd-logo {
+.resetpwd-page .logo {
   font-size: 50px;
   color: #4CAF50;
   margin-bottom: 10px;
 }
 
-/* Title style */
-.resetpwd-title {
+.resetpwd-page .title {
   font-size: 32px;
   font-weight: bold;
   color: #4CAF50;
   margin-bottom: 10px;
 }
 
-/* Subtitle style */
-.resetpwd-subtitle {
+.resetpwd-page .subtitle {
   font-size: 18px;
   color: #555;
   margin-bottom: 25px;
 }
 
-/* Input fields styling */
-.resetpwd-input {
+.resetpwd-page .input {
   width: 100%;
   padding: 12px;
-  margin-bottom: 15px; /* Spacing between inputs */
+  margin-bottom: 15px;
   border-radius: 8px;
   border: 1px solid #ddd;
   font-size: 16px;
   outline: none;
 }
 
-.resetpwd-input:focus {
-  border-color: #4CAF50; /* Green border on focus */
+.resetpwd-page .input:focus {
+  border-color: #4CAF50;
   box-shadow: 0 0 5px rgba(0, 150, 0, 0.2);
 }
 
-/* Button styling */
-.resetpwd-button {
+.resetpwd-page .button {
   width: 100%;
   padding: 15px;
-  background-color: #4CAF50; /* Green button */
+  background-color: #4CAF50;
   color: white;
   font-size: 18px;
   font-weight: bold;
@@ -82,24 +67,23 @@ html, body {
   transition: background-color 0.3s ease;
 }
 
-.resetpwd-button:hover {
-  background-color: #45a049; /* Darker green on hover */
+.resetpwd-page .button:hover {
+  background-color: #45a049;
 }
 
-.resetpwd-error {
+.resetpwd-page .error {
   color: red;
   font-size: 14px;
   margin-top: 10px;
 }
 
-
 @media screen and (max-width: 600px) {
-  .resetpwd-container {
+  .resetpwd-page {
     padding: 20px;
     align-items: flex-start;
   }
 
-  .resetpwd-card {
+  .resetpwd-page .card {
     padding: 25px 20px;
     margin-top: 40px;
     width: 100%;
@@ -107,20 +91,25 @@ html, body {
     border-radius: 12px;
   }
 
-  .resetpwd-logo {
+  .resetpwd-page .logo {
     font-size: 40px;
   }
 
-  .resetpwd-title {
+  .resetpwd-page .title {
     font-size: 24px;
   }
 
-  .resetpwd-subtitle {
+  .resetpwd-page .subtitle {
     font-size: 16px;
   }
 
-  .resetpwd-input {
+  .resetpwd-page .input {
     font-size: 16px;
     padding: 12px 16px;
+  }
+
+  .resetpwd-page .button {
+    font-size: 18px;
+    padding: 14px;
   }
 }

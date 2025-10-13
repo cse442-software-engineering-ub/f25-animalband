@@ -6,10 +6,10 @@ export default function ResetPwd() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState(""); // New: error message state
+  const [error, setError] = useState("");
 
   const handleReset = async () => {
-    setError(""); // Clear previous error
+    setError("");
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -24,16 +24,14 @@ export default function ResetPwd() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            new_password: password,
-          }),
+          body: JSON.stringify({ new_password: password }),
         }
       );
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        navigate("/login"); // Redirect to login page
+        navigate("/login");
       } else {
         setError(data.message || "Failed to reset password.");
       }
@@ -44,30 +42,30 @@ export default function ResetPwd() {
   };
 
   return (
-    <div className="resetpwd-container">
-      <div className="resetpwd-card">
-        <div className="resetpwd-logo">🐾</div>
-        <h1 className="resetpwd-title">ANIMALBAND</h1>
-        <h2 className="resetpwd-subtitle">Reset Password</h2>
+    <div className="resetpwd-page">
+      <div className="card">
+        <div className="logo">🐾</div>
+        <h1 className="title">ANIMALBAND</h1>
+        <h2 className="subtitle">Reset Password</h2>
+
         <input
           type="password"
           placeholder="Create a New Password"
-          className="resetpwd-input"
+          className="input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
         <input
           type="password"
           placeholder="Confirm New Password"
-          className="resetpwd-input"
+          className="input"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
         />
 
-        {/* Show error message if present */}
-        {error && <p className="resetpwd-error">{error}</p>}
+        {error && <p className="error">{error}</p>}
 
-        <button className="resetpwd-button" onClick={handleReset}>
+        <button className="button" onClick={handleReset}>
           Reset Password
         </button>
       </div>
