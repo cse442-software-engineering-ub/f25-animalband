@@ -7,22 +7,293 @@
 
 html, body {
   height: 100%;
-  overflow: auto; /* allow normal scrolling on other pages */
+  overflow: auto; /* allow normal scrolling */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
 }
 
 /* =================== Landing Page =================== */
-.stagestuff .landing-page {
-  height: 100vh; /* full viewport height */
-  display: flex;
-  flex-direction: column;
-  background-color: #ffffff;
-  overflow: hidden; /* lock scrolling only on landing page */
+.landing-page {
+  min-height: 100vh;
+  background-color: #E4E2E2;
 }
 
 /* =================== Header =================== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem 2rem;
+  background-color: #D9D9D9;
+  position: relative;
+}
+
+.logo-section {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.paw-icon {
+  font-size: 5rem !important;
+  color: #735442;
+}
+
+.site-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #000;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.header-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-login {
+  padding: 0.75rem 2rem;
+  background-color: #178C3A;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.btn-login:hover { background-color: #15803d; }
+
+.btn-register {
+  padding: 0.75rem 2rem;
+  background-color: transparent;
+  color: #178C3A;
+  border: 2px solid #178C3A;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box; /* ensures border doesn't offset text */
+}
+.btn-register:hover { background-color: #afd6bb; }
+
+.btn-account {
+  padding: 0.75rem 2rem;
+  background-color: #178C3A;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.btn-account:hover { background-color: #15803d; }
+
+/* =================== Main Description =================== */
+.main-description {
+  text-align: center;
+  padding: 2rem 2rem 0;
+}
+
+.main-heading {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0px;
+  color: #000;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #6E6E6E;
+  margin-bottom: 0rem;
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+/* =================== Animals Part =================== */
+.band-stage {
+  text-align: center;
+  padding: 1rem 0 0;
+  max-width: 64rem;
+  margin: 0 auto 2rem;
+  border-radius: 0.5rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.animals-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+}
+
+.animal-member {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.animal-member img {
+  height: 10rem;
+  object-fit: cover;
+}
+
+.btn-start-band {
+  opacity: .8;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: .75rem 2rem;
+  background-color: #178C3A;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s;
+  z-index: 10;
+  text-decoration: none;
+}
+
+.btn-start-band:hover {
+  background-color: #15803d;
+}
+
+/* =================== Feature Cards =================== */
+.features-section {
+  background-color: #F2F2F2;
+  padding: 2rem 0.5rem .5rem;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  max-width: 72rem;
+  margin: 0 auto 1rem;
+}
+
+.feature-card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  background-color: #F0F0F0;
+  border-radius: 0.4rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 1.25rem;
+  text-align: center;
+  transition: box-shadow 0.2s;
+}
+
+.feature-icon {
+  font-size: 4rem !important;
+  display: block;
+  margin-bottom: .5rem;
+  color: #000;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+.feature-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.feature-card h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #000;
+}
+
+.feature-card p {
+  color: #6E6E6E;
+  line-height: 1.5;
+}
+
+/* =================== Stats =================== */
+.stats-container {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  flex: 1 1 150px;
+  max-width: 300px;
+  background-color: #F0F0F0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: .75rem;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #000;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: #000;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* =================== Footer =================== */
+.footer {
+  background-color: #178C3A;
+  color: rgb(0, 0, 0);
+  text-align: center;
+  padding: 0.65rem;
+  margin-top: 1rem;
+}
+
+.footer h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: auto;
+}
+
+/* =================== Stage Page (stagestuff) =================== */
+.stagestuff .landing-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
 .stagestuff .header {
   display: flex;
   align-items: center;
@@ -30,7 +301,7 @@ html, body {
   padding: 1rem 2rem;
   background-color: #ffffff;
   position: relative;
-  flex-shrink: 0; /* prevent shrinking */
+  flex-shrink: 0;
 }
 
 .stagestuff .logo-section {
@@ -59,45 +330,52 @@ html, body {
 
 .stagestuff .header-buttons {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
   align-items: center;
+  gap: 0.5rem;
 }
 
-.stagestuff .btn-login {
+/* === Stage Buttons Match Landing Page & Center Text === */
+.stagestuff .header-buttons .btn-login,
+.stagestuff .header-buttons .btn-register {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-decoration: none;
+  box-sizing: border-box; /* includes border in sizing */
+}
+
+/* Login */
+.stagestuff .header-buttons .btn-login {
   background-color: #178C3A;
   color: white;
   border: none;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
 }
-.stagestuff .btn-login:hover { background-color: #15803d; }
+.stagestuff .header-buttons .btn-login:hover { background-color: #15803d; }
 
-.stagestuff .btn-register {
-  padding: 0.75rem 2rem;
+/* Register */
+.stagestuff .header-buttons .btn-register {
   background-color: transparent;
   color: #178C3A;
   border: 2px solid #178C3A;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
 }
-.stagestuff .btn-register:hover { background-color: #afd6bb; }
+.stagestuff .header-buttons .btn-register:hover { background-color: #afd6bb; }
 
 /* =================== Band Stage =================== */
 .stagestuff .band-stage {
-  flex: 1; /* take remaining space */
+  flex: 1;
   display: flex;
   justify-content: center;
-  align-items: center; /* vertical centering */
+  align-items: center;
   text-align: center;
-  width: 100vw;       /* full viewport width */
-  padding: 0;         /* no horizontal padding to avoid cutting off images */
+  width: 100%;
+  padding: 0;
 }
 
 .stagestuff .animals-container {
@@ -106,7 +384,7 @@ html, body {
   gap: 2rem;
   flex-wrap: nowrap;
   overflow-x: auto;
-  overflow-y: visible; /* allow vertical overflow for jump */
+  overflow-y: visible;
   padding: 0 1rem;
 }
 .stagestuff .animals-container::-webkit-scrollbar { display: none; }
@@ -115,31 +393,24 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 120px; /* responsive minimum width */
+  min-width: 120px;
 }
 
 .stagestuff .animal-member img {
-  width: 250px; /* default size */
+  width: 250px;
   height: 250px;
-  max-height: calc(100vh - 200px); /* leave room for header + bottom controls */
+  max-height: calc(100vh - 200px);
   border-radius: 0.5rem;
   object-fit: cover;
   margin-bottom: 0.5rem;
 }
 
-/* Ensure animals fit horizontally on smaller screens */
 @media (max-width: 1200px) {
-  .stagestuff .animal-member img {
-    width: 200px;
-    height: 200px;
-  }
+  .stagestuff .animal-member img { width: 200px; height: 200px; }
 }
 
 @media (max-width: 768px) {
-  .stagestuff .animal-member img {
-    width: 150px;
-    height: 150px;
-  }
+  .stagestuff .animal-member img { width: 150px; height: 150px; }
 }
 
 .stagestuff .animal-controls {
@@ -170,15 +441,9 @@ html, body {
   z-index: 100;
 }
 
-.stagestuff .volume-slider {
-  width: 150px;
-  accent-color: #178C3A;
-}
+.stagestuff .volume-slider { width: 150px; accent-color: #178C3A; }
 
-.stagestuff .circle-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
+.stagestuff .circle-buttons { display: flex; gap: 0.5rem; }
 
 .stagestuff .circle-btn {
   width: 40px;
@@ -194,21 +459,17 @@ html, body {
   color: white;
 }
 
-/* Record */
 .stagestuff .circle-btn.record { background-color: #178C3A; }
 .stagestuff .circle-btn.record:hover { background-color: #15803d; transform: scale(1.1); }
 
-/* Stop */
 .stagestuff .circle-btn.stop { background-color: #b91c1c; }
 .stagestuff .circle-btn.stop:hover { background-color: #991b1b; transform: scale(1.1); }
 
-/* Play */
 .stagestuff .circle-btn.play { background-color: #6e6e6e; }
 .stagestuff .circle-btn.play.playing { background-color: #178C3A; }
 .stagestuff .circle-btn.play:hover { background-color: #8a8a8a; transform: scale(1.1); }
 .stagestuff .circle-btn.play:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-/* Export */
 .stagestuff .circle-btn.export { background-color: #178C3A; }
 .stagestuff .circle-btn.export:hover { background-color: #15803d; transform: scale(1.1); }
 .stagestuff .circle-btn.export:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
@@ -220,12 +481,12 @@ html, body {
   .stagestuff .band-stage { padding: 0 0.5rem; }
 }
 
-@keyframes swell {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-.stagestuff .animal-member img.playing {
-  animation: swell 0.3s ease-in-out;
+@media (max-width: 768px) {
+  .main-heading { font-size: 1.75rem; }
+  .site-title { font-size: 1.75rem; }
+  .paw-icon { font-size: 3.5rem !important; }
+  .features-grid { grid-template-columns: 1fr; }
+  .stats-container { flex-direction: column; align-items: center; }
+  .animals-container { flex-wrap: wrap; }
+  .band-stage { padding: 2rem 1rem; }
 }
