@@ -4,16 +4,16 @@ import { SOUND_CONFIG } from "./stage_soundsConfig";
 import { loadSound, playSound, setMasterVolume } from "./stage_audioUtil";
 import "./stage.css";
 
-import Ostrich from "../../../assets/ostrich.jpeg";
-import OstrichPlaying from "../../../assets/ostrich_playing.jpeg";
-import Bird from "../../../assets/bird.jpeg";
-import BirdPlaying from "../../../assets/bird_playing.jpeg";
-import Hamster from "../../../assets/hamster.jpeg";
-import HamsterPlaying from "../../../assets/hamster_playing.jpeg";
-import Kangaroo from "../../../assets/kangaroo.jpeg";
-import KangarooPlaying from "../../../assets/kangaroo_playing.jpeg";
-import Snake from "../../../assets/snake.jpeg";
-import SnakePlaying from "../../../assets/snake_playing.jpeg";
+import Ostrich from "../../../assets/ostrich.png";
+import OstrichPlaying from "../../../assets/ostrichrockin.png";
+import Bird from "../../../assets/bird.png";
+import BirdPlaying from "../../../assets/birdrockin.png";
+import Hamster from "../../../assets/hamster.png";
+import HamsterPlaying from "../../../assets/hamsterrockin.png";
+import Kangaroo from "../../../assets/kangaroo.png";
+import KangarooPlaying from "../../../assets/kangaroorockin.png";
+import Snake from "../../../assets/snake.png";
+import SnakePlaying from "../../../assets/snakerockin.png";
 
 export default function DesktopStage() {
 
