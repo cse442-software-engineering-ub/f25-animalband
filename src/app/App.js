@@ -21,6 +21,10 @@ import MobileEditAccount from "./routes/account/mobile_edit_account.js";
 import DesktopForum from "./routes/forum/desktop_forum.js";
 import MobileForum from "./routes/forum/mobile_forum.js";
 
+import PwdCode from "./routes/login/desktop_pwd_code.js"
+import ResetPwd from "./routes/login/desktop_pwd_reset.js";
+import ResetEmail from "./routes/login/desktop_reset_email.js";
+
 import "../App.css";
 
 function NotFound() {
@@ -60,6 +64,10 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/password-code" element={<PwdCode />} />
+          <Route path="/reset-password" element={<ResetPwd />} />
+          <Route path="/forgot-password" element={<PwdCode />} />
+          <Route path="/account-email" element={<ResetEmail />} />
           <Route path="/account/edit" element={<EditAccount />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

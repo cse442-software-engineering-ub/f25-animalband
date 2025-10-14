@@ -1,72 +1,75 @@
-/* Body and container styles remain global */
-body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background-color: #228b22; /* Green background */
-}
+/* Scoped Login Page Styles */
 
-.login-container {
-  height: 100vh;
+.login-page {
+  min-height: 100vh;
+  background-color: #228b22; /* Green background */
   display: flex;
   justify-content: center;
   align-items: center;
+  font-family: Arial, sans-serif;
+  padding: 1rem;
 }
 
-/* 🛡️ Scoped styles start here */
-.login-card {
+/* Login Card */
+.login-page .login-card {
   background-color: #f0f0f0;
   padding: 40px 30px;
   border-radius: 8px;
   width: 300px;
   text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.login-card .logo .paw-icon {
+/* Logo & Title */
+.login-page .login-card .logo {
   font-size: 40px;
   margin-bottom: 10px;
+  color: #2e8b57;
 }
 
-.login-card .logo h1 {
+.login-page .login-card .logo h1 {
   margin: 0;
-  color: #2e8b57; /* dark green */
+  color: #2e8b57;
   font-size: 22px;
   font-weight: bold;
   letter-spacing: 1px;
 }
 
-.login-card .logo h2 {
+.login-page .login-card .logo h2 {
   margin: 5px 0 20px;
   font-size: 20px;
   color: #333;
 }
 
-.login-card form input {
+/* Form Inputs */
+.login-page .login-card form input {
   width: 100%;
   padding: 10px;
   margin: 8px 0;
   border: none;
   border-radius: 20px;
   box-sizing: border-box;
+  font-size: 16px;
 }
 
-/* Center the forgot password link */
-.forgot-link-container {
+/* Forgot password link */
+.login-page .forgot-link-container {
   margin: 10px 0 15px;
   font-size: 12px;
   text-align: center;
 }
 
-.login-card .forgot-link {
+.login-page .forgot-link {
   color: #228b22;
   text-decoration: none;
 }
 
-.login-card .forgot-link:hover {
+.login-page .forgot-link:hover {
   text-decoration: underline;
 }
 
-.login-card button {
+/* Login button */
+.login-page .login-card button {
   width: 100%;
   padding: 10px;
   background-color: #228b22;
@@ -78,30 +81,27 @@ body {
   margin-bottom: 15px;
 }
 
-.login-card button:hover {
+.login-page .login-card button:hover {
   background-color: #1e7a1e;
 }
 
-.login-card .register-link {
+/* Register link */
+.login-page .register-link {
   font-size: 12px;
 }
 
-.login-card .register-link a {
+.login-page .register-link a {
   color: #228b22;
   text-decoration: none;
 }
 
-.login-card .register-link a:hover {
+.login-page .register-link a:hover {
   text-decoration: underline;
 }
 
+/* Responsive Adjustments */
 @media screen and (max-width: 600px) {
-  .login-container {
-    padding: 20px;
-    align-items: flex-start;
-  }
-
-  .login-card {
+  .login-page .login-card {
     width: 100%;
     max-width: 90%;
     padding: 25px 20px;
@@ -109,37 +109,43 @@ body {
     margin-top: 40px;
   }
 
-  .login-card .logo h1 {
+  .login-page .logo h1 {
     font-size: 20px;
   }
 
-  .login-card .logo h2 {
+  .login-page .logo h2 {
     font-size: 18px;
   }
 
-  .login-card .paw-icon {
+  .login-page {
     font-size: 36px;
   }
 
-  .login-card form input {
+  .paw-icon {
+    font-size: 48px;
+    color: #4a2c18;
+    margin-bottom: 10px;
+  }
+
+  .login-page form input {
     font-size: 16px;
     padding: 12px;
   }
 
-  .login-card button {
+  .login-page button {
     font-size: 18px;
     padding: 12px;
   }
 
-  .forgot-link-container {
+  .login-page .forgot-link-container {
     font-size: 14px;
   }
 
-  .login-card {
+  .login-page {
     font-size: 14px;
   }
 
-  .login-card .register-link {
+  .login-page .register-link {
     font-size: 14px;
   }
 }

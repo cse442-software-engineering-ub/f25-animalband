@@ -15,7 +15,7 @@ export default function Login() {
 
     try {
       const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/login.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/php/login.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -37,20 +37,19 @@ export default function Login() {
   };
 
   return (
-    <div className="login-container">
+    <div className="login-page">
       <div className="login-card">
         <div className="logo">
           <span className="material-symbols-outlined paw-icon">pets</span>
           <h1>ANIMALBAND</h1>
-          <h2 style={{ color: "#2e8b57" }}>Login</h2>
+          <h2>Login</h2>
         </div>
         <form>
           <input type="text" name="email" placeholder="Email" />
           <input type="password" name="password" placeholder="Password" />
 
-          {/* Centered Forgot Password link */}
           <p className="forgot-link-container">
-            <Link to="/forgot-password" className="forgot-link">
+            <Link to="/account-email" className="forgot-link">
               Forgot Password?
             </Link>
           </p>
