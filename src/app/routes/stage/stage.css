@@ -220,6 +220,7 @@ html, body {
   .stagestuff .band-stage { padding: 0 0.5rem; }
 }
 
+/*
 @keyframes swell {
   0% { transform: scale(1); }
   50% { transform: scale(1.2); }
@@ -229,3 +230,4 @@ html, body {
 .stagestuff .animal-member img.playing {
   animation: swell 0.3s ease-in-out;
 }
+*/
