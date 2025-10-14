@@ -21,7 +21,7 @@
 }
 
 /* Logo & Title */
-.login-page .login-card .logo .paw-icon {
+.login-page .login-card .logo {
   font-size: 40px;
   margin-bottom: 10px;
   color: #2e8b57;
@@ -117,8 +117,14 @@
     font-size: 18px;
   }
 
-  .login-page .paw-icon {
+  .login-page {
     font-size: 36px;
+  }
+
+  .paw-icon {
+    font-size: 48px;
+    color: #4a2c18;
+    margin-bottom: 10px;
   }
 
   .login-page form input {
