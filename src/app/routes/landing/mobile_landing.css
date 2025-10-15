@@ -1,0 +1,315 @@
+/* ==========Page========== */
+.m-landing {
+  max-width: 420px;
+  margin: 0 auto;
+  background: #e4e2e2;
+  min-height: 100dvh;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ==========Header========== */
+.m-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #d9d9d9;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+}
+
+.m-site-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #000;
+  text-decoration: none;
+}
+
+.m-paw {
+  font-size: 80px !important;
+  color: #735442;
+}
+
+.m-name {
+  font-weight: 800;
+  font-size: 25px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* ==========Auth Section - Consolidated ========== */
+.m-auth {
+  display: flex;
+  flex-direction: column;   /* <-- column, not row */
+  gap: 6px;
+  width: 160px;             /* gives both buttons the same width */
+  align-items: stretch;     /* buttons fill the container width */
+}
+
+.m-btn {
+  text-align: center;
+  text-decoration: none;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 10px 16px; /* Increased padding for better touch targets */
+  font-size: 15px;
+  line-height: 1;
+  border: 2px solid;
+  min-width: 80px; /* Ensure minimum same width */
+  flex-shrink: 0; /* Prevent buttons from shrinking differently */
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.m-btn-solid {
+  background: #178C3A;
+  color: #fff;
+  border-color: #178C3A;
+}
+
+.m-btn-solid:hover {
+  background: #126c2e;
+  border-color: #126c2e;
+}
+
+.m-btn-outline {
+  background: transparent;
+  color: #178C3A;
+  border-color: #178C3A;
+}
+
+.m-btn-outline:hover {
+  background: #178C3A;
+  color: #fff;
+}
+
+/* ==========Profile Picture ========== */
+/* When logged in: stack header and center the auth area */
+.m-header.is-logged-in {
+  flex-direction: row;
+  align-items: right;
+  gap: 10px;
+}
+
+/* Center the avatar row and make it full width */
+.m-auth.is-logged-in {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Larger, responsive avatar */
+.m-profile-pic {
+  width: clamp(56px, 12vw, 84px);
+  height: clamp(56px, 12vw, 84px);
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 2px solid #178C3A;
+}
+.m-profile-pic:hover {
+  transform: scale(1.05);
+}
+
+/* ==========Main Description========== */
+.m-main {
+  padding: 12px 14px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.m-title {
+  font-weight: 800;
+  font-size: clamp(20px, 3.8vw + 8px, 26px);
+  letter-spacing: .2px;
+  color: #0b0d0c;
+  text-align: center;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .08);
+}
+
+.m-sub {
+  font-size: 14px;
+  color: #6e6e6e;
+  text-align: center;
+  max-width: 38ch;
+  line-height: 1.5;
+}
+
+/* ==========Carousel========== */
+.m-carousel {
+  width: 90%;
+  margin: 0 auto;
+  background: #F0F0F0;
+  border-radius: 14px;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, .18);
+  overflow: hidden;
+  padding-bottom: 10px;
+  max-height: none;
+}
+
+.m-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.m-track::-webkit-scrollbar {
+  display: none;
+}
+
+.m-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  box-sizing: border-box;
+  background-color: #F0F0F0;
+}
+
+.m-slide-img {
+  width: 70%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .25);
+  display: block;
+  border-radius: 8px;
+}
+
+.m-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  padding: 8px 0 10px;
+}
+
+.m-dot-btn {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 0;
+  background: #c5c5c5;
+  padding: 0;
+  cursor: pointer;
+}
+
+.m-dot-btn.is-active {
+  background: #6e6e6e;
+}
+
+/* ==========Start Band Button========== */
+.m-btn-start-band {
+  width: 92%;
+  display: inline-block;
+  text-align: center;
+  background: #178C3A;
+  color: #fff;
+  font-weight: 800;
+  padding: 14px 16px;
+  border-radius: 16px;
+  text-decoration: none;
+  box-shadow: 0 10px 16px rgba(0, 0, 0, .25);
+  transition: background 0.2s ease;
+}
+
+.m-btn-start-band:hover {
+  background: #126c2e;
+}
+
+/* ==========Features========== */
+.m-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.m-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .15);
+  transition: transform 0.2s ease;
+}
+
+.m-card:hover {
+  transform: translateY(-2px);
+}
+
+.m-card-icon {
+  color: #000000;
+  font-size: 50px !important; /* Fixed the syntax error */
+}
+
+.m-card-text {
+  line-height: 1.2;
+}
+
+.m-card-title {
+  font-weight: 800;
+  font-size: 14px;
+  color: #0b0d0c;
+}
+
+.m-card-sub {
+  font-size: 12px;
+  color: #6e6e6e;
+}
+
+/* ==========Stats========== */
+.m-stats {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 6px 0 10px;
+}
+
+.m-stat {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .15);
+  padding: 10px 12px;
+  min-width: 95px;
+  text-align: center;
+  flex: 1;
+  max-width: 120px;
+}
+
+.m-stat-num {
+  font-weight: 800;
+  color: #0b0d0c;
+  font-size: 18px;
+}
+
+.m-stat-label {
+  font-size: 12px;
+  color: #0b0d0c;
+  font-weight: 700;
+  opacity: .85;
+}
+
+/* ==========Footer========== */
+.m-footer {
+  background: #178C3A;
+  color: #000000;
+  text-align: center;
+  font-weight: 800;
+  padding: 14px 10px;
+  margin-top: 6px;
+}

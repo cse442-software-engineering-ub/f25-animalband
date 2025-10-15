@@ -1,0 +1,126 @@
+/* ===== Scoped Styles for Password Code Verification Page ===== */
+
+.pwd-code-page {
+  background-color: #108c3a;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.pwd-code-page .card {
+  background-color: #eeeeee;
+  padding: 40px 30px;
+  border-radius: 8px;
+  text-align: center;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.pwd-code-page .logo {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.pwd-code-page .title {
+  color: #108c3a;
+  margin: 0;
+  font-weight: bold;
+  font-size: 26px;
+}
+
+.pwd-code-page .subtitle {
+  color: #555;
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.pwd-code-page .input {
+  margin-top: 25px;
+  padding: 12px 16px;
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.pwd-code-page .input:focus {
+  border-color: #108c3a;
+}
+
+.pwd-code-page .info {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.4;
+}
+
+.pwd-code-page .button {
+  margin-top: 20px;
+  background-color: #108c3a;
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 15px;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.pwd-code-page .button:hover {
+  background-color: #0d6f2c;
+}
+
+.pwd-code-page .error {
+  margin-top: 10px;
+  color: red;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+@media screen and (max-width: 600px) {
+  .pwd-code-page {
+    padding: 10px;
+    align-items: flex-start;
+  }
+
+  .pwd-code-page .card {
+    width: 100%;
+    padding: 30px 20px;
+    margin-top: 40px;
+  }
+
+  .pwd-code-page .logo {
+    font-size: 42px;
+  }
+
+  .pwd-code-page .title {
+    font-size: 22px;
+  }
+
+  .pwd-code-page .subtitle {
+    font-size: 16px;
+  }
+
+  .pwd-code-page .input {
+    font-size: 16px;
+    padding: 12px 16px;
+  }
+
+  .pwd-code-page .info {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .pwd-code-page .button {
+    font-size: 16px;
+    padding: 14px 18px;
+  }
+}
