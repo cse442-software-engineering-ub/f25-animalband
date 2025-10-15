@@ -12,7 +12,7 @@ export default function PwdCode() {
 
     try {
       const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/php/reset-password.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/reset-password.php",
         {
           method: "POST",
           headers: {
