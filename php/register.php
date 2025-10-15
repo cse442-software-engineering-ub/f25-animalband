@@ -21,6 +21,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS authTokens (
 )");
 
 $conn->query("CREATE TABLE IF NOT EXISTS accountCredentials (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
     Name VARCHAR(50),
     Email VARCHAR(50),
     Password VARCHAR(255),
@@ -32,8 +33,8 @@ $username = $_POST['username'] ?? null;
 $email = $_POST['email'] ?? null;
 $password = $_POST['password'] ?? null;
 
-$profilePicPath = null;
-
+// Default
+$profilePicPath = "uploads/bird.jpeg";
 // Handle file upload
 if (isset($_FILES['profilePic']) && $_FILES['profilePic']['error'] === UPLOAD_ERR_OK) {
     $uploadDir = "/data/web/CSE442/2025-Fall/cse-442h/php/uploads/";
@@ -54,7 +55,8 @@ if (isset($_FILES['profilePic']) && $_FILES['profilePic']['error'] === UPLOAD_ER
     if (isset($_FILES['profilePic'])) {
         error_log("Upload error code: " . $_FILES['profilePic']['error']);
     } else {
-        error_log("No profilePic file received");
+        error_log("No profilePic file received using default");
+        $profilePicPath = "uploads/bird.jpeg";
     }
 }
 

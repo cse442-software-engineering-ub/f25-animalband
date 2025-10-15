@@ -10,7 +10,11 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
         'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
-
+html, body, #root {
+  height: 100%;
+  background: #E4E2E2;
+}
+/* ==========Header========== */
 .ea-header {
     display: flex;
     align-items: center;

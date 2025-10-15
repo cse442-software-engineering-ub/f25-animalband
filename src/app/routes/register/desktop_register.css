@@ -1,0 +1,160 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  background-color: #138A36;
+}
+
+.register-page {
+  background-color: #f0f0f0;
+  width: 320px;
+  margin: 50px auto;
+  padding: 30px 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Remove the emoji paw print */
+.register-page::before {
+  content: none;
+}
+
+/* Logo styling */
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.paw-icon {
+  font-size: 40px;
+  color: #138A36;
+  margin-bottom: 5px;
+}
+
+.logo h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.logo h2 {
+  font-size: 20px;
+  color: #4CAF50;
+  margin-top: 5px;
+}
+
+/* Form styles */
+form label {
+  display: block;
+  text-align: left;
+  margin-bottom: 15px;
+  font-weight: bold;
+  color: #333;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="file"] {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 5px;
+  border: none;
+  border-radius: 20px;
+  background-color: #fff;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+input[type="checkbox"] {
+  margin-right: 5px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #333;
+  margin: 10px 0;
+}
+
+button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  background-color: #138A36;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+  background-color: #0f6d2a;
+}
+
+.register-page p {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.register-page a {
+  color: #138A36;
+  text-decoration: none;
+}
+
+.register-page a:hover {
+  text-decoration: underline;
+}
+
+/* Container for the label and file input */
+.file-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+/* Style the file input so it matches the other inputs */
+.file-input {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 20px;
+  background-color: #fff;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  color: #333;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 600px) {
+  .register-page {
+    width: 90%;
+    padding: 20px 15px;
+    margin: 30px auto;
+  }
+
+  input[type="text"],
+  input[type="password"] {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  button[type="submit"] {
+    padding: 14px;
+    font-size: 18px;
+  }
+
+  .remember-me {
+    font-size: 16px;
+  }
+}

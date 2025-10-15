@@ -1,0 +1,151 @@
+/* Scoped Login Page Styles */
+
+.login-page {
+  min-height: 100vh;
+  background-color: #228b22; /* Green background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  padding: 1rem;
+}
+
+/* Login Card */
+.login-page .login-card {
+  background-color: #f0f0f0;
+  padding: 40px 30px;
+  border-radius: 8px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Logo & Title */
+.login-page .login-card .logo {
+  font-size: 40px;
+  margin-bottom: 10px;
+  color: #2e8b57;
+}
+
+.login-page .login-card .logo h1 {
+  margin: 0;
+  color: #2e8b57;
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.login-page .login-card .logo h2 {
+  margin: 5px 0 20px;
+  font-size: 20px;
+  color: #333;
+}
+
+/* Form Inputs */
+.login-page .login-card form input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 20px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+/* Forgot password link */
+.login-page .forgot-link-container {
+  margin: 10px 0 15px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.login-page .forgot-link {
+  color: #228b22;
+  text-decoration: none;
+}
+
+.login-page .forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* Login button */
+.login-page .login-card button {
+  width: 100%;
+  padding: 10px;
+  background-color: #228b22;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+.login-page .login-card button:hover {
+  background-color: #1e7a1e;
+}
+
+/* Register link */
+.login-page .register-link {
+  font-size: 12px;
+}
+
+.login-page .register-link a {
+  color: #228b22;
+  text-decoration: none;
+}
+
+.login-page .register-link a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 600px) {
+  .login-page .login-card {
+    width: 100%;
+    max-width: 90%;
+    padding: 25px 20px;
+    border-radius: 10px;
+    margin-top: 40px;
+  }
+
+  .login-page .logo h1 {
+    font-size: 20px;
+  }
+
+  .login-page .logo h2 {
+    font-size: 18px;
+  }
+
+  .login-page {
+    font-size: 36px;
+  }
+
+  .paw-icon {
+    font-size: 48px;
+    color: #4a2c18;
+    margin-bottom: 10px;
+  }
+
+  .login-page form input {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .login-page button {
+    font-size: 18px;
+    padding: 12px;
+  }
+
+  .login-page .forgot-link-container {
+    font-size: 14px;
+  }
+
+  .login-page {
+    font-size: 14px;
+  }
+
+  .login-page .register-link {
+    font-size: 14px;
+  }
+}

@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import "./desktop_login.css";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ export default function Login() {
 
     try {
       const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/login.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/php/login.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -38,23 +38,35 @@ export default function Login() {
 
   return (
     <div className="login-page">
-      <h2>Login</h2>
-      <form>
-        <label>
-          Email
-          <input type="text" name="email" />
-        </label>
-        <br />
-        <label>
-          Password
-          <input type="password" name="password" />
-        </label>
-        <button type="button" onClick={handleLogin}>
-          Login
-        </button>
-      </form>
+      <div className="login-card">
+        <div className="logo">
+          <span className="material-symbols-outlined paw-icon">pets</span>
+          <h1>ANIMALBAND</h1>
+          <h2>Login</h2>
+        </div>
+        <form>
+          <input type="text" name="email" placeholder="Email" />
+          <input type="password" name="password" placeholder="Password" />
 
-      Don't have an account? <Link to="/register">Register</Link>
+          <p className="forgot-link-container">
+            <Link to="/account-email" className="forgot-link">
+              Forgot Password?
+            </Link>
+          </p>
+
+          <button type="button" onClick={handleLogin}>
+            Login
+          </button>
+        </form>
+        <p className="register-link">
+          Don’t have an account? <Link to="/register">Register</Link>
+        </p>
+      </div>
+
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
     </div>
   );
 }
