@@ -17,6 +17,7 @@ import SnakePlaying from "../../../assets/snake_playing.jpeg";
 
 export default function MobileStage() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [sounds, setSounds] = useState({});
   const [volumes, setVolumes] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
@@ -36,19 +37,38 @@ export default function MobileStage() {
   };
 
   const ANIMAL_KEYS = {
-    hamster: ["a","s","d","f"],
-    bird: ["c","v","b","n"],
-    ostrich: ["h","j","k","l"],
-    kangaroo: ["u","i","o","p"],
-    snake: ["q","w","e","r"],
+    hamster: ["a", "s", "d", "f"],
+    bird: ["c", "v", "b", "n"],
+    ostrich: ["h", "j", "k", "l"],
+    kangaroo: ["u", "i", "o", "p"],
+    snake: ["q", "w", "e", "r"],
   };
 
+  // Fetch user info
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+          { credentials: "include" }
+        );
+        const data = await res.json();
+        if (data.loggedIn) setUser(data);
+      } catch (err) {
+        console.error("Failed to fetch user", err);
+      }
+    };
+    checkUser();
+  }, []);
+
+  // Initialize AudioContext
   useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
   }, []);
 
+  // Load all sounds
   useEffect(() => {
     const loadAllSounds = async () => {
       const loadedSounds = {};
@@ -71,11 +91,11 @@ export default function MobileStage() {
     if (!sounds[key]) return;
 
     const animalMap = {
-      a:"hamster", s:"hamster", d:"hamster", f:"hamster",
-      c:"bird", v:"bird", b:"bird", n:"bird",
-      h:"ostrich", j:"ostrich", k:"ostrich", l:"ostrich",
-      u:"kangaroo", i:"kangaroo", o:"kangaroo", p:"kangaroo",
-      q:"snake", w:"snake", e:"snake", r:"snake",
+      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+      c: "bird", v: "bird", b: "bird", n: "bird",
+      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+      q: "snake", w: "snake", e: "snake", r: "snake",
     };
 
     const animal = animalMap[key];
@@ -101,18 +121,19 @@ export default function MobileStage() {
 
     recordedNotes.forEach(({ key, time }) => {
       if (!sounds[key]) return;
+
       const animalMap = {
-        a:"hamster", s:"hamster", d:"hamster", f:"hamster",
-        c:"bird", v:"bird", b:"bird", n:"bird",
-        h:"ostrich", j:"ostrich", k:"ostrich", l:"ostrich",
-        u:"kangaroo", i:"kangaroo", o:"kangaroo", p:"kangaroo",
-        q:"snake", w:"snake", e:"snake", r:"snake",
+        a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+        c: "bird", v: "bird", b: "bird", n: "bird",
+        h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+        u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+        q: "snake", w: "snake", e: "snake", r: "snake",
       };
+
       const animal = animalMap[key];
       if (!animal) return;
 
       const volume = (volumes[animal] || 1) * masterVolume;
-
       const source = audioContext.createBufferSource();
       source.buffer = sounds[key];
       const gainNode = audioContext.createGain();
@@ -140,7 +161,7 @@ export default function MobileStage() {
     localStorage.setItem("masterVolume", masterVolume);
   }, [masterVolume]);
 
-  // Helper: Convert AudioBuffer to WAV Blob
+  // Convert AudioBuffer to WAV
   function bufferToWav(abuffer) {
     const numOfChan = abuffer.numberOfChannels;
     const length = abuffer.length * numOfChan * 2 + 44;
@@ -155,7 +176,6 @@ export default function MobileStage() {
     setUint32(0x46464952); // "RIFF"
     setUint32(length - 8);
     setUint32(0x45564157); // "WAVE"
-
     setUint32(0x20746d66); // "fmt "
     setUint32(16);
     setUint16(1);
@@ -164,13 +184,10 @@ export default function MobileStage() {
     setUint32(abuffer.sampleRate * 2 * numOfChan);
     setUint16(numOfChan * 2);
     setUint16(16);
-
     setUint32(0x61746164); // "data"
     setUint32(length - pos - 4);
 
-    for (let i = 0; i < numOfChan; i++) {
-      channels.push(abuffer.getChannelData(i));
-    }
+    for (let i = 0; i < numOfChan; i++) channels.push(abuffer.getChannelData(i));
 
     let offset = 0;
     while (pos < length) {
@@ -189,17 +206,17 @@ export default function MobileStage() {
     if (recordedNotes.length === 0 || !audioContextRef.current) return;
 
     const fileName = prompt("Enter a name for your recording:", "animalband_recording");
-    if (!fileName) return; // user canceled
+    if (!fileName) return;
 
     const duration = (recordedNotes[recordedNotes.length - 1].time + 1000) / 1000;
     const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
 
     const animalMap = {
-      a:"hamster", s:"hamster", d:"hamster", f:"hamster",
-      c:"bird", v:"bird", b:"bird", n:"bird",
-      h:"ostrich", j:"ostrich", k:"ostrich", l:"ostrich",
-      u:"kangaroo", i:"kangaroo", o:"kangaroo", p:"kangaroo",
-      q:"snake", w:"snake", e:"snake", r:"snake",
+      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+      c: "bird", v: "bird", b: "bird", n: "bird",
+      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+      q: "snake", w: "snake", e: "snake", r: "snake",
     };
 
     for (const { key, time } of recordedNotes) {
@@ -208,7 +225,6 @@ export default function MobileStage() {
 
       const source = offlineCtx.createBufferSource();
       source.buffer = buffer;
-
       const gainNode = offlineCtx.createGain();
       const animal = animalMap[key];
       const volume = (volumes[animal] || 1) * masterVolume;
@@ -237,8 +253,26 @@ export default function MobileStage() {
           <h1 className="m-name">ANIMALBAND</h1>
         </Link>
         <div className="header-buttons">
-          <button className="btn-login" onClick={() => navigate("/login")}>Login</button>
-          <button className="btn-register" onClick={() => navigate("/register")}>Register</button>
+          {!user ? (
+            <>
+              <button className="btn-login" onClick={() => navigate("/login")}>Login</button>
+              <button className="btn-register" onClick={() => navigate("/register")}>Register</button>
+            </>
+          ) : (
+            <img
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              alt="Profile"
+              className="profile-pic"
+              onClick={() => navigate("/account")}
+              style={{
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                cursor: "pointer",
+                objectFit: "cover",
+              }}
+            />
+          )}
         </div>
       </header>
 
@@ -260,13 +294,6 @@ export default function MobileStage() {
                   onClick={() => handleTap(key)}
                 />
               ))}
-              {/* <input    // individual volume control doesnt work right removed to declutter the screen
-                type="range"
-                min="0" max="1" step="0.01"
-                value={volumes[animal] || 1}
-                onChange={(e) => handleVolumeChange(animal, e.target.value)}
-                className="animal-volume-slider"
-              /> */}
             </div>
           ))}
         </div>

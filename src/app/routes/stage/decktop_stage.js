@@ -4,21 +4,21 @@ import { SOUND_CONFIG } from "./stage_soundsConfig";
 import { loadSound, playSound, setMasterVolume } from "./stage_audioUtil";
 import "./stage.css";
 
-import Ostrich from "../../../assets/ostrich.jpeg";
-import OstrichPlaying from "../../../assets/ostrich_playing.jpeg";
-import Bird from "../../../assets/bird.jpeg";
-import BirdPlaying from "../../../assets/bird_playing.jpeg";
-import Hamster from "../../../assets/hamster.jpeg";
-import HamsterPlaying from "../../../assets/hamster_playing.jpeg";
-import Kangaroo from "../../../assets/kangaroo.jpeg";
-import KangarooPlaying from "../../../assets/kangaroo_playing.jpeg";
-import Snake from "../../../assets/snake.jpeg";
-import SnakePlaying from "../../../assets/snake_playing.jpeg";
+import Ostrich from "../../../assets/ostrich.png";
+import OstrichPlaying from "../../../assets/ostrichrockin.png";
+import Bird from "../../../assets/bird.png";
+import BirdPlaying from "../../../assets/birdrockin.png";
+import Hamster from "../../../assets/hamster.png";
+import HamsterPlaying from "../../../assets/hamsterrockin.png";
+import Kangaroo from "../../../assets/kangaroo.png";
+import KangarooPlaying from "../../../assets/kangaroorockin.png";
+import Snake from "../../../assets/snake.png";
+import SnakePlaying from "../../../assets/snakerockin.png";
 
 export default function DesktopStage() {
-  console.log("📺 Desktop stage mounted");
 
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [sounds, setSounds] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
   const [playingAnimals, setPlayingAnimals] = useState({});
@@ -37,6 +37,25 @@ export default function DesktopStage() {
   const [recordingDescription, setRecordingDescription] = useState("");
 
   const audioContextRef = useRef(null);
+
+  // ✅ Fetch user on mount
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+          { credentials: "include" }
+        );
+        const data = await res.json();
+        if (data.loggedIn) {
+          setUser(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user", err);
+      }
+    };
+    checkUser();
+  }, []);
 
   useEffect(() => {
     if (!audioContextRef.current) {
@@ -342,16 +361,32 @@ export default function DesktopStage() {
             <span className="material-symbols-outlined paw-icon">pets</span>
             <h1 className="site-title">ANIMALBAND</h1>
           </Link>
+
           <div className="header-buttons">
-            <button className="btn-login" onClick={() => navigate("/login")}>
-              Login
-            </button>
-            <button
-              className="btn-register"
-              onClick={() => navigate("/register")}
-            >
-              Register
-            </button>
+            {!user ? (
+              <>
+                <button className="btn-login" onClick={() => navigate("/login")}>
+                  Login
+                </button>
+                <button className="btn-register" onClick={() => navigate("/register")}>
+                  Register
+                </button>
+              </>
+            ) : (
+              <img
+                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                alt="Profile"
+                className="profile-pic"
+                onClick={() => navigate("/account")}
+                style={{
+                  width: "75px",
+                  height: "75px",
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  objectFit: "cover",
+                }}
+              />
+            )}
           </div>
         </header>
 
@@ -360,11 +395,7 @@ export default function DesktopStage() {
             {Object.keys(ANIMAL_IMAGES).map((animal) => (
               <div key={animal} className="animal-member">
                 <img
-                  src={
-                    playingAnimals[animal]
-                      ? ANIMAL_IMAGES[animal][1]
-                      : ANIMAL_IMAGES[animal][0]
-                  }
+                  src={playingAnimals[animal] ? ANIMAL_IMAGES[animal][1] : ANIMAL_IMAGES[animal][0]}
                   alt={`${animal} instrument`}
                   className={playingAnimals[animal] ? "playing" : ""}
                 />
@@ -386,6 +417,7 @@ export default function DesktopStage() {
           </div>
         </section>
 
+        {/* Bottom controls */}
         <div className="bottom-controls">
           <input
             type="range"
@@ -447,7 +479,6 @@ export default function DesktopStage() {
           </div>
 
         </div>
-      </div>
 
       {showSaveForm && (
         <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
