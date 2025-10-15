@@ -14,12 +14,9 @@ html, body {
 }
 
 /* =================== Landing Page =================== */
-.stagestuff .landing-page {
-  height: 100vh; /* full viewport height */
-  display: flex;
-  flex-direction: column;
-  background-color: #ffffff;
-  /* overflow: hidden; lock scrolling only on landing page */
+.landing-page {
+  min-height: 100vh;
+  background-color: #E4E2E2;
 }
 
 /* =================== Header =================== */
@@ -482,128 +479,6 @@ html, body {
   .stagestuff .header { flex-direction: column; gap: 1rem; }
   .stagestuff .animals-container { gap: 1rem; }
   .stagestuff .band-stage { padding: 0 0.5rem; }
-}
-
-@keyframes swell {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-.stagestuff .animal-member img.playing {
-  animation: swell 0.3s ease-in-out;
-}
-
-/* Modal box styling */
-.modal-box {
-  background-color: #E4E2E2;
-  padding: 2rem 2.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  width: 90%;
-  max-width: 400px;
-  max-height: 90vh; /* <-- Add this */
-  overflow-y: auto; /* <-- Add this */
-  font-family: inherit;
-  color: #000;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  z-index: 10000;
-}
-
-
-/* Modal form inputs */
-.modal-box input[type="text"],
-.modal-box textarea {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid #178C3A;
-  border-radius: 9999px; /* pill shape */
-  font-size: 1rem;
-  font-family: inherit;
-  resize: vertical;
-  transition: border-color 0.2s;
-}
-
-.modal-box input[type="text"]:focus,
-.modal-box textarea:focus {
-  outline: none;
-  border-color: #11632f;
-  background-color: #f0f6f0;
-}
-
-/* Buttons container */
-.modal-box .form-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-/* Modal buttons (reuse your button style) */
-.modal-box button {
-  padding: 0.5rem 1.5rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  border: none;
-  transition: background-color 0.2s, transform 0.15s;
-}
-
-/* Cancel button style */
-.modal-box button:first-child {
-  background-color: transparent;
-  color: #178C3A;
-  border: 2px solid #178C3A;
-}
-
-.modal-box button:first-child:hover {
-  background-color: #afd6bb;
-}
-
-/* Save button style */
-.modal-box button:last-child {
-  background-color: #178C3A;
-  color: white;
-}
-
-.modal-box button:last-child:hover {
-  background-color: #15803d;
-  transform: scale(1.05);
-}
-
-/* Ensure modal is always on top of everything */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-
-/* Center the modal box */
-.modal-box {
-  background-color: #E4E2E2;
-  padding: 2rem 2.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  width: 90%;
-  max-width: 400px;
-  font-family: inherit;
-  color: #000;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  z-index: 10000; /* Ensure it's above the overlay just in case */
 }
 
 @media (max-width: 768px) {

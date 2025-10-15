@@ -21,7 +21,6 @@ import MobileEditAccount from "./routes/account/mobile_edit_account.js";
 import DesktopForum from "./routes/forum/desktop_forum.js";
 import MobileForum from "./routes/forum/mobile_forum.js";
 
-import MyRecordings from "./routes/account/recordings.js";
 import PwdCode from "./routes/login/desktop_pwd_code.js"
 import ResetPwd from "./routes/login/desktop_pwd_reset.js";
 import ResetEmail from "./routes/login/desktop_reset_email.js";
@@ -70,7 +69,6 @@ export default function App() {
           <Route path="/forgot-password" element={<PwdCode />} />
           <Route path="/account-email" element={<ResetEmail />} />
           <Route path="/account/edit" element={<EditAccount />} />
-          <Route path="/my-recordings" element={<MyRecordings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
