@@ -433,54 +433,50 @@ export default function DesktopStage() {
               <span className="material-symbols-outlined export-icon">
                 file_download
               </span>
-              Export to WAV
             </button>
 
             <button
               onClick={() => setShowSaveForm(true)}
               disabled={recordedNotes.length === 0}
-              className="record-btn export"
+              className="circle-btn export"
             >
               <span className="material-symbols-outlined export-icon">
-                file_download
+                save
               </span>
-              Save My Recording
             </button>
           </div>
 
-          {showSaveForm && (
-            <div
-              className="modal-overlay"
-              onClick={() => setShowSaveForm(false)}
-            >
-              <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-                <h3>Save Your Recording</h3>
-                <label>
-                  Title:
-                  <input
-                    type="text"
-                    value={recordingTitle}
-                    onChange={(e) => setRecordingTitle(e.target.value)}
-                    placeholder="Your Recording"
-                  />
-                </label>
-                <label>
-                  Description:
-                  <textarea
-                    value={recordingDescription}
-                    onChange={(e) => setRecordingDescription(e.target.value)}
-                    placeholder="Description of your recording."
-                  />
-                </label>
-                <div className="form-buttons">
-                  <button onClick={() => setShowSaveForm(false)}>Cancel</button>
-                  <button onClick={saveRecordingLocally}>Save</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {showSaveForm && (
+        <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Save Your Recording</h3>
+            <label>
+              Title:
+              <input
+                type="text"
+                value={recordingTitle}
+                onChange={(e) => setRecordingTitle(e.target.value)}
+                placeholder="Your Recording"
+              />
+            </label>
+            <label>
+              Description:
+              <textarea
+                value={recordingDescription}
+                onChange={(e) => setRecordingDescription(e.target.value)}
+                placeholder="Description of your recording."
+              />
+            </label>
+            <div className="form-buttons">
+              <button onClick={() => setShowSaveForm(false)}>Cancel</button>
+              <button onClick={saveRecordingLocally}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
