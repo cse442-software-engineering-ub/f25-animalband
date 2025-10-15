@@ -13,7 +13,7 @@ export default function ResetEmail() {
 
     try {
       const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/fixPwdReset/php/verifyEmail.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/verifyEmail.php",
         {
           method: "POST",
           headers: {
