@@ -1,10 +1,15 @@
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import DeleteAccountModal from "../../components/DeleteAccountModal";
 import "./mobile_profile.css";
+
+const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php";
 
 export default function MobileProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -12,7 +17,7 @@ export default function MobileProfile() {
     const fetchUser = async () => {
       try {
         const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+          `${PHP_BASE}/getUser.php`,
           { credentials: "include" }
         );
         const data = await res.json();
@@ -79,10 +84,37 @@ export default function MobileProfile() {
     navigate("/account/edit");
   };
 
+  const modelOpen = () => {
+    setModalOpen(true);
+    closeSidebar();
+  };
+
+  const handleNavigation = (path) => {
+    navigate(path);
+    closeSidebar();
   // Navigate to forum with specific view
   const navigateToForum = (view) => {
     navigate("/forum", { state: { activeView: view } });
     setShowMobileMenu(false);
+  };
+
+  const handleDelete = async () => {
+    try {
+      const res = await fetch(`${PHP_BASE}/deleteAccount.php`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        window.location.href = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/"; // redirect home after deletion
+      } else {
+        alert(data.message || "Failed to delete account.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting account.");
+    }
   };
 
   return (
@@ -176,6 +208,21 @@ export default function MobileProfile() {
               <span className="material-symbols-outlined">person</span>
               My Profile
             </button>
+          </li>
+          <li>
+            <button onClick={modelOpen}>
+              <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
+                delete
+              </span>
+              Delete Account
+            </button>
+          </li>
+          <li>
+            <button onClick={() => handleNavigation("/stage")}>
+              <span className="material-symbols-outlined" style={{ verticalAlign: 'middle', marginRight: '0.5rem' }}>
+                piano
+              </span>
+              Back to Stage
             {/* NEW: Edit Profile option in mobile menu */}
             <button 
               className="mobile-nav-btn"
@@ -191,6 +238,23 @@ export default function MobileProfile() {
               <span className="material-symbols-outlined">logout</span>
               Log Out
             </button>
+          </li>
+        </ul>
+      </aside>
+          
+      <DeleteAccountModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onConfirm={async () => {
+            // Wrap call so the modal can handle error/loading states
+            try {
+              await handleDelete();
+            } catch (err) {
+              // Re-throw so DeleteAccountModal catches and shows error
+              throw err;
+            }
+          }}
+        />
           </nav>
         </div>
       )}
