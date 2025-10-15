@@ -111,7 +111,7 @@ export default function DesktopProfile() {
           <h3>Menu</h3>
           <ul>
             <li><button onClick={() => console.log("My Posts")}>My Posts</button></li>
-            <li><button onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+            <li><button onClick={() => console.log("My Recordings")}>My Recordings</button></li>
             <li><button onClick={() => navigate("/account/edit")}>Edit Account</button></li>
             <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>
             <li><button onClick={handleLogout}>Logout</button></li>

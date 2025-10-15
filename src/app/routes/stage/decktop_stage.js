@@ -31,11 +31,6 @@ export default function DesktopStage() {
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
 
-  //Local save state
-  const [showSaveForm, setShowSaveForm] = useState(false);
-  const [recordingTitle, setRecordingTitle] = useState("");
-  const [recordingDescription, setRecordingDescription] = useState("");
-
   const audioContextRef = useRef(null);
 
   // ✅ Fetch user on mount
@@ -59,8 +54,7 @@ export default function DesktopStage() {
 
   useEffect(() => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext ||
-        window.webkitAudioContext)();
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
   }, []);
 
@@ -89,26 +83,11 @@ export default function DesktopStage() {
       if (!sounds[key]) return;
 
       const animalMap = {
-        a: "hamster",
-        s: "hamster",
-        d: "hamster",
-        f: "hamster",
-        c: "bird",
-        v: "bird",
-        b: "bird",
-        n: "bird",
-        h: "ostrich",
-        j: "ostrich",
-        k: "ostrich",
-        l: "ostrich",
-        u: "kangaroo",
-        i: "kangaroo",
-        o: "kangaroo",
-        p: "kangaroo",
-        q: "snake",
-        w: "snake",
-        e: "snake",
-        r: "snake",
+        a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+        c: "bird", v: "bird", b: "bird", n: "bird",
+        h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+        u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+        q: "snake", w: "snake", e: "snake", r: "snake",
       };
 
       const animal = animalMap[key];
@@ -147,26 +126,11 @@ export default function DesktopStage() {
     setIsPlaying(true);
     const audioContext = audioContextRef.current;
     const animalMap = {
-      a: "hamster",
-      s: "hamster",
-      d: "hamster",
-      f: "hamster",
-      c: "bird",
-      v: "bird",
-      b: "bird",
-      n: "bird",
-      h: "ostrich",
-      j: "ostrich",
-      k: "ostrich",
-      l: "ostrich",
-      u: "kangaroo",
-      i: "kangaroo",
-      o: "kangaroo",
-      p: "kangaroo",
-      q: "snake",
-      w: "snake",
-      e: "snake",
-      r: "snake",
+      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+      c: "bird", v: "bird", b: "bird", n: "bird",
+      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+      q: "snake", w: "snake", e: "snake", r: "snake",
     };
 
     recordedNotes.forEach(({ key, time }) => {
@@ -195,10 +159,7 @@ export default function DesktopStage() {
   const exportRecording = async () => {
     if (recordedNotes.length === 0 || !audioContextRef.current) return;
 
-    const fileName = prompt(
-      "Enter a name for your recording:",
-      "animalband_recording"
-    );
+    const fileName = prompt("Enter a name for your recording:", "animalband_recording");
     if (!fileName) return;
 
     const duration =
@@ -206,26 +167,11 @@ export default function DesktopStage() {
     const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
 
     const animalMap = {
-      a: "hamster",
-      s: "hamster",
-      d: "hamster",
-      f: "hamster",
-      c: "bird",
-      v: "bird",
-      b: "bird",
-      n: "bird",
-      h: "ostrich",
-      j: "ostrich",
-      k: "ostrich",
-      l: "ostrich",
-      u: "kangaroo",
-      i: "kangaroo",
-      o: "kangaroo",
-      p: "kangaroo",
-      q: "snake",
-      w: "snake",
-      e: "snake",
-      r: "snake",
+      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+      c: "bird", v: "bird", b: "bird", n: "bird",
+      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+      q: "snake", w: "snake", e: "snake", r: "snake",
     };
 
     for (const { key, time } of recordedNotes) {
@@ -253,39 +199,6 @@ export default function DesktopStage() {
     URL.revokeObjectURL(url);
   };
 
-  const saveRecordingLocally = async () => {
-    const cookies = document.cookie.split("; ");
-    const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
-    const authCookie = cookieObj["auth_token"] || "";
-    try {
-      const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php/saveRecordingLocal.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            recording: recordedNotes,
-            title: recordingTitle,
-            description: recordingDescription,
-            userToken: authCookie,
-          }),
-        }
-      );
-
-      if (response.ok) {
-        alert("Recording saved!");
-        setShowSaveForm(false);
-        setRecordingTitle("");
-        setRecordingDescription("");
-      } else {
-        alert("Failed to save recording.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error saving recording.");
-    }
-  };
-
   function bufferToWav(buffer) {
     const numOfChan = buffer.numberOfChannels;
     const length = buffer.length * numOfChan * 2 + 44;
@@ -300,42 +213,25 @@ export default function DesktopStage() {
 
     let offset = 0;
 
-    writeString(view, offset, "RIFF");
-    offset += 4;
-    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true);
-    offset += 4;
-    writeString(view, offset, "WAVE");
-    offset += 4;
-    writeString(view, offset, "fmt ");
-    offset += 4;
-    view.setUint32(offset, 16, true);
-    offset += 4;
-    view.setUint16(offset, 1, true);
-    offset += 2;
-    view.setUint16(offset, numOfChan, true);
-    offset += 2;
-    view.setUint32(offset, buffer.sampleRate, true);
-    offset += 4;
-    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
-    offset += 4;
-    view.setUint16(offset, numOfChan * 2, true);
-    offset += 2;
-    view.setUint16(offset, 16, true);
-    offset += 2;
-    writeString(view, offset, "data");
-    offset += 4;
-    view.setUint32(offset, buffer.length * numOfChan * 2, true);
-    offset += 4;
+    writeString(view, offset, "RIFF"); offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "WAVE"); offset += 4;
+    writeString(view, offset, "fmt "); offset += 4;
+    view.setUint32(offset, 16, true); offset += 4;
+    view.setUint16(offset, 1, true); offset += 2;
+    view.setUint16(offset, numOfChan, true); offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
+    view.setUint16(offset, numOfChan * 2, true); offset += 2;
+    view.setUint16(offset, 16, true); offset += 2;
+    writeString(view, offset, "data"); offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
 
     const interleaved = interleave(buffer);
     let index = 44;
     for (let i = 0; i < interleaved.length; i++, index += 2) {
       const sample = Math.max(-1, Math.min(1, interleaved[i]));
-      view.setInt16(
-        index,
-        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
-        true
-      );
+      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
     }
 
     return new Blob([view], { type: "audio/wav" });
@@ -343,8 +239,7 @@ export default function DesktopStage() {
 
   function interleave(buffer) {
     const inputL = buffer.getChannelData(0);
-    const inputR =
-      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
     const interleaved = new Float32Array(buffer.length * 2);
     for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
       interleaved[j] = inputL[i];
@@ -462,57 +357,16 @@ export default function DesktopStage() {
               disabled={recordedNotes.length === 0}
               className="circle-btn export"
             >
-              <span className="material-symbols-outlined export-icon">
-                file_download
-              </span>
-            </button>
-
-            <button
-              onClick={() => setShowSaveForm(true)}
-              disabled={recordedNotes.length === 0}
-              className="circle-btn export"
-            >
-              <span className="material-symbols-outlined export-icon">
-                save
-              </span>
+              ⬇
             </button>
           </div>
-
         </div>
 
-      {showSaveForm && (
-        <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3>Save Your Recording</h3>
-            <label>
-              Title:
-              <input
-                type="text"
-                value={recordingTitle}
-                onChange={(e) => setRecordingTitle(e.target.value)}
-                placeholder="Your Recording"
-              />
-            </label>
-            <label>
-              Description:
-              <textarea
-                value={recordingDescription}
-                onChange={(e) => setRecordingDescription(e.target.value)}
-                placeholder="Description of your recording."
-              />
-            </label>
-            <div className="form-buttons">
-              <button onClick={() => setShowSaveForm(false)}>Cancel</button>
-              <button onClick={saveRecordingLocally}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-        rel="stylesheet"
-      />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+          rel="stylesheet"
+        />
+      </div>
     </div>
   );
 }
