@@ -12,6 +12,7 @@ export default function Landing() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [memberCount, setMemberCount] = useState(null);
+  const [postCount, setPostCount] = useState(null);
 
   // Fetch user info
   useEffect(() => {
@@ -43,13 +44,33 @@ export default function Landing() {
         if (data.memberCount !== undefined) {
           setMemberCount(data.memberCount);
         } else {
-          console.error("Invalid response format", data);
+          console.error("Invalid response format for member count", data);
         }
       } catch (err) {
         console.error("Failed to fetch member count", err);
       }
     };
     fetchMemberCount();
+  }, []);
+
+  // Fetch total post count
+  useEffect(() => {
+    const fetchPostCount = async () => {
+      try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getPostCount.php"
+        );
+        const data = await res.json();
+        if (data.postCount !== undefined) {
+          setPostCount(data.postCount);
+        } else {
+          console.error("Invalid response format for post count", data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch post count", err);
+      }
+    };
+    fetchPostCount();
   }, []);
 
   const handleAccountClick = () => {
@@ -195,7 +216,9 @@ export default function Landing() {
             <p className="stat-label">Members</p>
           </div>
           <div className="stat-card">
-            <p className="stat-number">2,184</p>
+            <p className="stat-number">
+              {postCount !== null ? postCount.toLocaleString() : "Loading..."}
+            </p>
             <p className="stat-label">Posts</p>
           </div>
         </div>
@@ -214,4 +237,5 @@ export default function Landing() {
     </div>
   );
 }
+
 
