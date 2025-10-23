@@ -11,7 +11,9 @@ import Snake from "../../../assets/snake.jpeg";
 export default function Landing() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [memberCount, setMemberCount] = useState(null);
 
+  // Fetch user info
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -28,6 +30,26 @@ export default function Landing() {
       }
     };
     checkUser();
+  }, []);
+
+  // Fetch total member count
+  useEffect(() => {
+    const fetchMemberCount = async () => {
+      try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getMemberCount.php"
+        );
+        const data = await res.json();
+        if (data.memberCount !== undefined) {
+          setMemberCount(data.memberCount);
+        } else {
+          console.error("Invalid response format", data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch member count", err);
+      }
+    };
+    fetchMemberCount();
   }, []);
 
   const handleAccountClick = () => {
@@ -122,7 +144,9 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        <Link to="/stage" className="btn-start-band">Start Your Band</Link>
+        <Link to="/stage" className="btn-start-band">
+          Start Your Band
+        </Link>
       </section>
 
       {/* Features */}
@@ -165,7 +189,9 @@ export default function Landing() {
             <p className="stat-label">Loops Created</p>
           </div>
           <div className="stat-card">
-            <p className="stat-number">472</p>
+            <p className="stat-number">
+              {memberCount !== null ? memberCount.toLocaleString() : "Loading..."}
+            </p>
             <p className="stat-label">Members</p>
           </div>
           <div className="stat-card">
@@ -188,3 +214,4 @@ export default function Landing() {
     </div>
   );
 }
+
