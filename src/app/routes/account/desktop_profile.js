@@ -11,6 +11,7 @@ export default function DesktopProfile() {
   const [modalOpen, setModalOpen] = useState(false);
   const [postCount, setPostCount] = useState(0);
   const [likeCount, setLikeCount] = useState(0);
+  const [recordingCount, setRecordingCount] = useState(0);
   const fileInputRef = useRef(null);
 
   // Fetch user info
@@ -32,21 +33,26 @@ export default function DesktopProfile() {
     fetchUser();
   }, [navigate]);
 
-  // Fetch user's post count and like count (by username)
+  // Fetch user's post count, like count, and recording count
   useEffect(() => {
-    if (!user?.username) return;
+    if (!user?.username || !user?.email) return;
 
     const fetchUserStats = async () => {
       try {
-        // Fetch post count
+        // Post count
         const postRes = await fetch(`${PHP_BASE}/getUserPostCount.php?username=${encodeURIComponent(user.username)}`);
         const postData = await postRes.json();
         setPostCount(postData.count || 0);
 
-        // Fetch like count
+        // Like count
         const likeRes = await fetch(`${PHP_BASE}/getUserLikeCount.php?username=${encodeURIComponent(user.username)}`);
         const likeData = await likeRes.json();
         setLikeCount(likeData.totalLikes || 0);
+
+        // Recording count
+        const recRes = await fetch(`${PHP_BASE}/getUserRecordingCount.php?email=${encodeURIComponent(user.email)}`);
+        const recData = await recRes.json();
+        setRecordingCount(recData.count || 0);
       } catch (err) {
         console.error("Failed to fetch user's stats", err);
       }
@@ -203,7 +209,7 @@ export default function DesktopProfile() {
                     <div className="stat-label">Posts</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-number">8</div>
+                    <div className="stat-number">{recordingCount}</div>
                     <div className="stat-label">Recordings</div>
                   </div>
                   <div className="stat-card">
