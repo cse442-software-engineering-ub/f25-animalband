@@ -85,7 +85,7 @@ export default function DesktopStage() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (showSaveForm) return;
-      
+
       const key = e.key.toLowerCase();
       if (!sounds[key]) return;
 
@@ -130,7 +130,7 @@ export default function DesktopStage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [sounds, masterVolume, isRecording, recordStartTime]);
+  }, [sounds, masterVolume, isRecording, recordStartTime, showSaveForm]);
 
   useEffect(() => {
     const savedVol = parseFloat(localStorage.getItem("masterVolume") || "1");

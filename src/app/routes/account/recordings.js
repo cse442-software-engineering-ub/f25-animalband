@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "./recordings.css";
 import "./desktop_edit_account.css"; // reuse shared layout + header + sidebar styles
 import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
-import { loadSound } from "../stage/stage_audioUtil";
 
 const PHP_URL =
   "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php";
@@ -19,9 +18,27 @@ export default function MyRecordings() {
 
   const [sounds, setSounds] = useState({});
   const [isPlaying, setIsPlaying] = useState(false);
-  const masterVolume = 0.3;
+  const masterVolume = 1;
 
   const audioContextRef = useRef(null);
+
+  // ------------------ LOCAL LOADSOUND ------------------
+  const loadSoundForPage = async (filename) => {
+    const audioContext = audioContextRef.current;
+    if (!audioContext) throw new Error("AudioContext not initialized");
+
+    const url = `${process.env.PUBLIC_URL}/stage_sounds/${filename}`;
+    console.log("[DEBUG] Fetching:", url);
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} - Could not load ${url}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return await audioContext.decodeAudioData(arrayBuffer);
+  };
+  // -----------------------------------------------------
 
   // Load user info for header
   useEffect(() => {
@@ -53,21 +70,24 @@ export default function MyRecordings() {
     }
   }, []);
 
-  // Load sounds into buffers
+  // Load sounds into buffers using local loadSoundForPage
   useEffect(() => {
     if (!audioContextRef.current) return;
-    const audioContext = audioContextRef.current;
 
     const loadAllSounds = async () => {
       const loadedSounds = {};
-        for (const sound of SOUND_CONFIG) {
-            loadedSounds[sound.key] = await loadSound(sound.file);
+      for (const sound of SOUND_CONFIG) {
+        try {
+          loadedSounds[sound.key] = await loadSoundForPage(sound.file);
+        } catch (err) {
+          console.warn(`Failed to load sound ${sound.file}:`, err);
         }
+      }
       setSounds(loadedSounds);
     };
 
     loadAllSounds();
-  }, []);
+  }, [audioContextRef.current]);
 
   // Fetch recordings
   useEffect(() => {
@@ -76,14 +96,11 @@ export default function MyRecordings() {
       const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
       const authCookie = cookieObj["auth_token"] || "";
       try {
-        const response = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php/getLocalRecordings.php",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ auth_token: authCookie }),
-          }
-        );
+        const response = await fetch(`${PHP_URL}/getLocalRecordings.php`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ auth_token: authCookie }),
+        });
 
         if (response.ok) {
           const data = await response.json();
@@ -92,8 +109,7 @@ export default function MyRecordings() {
               id: rec.id,
               title: rec.title,
               description: rec.description,
-              audioUrl: rec.recording,
-              recordedNotes: rec.recordedNotes || [], // make sure we get key/time data
+              recordedNotes: rec.recording || [],
             }));
             setRecordings(formatted);
           }
@@ -117,14 +133,19 @@ export default function MyRecordings() {
   };
 
   const playRecording = async () => {
-    if (recordedNotes.length === 0 || !audioContextRef.current) return;
-    if (Object.keys(sounds).length === 0) return; // wait until sounds are loaded
+    console.log("START OF PLAYRECORDING");
+    console.log(recordedNotes);
+    if (recordedNotes.length === 0) return;
 
     const audioContext = audioContextRef.current;
+    if (!audioContext) return;
 
-    // Resume context (required for Chrome/Edge autoplay policies)
-    await audioContext.resume();
+    // Resume AudioContext (must be done on user gesture)
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
 
+    console.log("setisplaying reached");
     setIsPlaying(true);
 
     recordedNotes.forEach(({ key, time }) => {
@@ -133,6 +154,7 @@ export default function MyRecordings() {
         console.warn(`Sound for key ${key} not loaded`);
         return;
       }
+
       const source = audioContext.createBufferSource();
       source.buffer = buffer;
       const gainNode = audioContext.createGain();
@@ -145,12 +167,10 @@ export default function MyRecordings() {
     setTimeout(() => setIsPlaying(false), totalTime);
   };
 
-
   if (loading) return <p className="ea-loading">Loading…</p>;
 
   return (
     <div className="ea-page">
-      {/* Header */}
       <header className="ea-header">
         <div className="ea-logo-section" onClick={() => navigate("/")}>
           <span className="material-symbols-outlined ea-paw-icon">pets</span>
@@ -168,9 +188,7 @@ export default function MyRecordings() {
         </div>
       </header>
 
-      {/* Layout */}
       <div className="ea-layout">
-        {/* Sidebar */}
         <aside className="ea-sidebar">
           <h3>Menu</h3>
           <ul>
@@ -193,7 +211,6 @@ export default function MyRecordings() {
           </ul>
         </aside>
 
-        {/* Main Content */}
         <main className="ea-content">
           <h1 className="ea-title">My Recordings</h1>
           <p className="ea-subtitle">
