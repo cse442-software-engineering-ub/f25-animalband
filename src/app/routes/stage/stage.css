@@ -490,3 +490,22 @@ html, body {
   .animals-container { flex-wrap: wrap; }
   .band-stage { padding: 2rem 1rem; }
 }
+
+.track-list {
+  margin: 20px;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+}
+
+.track-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px 0;
+}
+
+.track-buttons button {
+  margin-left: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
