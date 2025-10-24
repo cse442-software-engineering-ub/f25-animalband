@@ -3,14 +3,18 @@ import { Link, useNavigate } from "react-router-dom";
 import DeleteAccountModal from "../../components/DeleteAccountModal";
 import "./desktop_profile.css";
 
-const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php";
+const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 export default function DesktopProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [postCount, setPostCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+  const [recordingCount, setRecordingCount] = useState(0);
   const fileInputRef = useRef(null);
 
+  // Fetch user info
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -28,6 +32,34 @@ export default function DesktopProfile() {
     };
     fetchUser();
   }, [navigate]);
+
+  // Fetch user's post count, like count, and recording count
+  useEffect(() => {
+    if (!user?.username || !user?.email) return;
+
+    const fetchUserStats = async () => {
+      try {
+        // Post count
+        const postRes = await fetch(`${PHP_BASE}/getUserPostCount.php?username=${encodeURIComponent(user.username)}`);
+        const postData = await postRes.json();
+        setPostCount(postData.count || 0);
+
+        // Like count
+        const likeRes = await fetch(`${PHP_BASE}/getUserLikeCount.php?username=${encodeURIComponent(user.username)}`);
+        const likeData = await likeRes.json();
+        setLikeCount(likeData.totalLikes || 0);
+
+        // Recording count
+        const recRes = await fetch(`${PHP_BASE}/getUserRecordingCount.php?email=${encodeURIComponent(user.email)}`);
+        const recData = await recRes.json();
+        setRecordingCount(recData.count || 0);
+      } catch (err) {
+        console.error("Failed to fetch user's stats", err);
+      }
+    };
+
+    fetchUserStats();
+  }, [user]);
 
   const handleProfilePicClick = () => fileInputRef.current?.click();
 
@@ -67,7 +99,6 @@ export default function DesktopProfile() {
     }
   };
 
-  // Called when user confirms deletion in modal.
   const handleDelete = async () => {
     try {
       const res = await fetch(`${PHP_BASE}/deleteAccount.php`, {
@@ -77,7 +108,7 @@ export default function DesktopProfile() {
       const data = await res.json();
 
       if (res.ok) {
-        window.location.href = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/"; // redirect home after deletion
+        window.location.href = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/";
       } else {
         alert(data.message || "Failed to delete account.");
       }
@@ -107,9 +138,7 @@ export default function DesktopProfile() {
         </div>
       </header>
 
-      {/* Body Layout */}
       <div className="profile-layout">
-        {/* Sidebar */}
         <aside className="sidebar">
           <h3>Menu</h3>
           <ul>
@@ -122,22 +151,18 @@ export default function DesktopProfile() {
           </ul>
         </aside>
 
-        {/* Modal */}
         <DeleteAccountModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           onConfirm={async () => {
-            // Wrap call so the modal can handle error/loading states
             try {
               await handleDelete();
             } catch (err) {
-              // Re-throw so DeleteAccountModal catches and shows error
               throw err;
             }
           }}
         />
 
-        {/* Main Profile Section */}
         <main className="profile-content">
           {user ? (
             <>
@@ -180,15 +205,15 @@ export default function DesktopProfile() {
                 <h3>My Statistics</h3>
                 <div className="stats-container">
                   <div className="stat-card">
-                    <div className="stat-number">15</div>
+                    <div className="stat-number">{postCount}</div>
                     <div className="stat-label">Posts</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-number">8</div>
+                    <div className="stat-number">{recordingCount}</div>
                     <div className="stat-label">Recordings</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-number">127</div>
+                    <div className="stat-number">{likeCount}</div>
                     <div className="stat-label">Likes</div>
                   </div>
                 </div>
@@ -200,7 +225,6 @@ export default function DesktopProfile() {
         </main>
       </div>
 
-      {/* Material Icons Font */}
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     </div>
   );
