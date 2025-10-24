@@ -84,6 +84,8 @@ export default function DesktopStage() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (showSaveForm) return;
+      
       const key = e.key.toLowerCase();
       if (!sounds[key]) return;
 

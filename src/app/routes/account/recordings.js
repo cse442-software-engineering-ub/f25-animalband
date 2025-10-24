@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./recordings.css";
 import "./desktop_edit_account.css"; // reuse shared layout + header + sidebar styles
+import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
 
 const PHP_URL =
-  "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php";
+  "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php";
 
 export default function MyRecordings() {
   const navigate = useNavigate();
@@ -12,7 +13,13 @@ export default function MyRecordings() {
   const [loading, setLoading] = useState(true);
 
   const [recordings, setRecordings] = useState([]);
+  const [recordedNotes, setRecordedNotes] = useState([]);
   const [selectedRecording, setSelectedRecording] = useState(null);
+
+  const [sounds, setSounds] = useState({});
+  const [isPlaying, setIsPlaying] = useState(false);
+  const masterVolume = 0.3;
+
   const audioContextRef = useRef(null);
 
   // Load user info for header
@@ -45,6 +52,28 @@ export default function MyRecordings() {
     }
   }, []);
 
+  // Load sounds into buffers
+  useEffect(() => {
+    if (!audioContextRef.current) return;
+    const audioContext = audioContextRef.current;
+
+    const loadSound = async (url) => {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      return await audioContext.decodeAudioData(arrayBuffer);
+    };
+
+    const loadAllSounds = async () => {
+      const loadedSounds = {};
+        for (const sound of SOUND_CONFIG) {
+            loadedSounds[sound.key] = await loadSound(sound.file);
+        }
+      setSounds(loadedSounds);
+    };
+
+    loadAllSounds();
+  }, []);
+
   // Fetch recordings
   useEffect(() => {
     const fetchRecordings = async () => {
@@ -69,6 +98,7 @@ export default function MyRecordings() {
               title: rec.title,
               description: rec.description,
               audioUrl: rec.recording,
+              recordedNotes: rec.recordedNotes || [], // make sure we get key/time data
             }));
             setRecordings(formatted);
           }
@@ -81,25 +111,36 @@ export default function MyRecordings() {
     fetchRecordings();
   }, []);
 
-  const openModal = (rec) => setSelectedRecording(rec);
-  const closeModal = () => setSelectedRecording(null);
+  const openModal = (rec) => {
+    setSelectedRecording(rec);
+    setRecordedNotes(rec.recordedNotes || []);
+  };
+
+  const closeModal = () => {
+    setSelectedRecording(null);
+    setRecordedNotes([]);
+  };
 
   const playRecording = () => {
-    if (!selectedRecording || !audioContextRef.current) return;
+    if (recordedNotes.length === 0 || !audioContextRef.current) return;
+    if (Object.keys(sounds).length === 0) return; // wait until sounds are loaded
 
+    setIsPlaying(true);
     const audioContext = audioContextRef.current;
-    fetch(selectedRecording.audioUrl)
-      .then((r) => r.arrayBuffer())
-      .then((data) =>
-        audioContext.decodeAudioData(data, (buffer) => {
-          const source = audioContext.createBufferSource();
-          source.buffer = buffer;
-          const gainNode = audioContext.createGain();
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(0);
-        })
-      )
-      .catch((err) => console.error("Error playing recording:", err));
+
+    recordedNotes.forEach(({ key, time }) => {
+      const buffer = sounds[key];
+      if (!buffer) return;
+      const source = audioContext.createBufferSource();
+      source.buffer = buffer;
+      const gainNode = audioContext.createGain();
+      gainNode.gain.value = masterVolume;
+      source.connect(gainNode).connect(audioContext.destination);
+      source.start(audioContext.currentTime + time / 1000);
+    });
+
+    const totalTime = recordedNotes[recordedNotes.length - 1].time + 400;
+    setTimeout(() => setIsPlaying(false), totalTime);
   };
 
   if (loading) return <p className="ea-loading">Loading…</p>;
@@ -178,7 +219,7 @@ export default function MyRecordings() {
                 <h2>{selectedRecording.title}</h2>
                 <p>{selectedRecording.description}</p>
                 <button onClick={playRecording} className="play-button">
-                  Play Recording
+                  {isPlaying ? "Playing…" : "Play Recording"}
                 </button>
                 <button className="close-button" onClick={closeModal}>
                   Close
