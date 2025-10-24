@@ -129,14 +129,16 @@ export default function ForumPostModal({
     post,
     user,
     onClose,
-    onBumpPostComments 
+    onBumpPostComments
 }) {
     const [loading, setLoading] = useState(true);
-    const [commentsFlat, setCommentsFlat] = useState([]); 
-    const [replyTo, setReplyTo] = useState(null); 
+    const [commentsFlat, setCommentsFlat] = useState([]);
+    const [replyTo, setReplyTo] = useState(null);
     const [draft, setDraft] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [collapsed, setCollapsed] = useState(() => new Set());
+    const listRef = useRef(null)
+
 
     const tree = useMemo(() => buildTree(commentsFlat), [commentsFlat]);
 
@@ -150,6 +152,7 @@ export default function ForumPostModal({
 
     const fetchComments = useCallback(async () => {
         setLoading(true);
+        const prevY = listRef.current ? listRef.current.scrollTop : 0;
         try {
             const res = await fetch(`${PHP_URL}/getForumComments.php?postId=${encodeURIComponent(post.id)}`, {
                 credentials: "include",
@@ -170,7 +173,7 @@ export default function ForumPostModal({
                 liked: user ? (Array.isArray(r.likesFrom) && r.likesFrom.includes(user.username)) : false,
             })));
 
-            if (rows.length >= 5){
+            if (rows.length >= 5) {
                 setCollapsed(new Set([rows[4].id]));
             }
         } catch (e) {
@@ -178,11 +181,36 @@ export default function ForumPostModal({
             setCommentsFlat([]);
         } finally {
             setLoading(false);
+            requestAnimationFrame(() => {
+                if (listRef.current) listRef.current.scrollTop = prevY;
+            });
         }
     }, [post.id, user?.username]);
 
     useEffect(() => {
-        if (post?.id) fetchComments();
+        if (!post?.id) return;
+        const url = `${PHP_URL}/commentsStream.php?postId=${encodeURIComponent(post.id)}`;
+        const es = new EventSource(url, { withCredentials: false });
+
+        es.addEventListener("open", () => console.log("[SSE] open"));
+        es.addEventListener("comments", () => fetchComments());
+        es.addEventListener("error", (e) => console.warn("[SSE] error", e));
+
+        return () => es.close();
+    }, [post?.id, fetchComments]);
+
+    useEffect(() => {
+        if (!post?.id) return;
+        const es = new EventSource(`${PHP_URL}/commentsStream.php?postId=${encodeURIComponent(post.id)}`, { withCredentials: false });
+
+        const onMsg = () => fetchComments();
+        const onErr = () => console.warn("comments SSE disconnected");
+
+        es.addEventListener("comments", onMsg);
+        es.onmessage = onMsg;
+        es.onerror = onErr;
+
+        return () => es.close();
     }, [post?.id, fetchComments]);
 
     const onReply = (node) => {
@@ -262,7 +290,7 @@ export default function ForumPostModal({
             if (!res.ok || !data.success) throw new Error(data.message || `HTTP ${res.status}`);
 
             await fetchComments();
-            onBumpPostComments?.(post.id); 
+            onBumpPostComments?.(post.id);
             setReplyTo(null);
         } catch (err) {
             console.error("comment failed:", err);
@@ -334,8 +362,7 @@ export default function ForumPostModal({
                             </button>
                         </div>
                     </form>
-
-                    <div className="ab-comments-list">
+                    <div className="ab-comments-list" ref={listRef}>
                         {loading ? (
                             <div className="ab-loading">Loading comments…</div>
                         ) : tree.length === 0 ? (
