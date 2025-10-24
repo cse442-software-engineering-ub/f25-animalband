@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 function parseDbTimestamp(s) {
     if (!s) return null;
@@ -130,6 +130,9 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
     const [draft, setDraft] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [collapsed, setCollapsed] = useState(() => new Set());
+    const listRef = useRef(null);
+    const firstLoadRef = useRef(true);
+    const [postError, setPostError] = useState("");
 
     const tree = useMemo(() => buildTree(commentsFlat), [commentsFlat]);
 
@@ -141,60 +144,132 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
         });
     }, []);
 
+    // const fetchComments = useCallback(async () => {
+    //     setLoading(true);
+    //     try {
+    //         const res = await fetch(`${PHP_URL}/getForumComments.php?postId=${encodeURIComponent(post.id)}`, {
+    //             credentials: "include",
+    //             cache: "no-store",
+    //         });
+    //         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    //         const rows = await res.json();
+    //         setCommentsFlat(rows.map(r => ({
+    //             id: Number(r.id),
+    //             postId: Number(r.postId),
+    //             parentId: r.parentId ? Number(r.parentId) : null,
+    //             author: r.author || "",
+    //             authorId: Number(r.authorId ?? 0),
+    //             content: r.content || "",
+    //             likesFrom: Array.isArray(r.likesFrom) ? r.likesFrom : [],
+    //             likeCount: Number(r.likeCount ?? 0),
+    //             created_at: r.created_at || null,
+    //             liked: user ? (Array.isArray(r.likesFrom) && r.likesFrom.includes(user.username)) : false,
+    //         })));
+
+    //         const topLevel = rows.filter(r => !r.parentId);
+    //         if (topLevel.length >= 5) {
+    //             setCollapsed(new Set([Number(topLevel[4].id)]));
+    //         } else {
+    //             setCollapsed(new Set());
+    //         }
+    //     } catch (e) {
+    //         console.error("Failed to fetch comments:", e);
+    //         setCommentsFlat([]);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // }, [post.id, user?.username]);
+
     const fetchComments = useCallback(async () => {
-        setLoading(true);
+        if (firstLoadRef.current) setLoading(true);
+        const prevY = listRef.current ? listRef.current.scrollTop : 0;
         try {
-            const res = await fetch(`${PHP_URL}/getForumComments.php?postId=${encodeURIComponent(post.id)}`, {
-                credentials: "include",
-                cache: "no-store",
-            });
+            const res = await fetch(
+                `${PHP_URL}/getForumComments.php?postId=${encodeURIComponent(post.id)}`,
+                { credentials: "include", cache: "no-store" }
+            );
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const rows = await res.json();
-            setCommentsFlat(rows.map(r => ({
-                id: Number(r.id),
-                postId: Number(r.postId),
-                parentId: r.parentId ? Number(r.parentId) : null,
-                author: r.author || "",
-                authorId: Number(r.authorId ?? 0),
-                content: r.content || "",
-                likesFrom: Array.isArray(r.likesFrom) ? r.likesFrom : [],
-                likeCount: Number(r.likeCount ?? 0),
-                created_at: r.created_at || null,
-                liked: user ? (Array.isArray(r.likesFrom) && r.likesFrom.includes(user.username)) : false,
-            })));
 
-            const topLevel = rows.filter(r => !r.parentId);
-            if (topLevel.length >= 5) {
-                setCollapsed(new Set([Number(topLevel[4].id)]));
-            } else {
-                setCollapsed(new Set());
+            setCommentsFlat(prev => {
+                const prevKey = prev.map(c => `${c.id}:${c.likeCount}`).join("|");
+                const nextFlat = rows.map(r => ({
+                    id: Number(r.id),
+                    postId: Number(r.postId),
+                    parentId: r.parentId ? Number(r.parentId) : null,
+                    author: r.author || "",
+                    authorId: Number(r.authorId ?? 0),
+                    content: r.content || "",
+                    likesFrom: Array.isArray(r.likesFrom) ? r.likesFrom : [],
+                    likeCount: Number(r.likeCount ?? 0),
+                    created_at: r.created_at || null,
+                    liked: user ? (Array.isArray(r.likesFrom) && r.likesFrom.includes(user.username)) : false,
+                }));
+                const nextKey = nextFlat.map(c => `${c.id}:${c.likeCount}`).join("|");
+                return prevKey === nextKey ? prev : nextFlat;
+            });
+
+            if (firstLoadRef.current) {
+                // collapse 5th TOP-LEVEL comment
+                const topLevel = rows.filter(r => !r.parentId);
+                if (topLevel.length >= 5) {
+                    setCollapsed(new Set([Number(topLevel[4].id)]));
+                } else {
+                    setCollapsed(new Set());
+                }
             }
         } catch (e) {
             console.error("Failed to fetch comments:", e);
             setCommentsFlat([]);
         } finally {
-            setLoading(false);
+            if (firstLoadRef.current) {
+                setLoading(false);
+                firstLoadRef.current = false;
+            }
+            requestAnimationFrame(() => {
+                if (listRef.current) listRef.current.scrollTop = prevY;
+            });
         }
     }, [post.id, user?.username]);
 
+    // useEffect(() => {
+    //     document.body.classList.add("popup-open");
+    //     fetchComments();
+    //     const interval = setInterval(fetchComments, 8000);
+    //     const onFocus = () => fetchComments();
+    //     const onVisibility = () => document.visibilityState === "visible" && fetchComments();
+
+    //     window.addEventListener("focus", onFocus);
+    //     document.addEventListener("visibilitychange", onVisibility);
+
+    //     return () => {
+    //         document.body.classList.remove("popup-open");
+    //         clearInterval(interval);
+    //         window.removeEventListener("focus", onFocus);
+    //         document.removeEventListener("visibilitychange", onVisibility);
+    //     };
+    // }, [fetchComments]);
     useEffect(() => {
         document.body.classList.add("popup-open");
         fetchComments();
-        const interval = setInterval(fetchComments, 8000);
-        const onFocus = () => fetchComments();
-        const onVisibility = () => document.visibilityState === "visible" && fetchComments();
-
-        window.addEventListener("focus", onFocus);
-        document.addEventListener("visibilitychange", onVisibility);
-
-        return () => {
-            document.body.classList.remove("popup-open");
-            clearInterval(interval);
-            window.removeEventListener("focus", onFocus);
-            document.removeEventListener("visibilitychange", onVisibility);
-        };
+        return () => document.body.classList.remove("popup-open");
     }, [fetchComments]);
 
+    // SSE subscription (commentsStream)
+    useEffect(() => {
+        if (!post?.id) return;
+        const url = `${PHP_URL}/commentsStream.php?postId=${encodeURIComponent(post.id)}`;
+        const es = new EventSource(url, { withCredentials: false });
+
+        const onComments = () => fetchComments();
+        const onErr = (e) => console.warn("[SSE] comments error", e);
+
+        es.addEventListener("comments", onComments);
+        es.onmessage = onComments; // heartbeats
+        es.onerror = onErr;
+
+        return () => es.close();
+    }, [post?.id, fetchComments]);
     const onReply = (node) => setReplyTo(node);
 
     const onLike = async (node) => {
@@ -229,6 +304,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
 
     const submitComment = async (e) => {
         e?.preventDefault?.();
+        setPostError("");
         if (!user || !draft.trim()) return;
         setSubmitting(true);
 
@@ -269,7 +345,9 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
         } catch (err) {
             console.error("comment failed:", err);
             setCommentsFlat(prev => prev.filter(c => c.id !== tempId));
-            alert("Failed to post comment.");
+            setPostError(
+                err?.message?.trim() || "Failed to post comment."
+            );
         } finally {
             setSubmitting(false);
         }
@@ -307,13 +385,29 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
                     </div>
 
                     <form className="m-new-comment" onSubmit={submitComment}>
+                        {postError && (
+                            <div className="ab-error" role="alert" aria-live="assertive">
+                                {postError}
+                            </div>
+                        )}
+
                         <textarea
                             placeholder={user ? "Write a comment…" : "Login to comment"}
                             value={draft}
-                            onChange={e => setDraft(e.target.value)}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                if (v.length <= 500) setDraft(v);
+                                if (postError) setPostError("");
+                            }}
                             disabled={!user || submitting}
                             rows={replyTo ? 3 : 4}
                         />
+
+                        <div className="ab-new-comment-meta">
+                            <span className={`char-count ${draft.length >= 500 ? "limit-reached" : ""}`}>
+                                {draft.length}/500
+                            </span>
+                        </div>
                         <div className="m-new-comment-actions">
                             {replyTo && (
                                 <div className="m-replying-to">
@@ -331,7 +425,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
                         </div>
                     </form>
 
-                    <div className="m-comments-list">
+                    <div className="m-comments-list" ref={listRef}>
                         {loading ? (
                             <div className="m-loading">Loading comments…</div>
                         ) : tree.length === 0 ? (

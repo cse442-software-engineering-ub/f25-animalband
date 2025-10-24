@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 function parseDbTimestamp(s) {
     if (!s) return null;
@@ -139,6 +139,8 @@ export default function ForumPostModal({
     const [collapsed, setCollapsed] = useState(() => new Set());
     const listRef = useRef(null)
     const firstLoadRef = useRef(true);
+    const [postError, setPostError] = useState("");
+
 
 
     const tree = useMemo(() => buildTree(commentsFlat), [commentsFlat]);
@@ -348,15 +350,27 @@ export default function ForumPostModal({
                             <span>{post.comments ?? 0} comments</span>
                         </div>
                     </div>
-
+                    {postError && (
+                        <div className="ab-error" role="alert" aria-live="assertive">
+                            {postError}
+                        </div>
+                    )}
                     <form className="ab-new-comment" onSubmit={submitComment}>
                         <textarea
                             placeholder={user ? "Write a comment…" : "Login to comment"}
                             value={draft}
-                            onChange={e => setDraft(e.target.value)}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                if (v.length <= 500) setDraft(v);
+                            }}
                             disabled={!user || submitting}
                             rows={replyTo ? 3 : 4}
                         />
+                        <div className="ab-new-comment-meta">
+                            <span className={`char-count ${draft.length >= 500 ? "limit-reached" : ""}`}>
+                                {draft.length}/500
+                            </span>
+                        </div>
                         <div className="ab-new-comment-actions">
                             {replyTo && (
                                 <div className="ab-replying-to">

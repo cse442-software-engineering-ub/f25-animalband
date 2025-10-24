@@ -44,7 +44,11 @@ $postId   = isset($payload["postId"]) ? intval($payload["postId"]) : 0;
 $parentId = array_key_exists("parentId", $payload) && $payload["parentId"] !== null
             ? intval($payload["parentId"]) : null;
 $content  = isset($payload["content"]) ? trim($payload["content"]) : "";
-
+if (mb_strlen($content, 'UTF-8') > 500) {
+  http_response_code(400);
+  echo json_encode(["success" => false, "message" => "Comment exceeds 500 characters"]);
+  exit;
+}
 $author   = "";
 $authorId = 0;
 
@@ -72,7 +76,7 @@ if ((!$author || !$authorId) && isset($payload["author"], $payload["authorId"]))
   $authorId = (int)$payload["authorId"];
 }
 
-if ($postId <= 0 || $content === "" || $author === "" || $authorId <= 0) {
+if ($postId <= 0 || mb_strlen($content, 'UTF-8') === 0 || $author === "" || $authorId <= 0) {
   http_response_code(400);
   echo json_encode(["success"=>false,"message"=>"Invalid fields"]);
   exit;

@@ -4,7 +4,7 @@ import MobilePostModal from "./mobile_post_modal";
 import "./mobile_forum.css";
 
 
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 export default function MobileForum() {
     const navigate = useNavigate();

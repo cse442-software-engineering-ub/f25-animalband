@@ -825,3 +825,15 @@ body.popup-open { overflow: hidden; }
   .m-post-header { padding: 1rem; }
   .m-post-body { padding: 1rem; }
 }
+
+
+.ab-error {
+  margin: 0 0 .5rem 0;
+  padding: .5rem .75rem;
+  border-radius: 8px;
+  background: #ffeaea;
+  color: #b00020;
+  border: 1px solid #ffb3b3;
+  font-weight: 600;
+  font-size: .9rem;
+}
