@@ -44,7 +44,7 @@ export default function MobileProfile() {
 
     try {
       const res = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
+        "https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
         {
           method: "POST",
           body: formData,
@@ -105,7 +105,7 @@ export default function MobileProfile() {
         <div className="mobile-header-right">
           {user ? (
             <img
-              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              src={`https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
               alt="Profile"
               className="mobile-profile-pic"
               onClick={handleAccountClick}
@@ -201,7 +201,7 @@ export default function MobileProfile() {
           <>
             <div className="mobile-profile-pic-container" onClick={handleProfilePicClick}>
               <img
-                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                src={`https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
                 alt="Profile"
                 className="mobile-profile-pic-large"
               />
