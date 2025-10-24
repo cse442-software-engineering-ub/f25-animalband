@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
+import ForumPostModal from "./desktop_post_modal";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -14,6 +15,7 @@ export default function DesktopForum() {
     const [sortBy, setSortBy] = useState("recent");
     const [user, setUser] = useState(null);
     const [activeView, setActiveView] = useState("community");
+    const [openPost, setOpenPost] = useState(null);
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -281,16 +283,6 @@ export default function DesktopForum() {
 
         };
 
-        // console.log("New Post Data Saved:", {
-        //     title: title,
-        //     content: content,
-        //     tags: tags,
-        //     likesFrom: likesFrom,
-        //     author: author,
-        //     authorId: authorId,
-        //     likeCount: likeCount
-
-        // });
         const tempId = Date.now();
         const optimistic = {
             id: tempId,
@@ -529,26 +521,25 @@ export default function DesktopForum() {
                             </div>
                         ) : (
                             sortedPosts.map((post) => (
-                                <div key={post.id} className="post-card">
-                                    <div className="post-header">
-                                        <div className="post-author">
-                                            <div>
-                                                <h3 className="post-title">{post.title}</h3>
-                                                <span className="author-name">by {post.author}</span>
-                                            </div>
+                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
+                                    <div className="post-author">
+                                        <div>
+                                            <h3 className="post-title">{post.title}</h3>
+                                            <span className="author-name">by {post.author}</span>
                                         </div>
-                                        {/* Time since posted */}
-                                        {post.created_at && (
-                                            (() => {
-                                                const ta = timeAgo(post.created_at, nowTick);
-                                                return (
-                                                    <span className="post-time">
-                                                        Created {ta === "just now" ? ta : `${ta} ago`}
-                                                    </span>
-                                                );
-                                            })()
-                                        )}
                                     </div>
+                                    {/* Time since posted */}
+                                    {post.created_at && (
+                                        (() => {
+                                            const ta = timeAgo(post.created_at, nowTick);
+                                            return (
+                                                <span className="post-time">
+                                                    Created {ta === "just now" ? ta : `${ta} ago`}
+                                                </span>
+                                            );
+                                        })()
+                                    )}
+                                </div>
                                     <p className="post-content">{post.content}</p>
                                     <div className="post-tags">
                                         {post.tags && post.tags.map(tag => (
@@ -562,7 +553,9 @@ export default function DesktopForum() {
                                         </div>
                                         <button
                                             className={`like-btn ${post.liked ? "liked" : ""}`}
-                                            onClick={() => toggleLike(post.id)}
+                                            onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onKeyDown={(e) => e.stopPropagation()}
                                             aria-label={post.liked ? "Unlike post" : "Like post"}
                                         >
                                             {post.liked ? "❤️" : "🤍"}
@@ -640,7 +633,16 @@ export default function DesktopForum() {
                     </div>
                 </div>
             )}
-
+            {openPost && (
+                <ForumPostModal
+                    post={openPost}
+                    user={user}
+                    onClose={() => setOpenPost(null)}
+                    onBumpPostComments={(postId) => {
+                        refreshNoJump();
+                    }}
+                />
+            )}
             {/* Material Icons */}
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
