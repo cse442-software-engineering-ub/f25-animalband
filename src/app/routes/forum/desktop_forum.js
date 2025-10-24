@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
+import ForumPostModal from "./desktop_forum_post";
 
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
 
 export default function DesktopForum() {
     const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function DesktopForum() {
     const [sortBy, setSortBy] = useState("recent");
     const [user, setUser] = useState(null);
     const [activeView, setActiveView] = useState("community");
+    const [openPost, setOpenPost] = useState(null);
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -529,26 +531,25 @@ export default function DesktopForum() {
                             </div>
                         ) : (
                             sortedPosts.map((post) => (
-                                <div key={post.id} className="post-card">
-                                    <div className="post-header">
-                                        <div className="post-author">
-                                            <div>
-                                                <h3 className="post-title">{post.title}</h3>
-                                                <span className="author-name">by {post.author}</span>
-                                            </div>
+                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
+                                    <div className="post-author">
+                                        <div>
+                                            <h3 className="post-title">{post.title}</h3>
+                                            <span className="author-name">by {post.author}</span>
                                         </div>
-                                        {/* Time since posted */}
-                                        {post.created_at && (
-                                            (() => {
-                                                const ta = timeAgo(post.created_at, nowTick);
-                                                return (
-                                                    <span className="post-time">
-                                                        Created {ta === "just now" ? ta : `${ta} ago`}
-                                                    </span>
-                                                );
-                                            })()
-                                        )}
                                     </div>
+                                    {/* Time since posted */}
+                                    {post.created_at && (
+                                        (() => {
+                                            const ta = timeAgo(post.created_at, nowTick);
+                                            return (
+                                                <span className="post-time">
+                                                    Created {ta === "just now" ? ta : `${ta} ago`}
+                                                </span>
+                                            );
+                                        })()
+                                    )}
+                                </div>
                                     <p className="post-content">{post.content}</p>
                                     <div className="post-tags">
                                         {post.tags && post.tags.map(tag => (
@@ -640,7 +641,17 @@ export default function DesktopForum() {
                     </div>
                 </div>
             )}
-
+            {openPost && (
+                <ForumPostModal
+                    post={openPost}
+                    user={user}
+                    onClose={() => setOpenPost(null)}
+                    onBumpPostComments={(postId) => {
+                        // simple refresh so the comment count updates in the list
+                        refreshNoJump();
+                    }}
+                />
+            )}
             {/* Material Icons */}
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

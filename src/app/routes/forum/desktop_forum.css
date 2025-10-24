@@ -739,3 +739,83 @@ body.popup-open {
     gap: 1rem;
   }
 }
+
+/* ===== Post modal ===== */
+.post-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.6);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999; backdrop-filter: blur(3px);
+}
+.post-modal {
+  width: min(900px, 96vw);
+  max-height: 92vh;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  display: flex; flex-direction: column;
+}
+.post-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 2px solid #e4e2e2; background: #f8f9fa;
+}
+.post-modal-title { margin: 0; font-size: 1.4rem; font-weight: 800; color: #333; }
+.post-modal-body { padding: 1rem 1.25rem; overflow: auto; }
+
+.post-modal-post {
+  background: #fff;
+  border: 2px solid #eaeaea;
+  border-radius: 10px; padding: 1rem; margin-bottom: 1rem;
+}
+.pmp-author-line { color: #666; font-size: .9rem; display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+.pmp-content { color: #333; line-height: 1.5; margin-bottom: .75rem; white-space: pre-wrap; }
+.pmp-tags { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .5rem; }
+.pmp-stats { display: flex; gap: 1rem; color: #666; font-weight: 500; }
+
+/* ===== Comments ===== */
+.ab-loading, .ab-empty { color: #666; padding: 1rem; }
+.ab-comments-list { margin-top: .25rem; }
+
+.ab-comment { position: relative; display: flex; }
+.ab-comment-rail {
+  width: 12px; margin-left: 4px; margin-right: 4px;
+  border-left: 2px solid #e5e5e5;
+}
+.ab-comment-card {
+  flex: 1; background: #fff;
+  border: 1px solid #eee; border-radius: 10px;
+  padding: .6rem .75rem; margin-bottom: .5rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.ab-comment-header { display: flex; align-items: center; gap: .5rem; color: #666; font-size: .9rem; }
+.ab-collapse-btn {
+  border: none; background: none; cursor: pointer; font-size: .9rem; color: #666;
+}
+.ab-comment-author { font-weight: 700; color: #333; }
+.ab-comment-dot { color: #bbb; }
+.ab-comment-time { color: #888; }
+.ab-comment-body { color: #333; margin: .5rem 0; white-space: pre-wrap; }
+.ab-comment-actions { display: flex; gap: .5rem; }
+.ab-like-btn, .ab-reply-btn {
+  border: none; background: none; cursor: pointer; font-weight: 600; color: #178c3a;
+  padding: .25rem .4rem; border-radius: 6px;
+}
+.ab-like-btn:hover, .ab-reply-btn:hover { background: rgba(23,140,58,0.08); }
+.ab-like-btn.liked { color: #e74c3c; }
+
+.ab-comment-children { margin-top: .25rem; }
+
+.ab-new-comment textarea {
+  width: 100%; border: 2px solid #ddd; border-radius: 10px;
+  padding: .75rem; font-size: 1rem; background: #fafafa;
+}
+.ab-new-comment textarea:focus { outline: none; border-color: #178c3a; background: #fff; box-shadow: 0 0 0 3px rgba(23,140,58,.1); }
+.ab-new-comment-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .5rem;
+}
+.ab-replying-to { color: #555; }
+.ab-cancel-reply {
+  border: none; background: none; cursor: pointer; color: #d32f2f; margin-left: .5rem; font-weight: 600;
+}
+.post-card { cursor: pointer; } /* lets posts open modal */
