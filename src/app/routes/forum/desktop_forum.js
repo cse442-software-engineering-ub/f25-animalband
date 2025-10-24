@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
-import ForumPostModal from "./desktop_forum_post";
+import ForumPostModal from "./desktop_post_modal";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
 
@@ -283,16 +283,6 @@ export default function DesktopForum() {
 
         };
 
-        // console.log("New Post Data Saved:", {
-        //     title: title,
-        //     content: content,
-        //     tags: tags,
-        //     likesFrom: likesFrom,
-        //     author: author,
-        //     authorId: authorId,
-        //     likeCount: likeCount
-
-        // });
         const tempId = Date.now();
         const optimistic = {
             id: tempId,
@@ -563,7 +553,9 @@ export default function DesktopForum() {
                                         </div>
                                         <button
                                             className={`like-btn ${post.liked ? "liked" : ""}`}
-                                            onClick={() => toggleLike(post.id)}
+                                            onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onKeyDown={(e) => e.stopPropagation()}
                                             aria-label={post.liked ? "Unlike post" : "Like post"}
                                         >
                                             {post.liked ? "❤️" : "🤍"}
@@ -647,7 +639,6 @@ export default function DesktopForum() {
                     user={user}
                     onClose={() => setOpenPost(null)}
                     onBumpPostComments={(postId) => {
-                        // simple refresh so the comment count updates in the list
                         refreshNoJump();
                     }}
                 />

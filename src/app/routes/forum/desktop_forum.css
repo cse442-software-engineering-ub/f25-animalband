@@ -818,4 +818,4 @@ body.popup-open {
 .ab-cancel-reply {
   border: none; background: none; cursor: pointer; color: #d32f2f; margin-left: .5rem; font-weight: 600;
 }
-.post-card { cursor: pointer; } /* lets posts open modal */
+.post-card { cursor: pointer; } 

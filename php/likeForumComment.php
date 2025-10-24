@@ -10,7 +10,6 @@ $data = json_decode(file_get_contents("php://input"), true);
 $commentId = intval($data["commentId"] ?? 0);
 if ($commentId<=0) { echo json_encode(["ok"=>false,"error"=>"bad id"]); exit; }
 
-// identify user (same caveat as above; align with your auth)
 session_start();
 $username = $_SESSION["username"] ?? null;
 if (!$username) { echo json_encode(["ok"=>false,"error"=>"not logged in"]); exit; }

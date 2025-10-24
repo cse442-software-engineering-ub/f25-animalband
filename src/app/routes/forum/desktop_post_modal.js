@@ -1,9 +1,7 @@
-// src/app/routes/forum/forum_post.js
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
 
-/** Utility: DB "YYYY-MM-DD HH:MM:SS" -> Date */
 function parseDbTimestamp(s) {
     if (!s) return null;
     const iso = s.replace(" ", "T");
@@ -27,7 +25,6 @@ function timeAgoTS(ts) {
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-/** Build tree {id, parentId} -> children[] */
 function buildTree(rows) {
     const byId = new Map();
     rows.forEach(r => byId.set(r.id, { ...r, children: [] }));
@@ -40,7 +37,6 @@ function buildTree(rows) {
             roots.push(byId.get(r.id));
         }
     });
-    // sort children (score then date)
     const sortFn = (a, b) => {
         const la = (a.likeCount ?? 0), lb = (b.likeCount ?? 0);
         if (lb !== la) return lb - la;
@@ -56,7 +52,6 @@ function buildTree(rows) {
     return roots;
 }
 
-/** Single comment node (recursive) */
 function CommentNode({
     node,
     depth,
@@ -130,16 +125,15 @@ function CommentNode({
     );
 }
 
-/** Modal for a single forum post with comments */
 export default function ForumPostModal({
     post,
     user,
     onClose,
-    onBumpPostComments // optional: refresh parent post comment count
+    onBumpPostComments 
 }) {
     const [loading, setLoading] = useState(true);
-    const [commentsFlat, setCommentsFlat] = useState([]); // flat array from server
-    const [replyTo, setReplyTo] = useState(null); // node being replied to
+    const [commentsFlat, setCommentsFlat] = useState([]); 
+    const [replyTo, setReplyTo] = useState(null); 
     const [draft, setDraft] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [collapsed, setCollapsed] = useState(() => new Set());
@@ -175,6 +169,10 @@ export default function ForumPostModal({
                 created_at: r.created_at || null,
                 liked: user ? (Array.isArray(r.likesFrom) && r.likesFrom.includes(user.username)) : false,
             })));
+
+            if (rows.length >= 5){
+                setCollapsed(new Set([rows[4].id]));
+            }
         } catch (e) {
             console.error("Failed to fetch comments:", e);
             setCommentsFlat([]);
@@ -193,7 +191,6 @@ export default function ForumPostModal({
 
     const onLike = async (node) => {
         if (!user) return;
-        // optimistic
         setCommentsFlat(prev => prev.map(c => {
             if (c.id !== node.id) return c;
             const goingToLike = !c.liked;
@@ -216,14 +213,12 @@ export default function ForumPostModal({
             });
             const data = await res.json();
             if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            // sync to server values
             setCommentsFlat(prev => prev.map(c => c.id === node.id
                 ? { ...c, liked: data.liked, likeCount: data.likeCount, likesFrom: data.likesFrom }
                 : c
             ));
         } catch (err) {
             console.error("like comment failed:", err);
-            // rollback by refetching for correctness
             fetchComments();
             alert("Failed to like/unlike. Please try again.");
         }
@@ -234,7 +229,6 @@ export default function ForumPostModal({
         if (!user || !draft.trim()) return;
         setSubmitting(true);
 
-        // optimistic placeholder
         const tempId = Date.now();
         const optimistic = {
             id: tempId,
@@ -267,9 +261,8 @@ export default function ForumPostModal({
             const data = await res.json();
             if (!res.ok || !data.success) throw new Error(data.message || `HTTP ${res.status}`);
 
-            // update list with real record (and bump counter on parent)
             await fetchComments();
-            onBumpPostComments?.(post.id); // tells parent to refresh post comment count
+            onBumpPostComments?.(post.id); 
             setReplyTo(null);
         } catch (err) {
             console.error("comment failed:", err);
@@ -282,7 +275,6 @@ export default function ForumPostModal({
     };
 
     useEffect(() => {
-        // trap scroll behind modal
         document.body.classList.add("popup-open");
         return () => document.body.classList.remove("popup-open");
     }, []);

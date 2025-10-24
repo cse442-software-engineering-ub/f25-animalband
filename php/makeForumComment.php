@@ -13,7 +13,6 @@ if ($mysqli->connect_error) {
   exit;
 }
 
-// Ensure table exists (safe to leave here)
 $mysqli->query("
   CREATE TABLE IF NOT EXISTS forumComments (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -42,7 +41,6 @@ $parentId = array_key_exists("parentId", $payload) && $payload["parentId"] !== n
             ? intval($payload["parentId"]) : null;
 $content  = isset($payload["content"]) ? trim($payload["content"]) : "";
 
-// If you later use sessions, you can prefer them:
 session_start();
 $author   = $_SESSION["username"] ?? ($payload["author"] ?? "");
 $authorId = isset($_SESSION["id"]) ? intval($_SESSION["id"]) : intval($payload["authorId"] ?? 0);
@@ -53,15 +51,12 @@ if ($postId <= 0 || $content === "" || $author === "" || $authorId <= 0) {
 }
 
 if ($parentId === null) {
-  // parentId = NULL case needs a different statement (can't bind NULL reliably as an int placeholder on all setups)
   $stmt = $mysqli->prepare("INSERT INTO forumComments (postId, parentId, author, authorId, content, likesFrom, likeCount) VALUES (?, NULL, ?, ?, ?, '[]', 0)");
   if (!$stmt) { echo json_encode(["success"=>false,"message"=>"Prepare failed"]); exit; }
-  // i s i s
   $stmt->bind_param("isis", $postId, $author, $authorId, $content);
 } else {
   $stmt = $mysqli->prepare("INSERT INTO forumComments (postId, parentId, author, authorId, content, likesFrom, likeCount) VALUES (?, ?, ?, ?, ?, '[]', 0)");
   if (!$stmt) { echo json_encode(["success"=>false,"message"=>"Prepare failed"]); exit; }
-  // i i s i s
   $stmt->bind_param("iisis", $postId, $parentId, $author, $authorId, $content);
 }
 
@@ -71,7 +66,6 @@ if (!$ok) {
   exit;
 }
 
-// bump comment count on the post
 $mysqli->query("UPDATE forumPosts SET comments = comments + 1 WHERE id = ".intval($postId));
 
 echo json_encode(["success"=>true, "id"=>$mysqli->insert_id]);
