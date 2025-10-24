@@ -138,6 +138,7 @@ export default function ForumPostModal({
     const [submitting, setSubmitting] = useState(false);
     const [collapsed, setCollapsed] = useState(() => new Set());
     const listRef = useRef(null)
+    const firstLoadRef = useRef(true);
 
 
     const tree = useMemo(() => buildTree(commentsFlat), [commentsFlat]);
@@ -151,7 +152,7 @@ export default function ForumPostModal({
     }, []);
 
     const fetchComments = useCallback(async () => {
-        setLoading(true);
+        if (firstLoadRef.current) setLoading(true);
         const prevY = listRef.current ? listRef.current.scrollTop : 0;
         try {
             const res = await fetch(`${PHP_URL}/getForumComments.php?postId=${encodeURIComponent(post.id)}`, {
@@ -160,27 +161,37 @@ export default function ForumPostModal({
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const rows = await res.json();
-            setCommentsFlat(rows.map(r => ({
-                id: Number(r.id),
-                postId: Number(r.postId),
-                parentId: r.parentId ? Number(r.parentId) : null,
-                author: r.author || "",
-                authorId: Number(r.authorId ?? 0),
-                content: r.content || "",
-                likesFrom: Array.isArray(r.likesFrom) ? r.likesFrom : [],
-                likeCount: Number(r.likeCount ?? 0),
-                created_at: r.created_at || null,
-                liked: user ? (Array.isArray(r.likesFrom) && r.likesFrom.includes(user.username)) : false,
-            })));
 
-            if (rows.length >= 5) {
-                setCollapsed(new Set([rows[4].id]));
+            setCommentsFlat(prev => {
+                const prevKey = prev.map(c => `${c.id}:${c.likeCount}`).join("|");
+                const nextFlat = rows.map(r => ({
+                    id: Number(r.id),
+                    postId: Number(r.postId),
+                    parentId: r.parentId ? Number(r.parentId) : null,
+                    author: r.author || "",
+                    authorId: Number(r.authorId ?? 0),
+                    content: r.content || "",
+                    likesFrom: Array.isArray(r.likesFrom) ? r.likesFrom : [],
+                    likeCount: Number(r.likeCount ?? 0),
+                    created_at: r.created_at || null,
+                    liked: user ? (Array.isArray(r.likesFrom) && r.likesFrom.includes(user.username)) : false,
+                }));
+                const nextKey = nextFlat.map(c => `${c.id}:${c.likeCount}`).join("|");
+                return prevKey === nextKey ? prev : nextFlat;
+            });
+
+            if (firstLoadRef.current) {
+                const topLevel = rows.filter(r => !r.parentId);
+                if (topLevel.length >= 5) setCollapsed(new Set([Number(topLevel[4].id)]));
             }
         } catch (e) {
             console.error("Failed to fetch comments:", e);
             setCommentsFlat([]);
         } finally {
-            setLoading(false);
+            if (firstLoadRef.current) {
+                setLoading(false);
+                firstLoadRef.current = false;
+            }
             requestAnimationFrame(() => {
                 if (listRef.current) listRef.current.scrollTop = prevY;
             });

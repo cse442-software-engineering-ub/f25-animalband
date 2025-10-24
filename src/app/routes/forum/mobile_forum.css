@@ -734,7 +734,7 @@
 }
 
 
-/* ===== Mobile Post Modal (view post + comments) ===== */
+/* ===== Mobile Post Modal ===== */
 .m-post-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.7);
@@ -780,7 +780,6 @@
 .m-post-tags { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .4rem; }
 .m-post-stats { display: flex; gap: 1rem; color: #666; font-weight: 500; }
 
-/* new comment composer */
 .m-new-comment textarea {
   width: 100%; border: 1px solid #ddd; border-radius: 10px; background: #fafafa;
   padding: .75rem; font-size: 1rem;
@@ -819,7 +818,6 @@
 .m-like-btn.liked { color: #e74c3c; }
 .m-comment-children { margin-top: .25rem; }
 
-/* prevent background scroll when modal is open */
 body.popup-open { overflow: hidden; }
 
 @media (max-width: 480px) {
