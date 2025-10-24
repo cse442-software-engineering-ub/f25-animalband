@@ -116,16 +116,23 @@ export default function MyRecordings() {
     setRecordedNotes([]);
   };
 
-  const playRecording = () => {
+  const playRecording = async () => {
     if (recordedNotes.length === 0 || !audioContextRef.current) return;
     if (Object.keys(sounds).length === 0) return; // wait until sounds are loaded
 
-    setIsPlaying(true);
     const audioContext = audioContextRef.current;
+
+    // Resume context (required for Chrome/Edge autoplay policies)
+    await audioContext.resume();
+
+    setIsPlaying(true);
 
     recordedNotes.forEach(({ key, time }) => {
       const buffer = sounds[key];
-      if (!buffer) return;
+      if (!buffer) {
+        console.warn(`Sound for key ${key} not loaded`);
+        return;
+      }
       const source = audioContext.createBufferSource();
       source.buffer = buffer;
       const gainNode = audioContext.createGain();
@@ -137,6 +144,7 @@ export default function MyRecordings() {
     const totalTime = recordedNotes[recordedNotes.length - 1].time + 400;
     setTimeout(() => setIsPlaying(false), totalTime);
   };
+
 
   if (loading) return <p className="ea-loading">Loading…</p>;
 
