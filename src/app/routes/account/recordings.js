@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./recordings.css";
 import "./desktop_edit_account.css"; // reuse shared layout + header + sidebar styles
 import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
+import { loadSound } from "../stage/stage_audioUtil";
 
 const PHP_URL =
   "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php";
@@ -56,12 +57,6 @@ export default function MyRecordings() {
   useEffect(() => {
     if (!audioContextRef.current) return;
     const audioContext = audioContextRef.current;
-
-    const loadSound = async (url) => {
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      return await audioContext.decodeAudioData(arrayBuffer);
-    };
 
     const loadAllSounds = async () => {
       const loadedSounds = {};
