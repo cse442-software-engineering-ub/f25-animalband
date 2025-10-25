@@ -31,6 +31,11 @@ export default function DesktopStage() {
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
 
+  //Local save state
+  const [showSaveForm, setShowSaveForm] = useState(false);
+  const [recordingTitle, setRecordingTitle] = useState("");
+  const [recordingDescription, setRecordingDescription] = useState("");
+
   const audioContextRef = useRef(null);
 
   const ANIMAL_IMAGES = {
@@ -69,7 +74,8 @@ export default function DesktopStage() {
   // Initialize AudioContext
   useEffect(() => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
     }
   }, []);
 
@@ -88,6 +94,8 @@ export default function DesktopStage() {
   // Handle key press
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (showSaveForm) return;
+
       const key = e.key.toLowerCase();
       if (!sounds[key]) return;
 
@@ -106,7 +114,7 @@ export default function DesktopStage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [sounds, masterVolume, isRecording, recordStartTime]);
+  }, [sounds, masterVolume, isRecording, recordStartTime, showSaveForm]);
 
   // Load master volume
   useEffect(() => {
@@ -198,7 +206,10 @@ export default function DesktopStage() {
   const exportRecording = async () => {
     if (!audioContextRef.current || recordedTracks.length === 0) return;
 
-    const fileName = prompt("Enter a name for your recording:", "animalband_recording");
+    const fileName = prompt(
+      "Enter a name for your recording:",
+      "animalband_recording"
+    );
     if (!fileName) return;
 
     const allNotes = recordedTracks.flat();
@@ -227,6 +238,39 @@ export default function DesktopStage() {
     a.download = `${fileName.trim() || "animalband_recording"}.wav`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const saveRecordingLocally = async () => {
+    const cookies = document.cookie.split("; ");
+    const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
+    const authCookie = cookieObj["auth_token"] || "";
+    try {
+      const response = await fetch(
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recording: recordedNotes,
+            title: recordingTitle,
+            description: recordingDescription,
+            userToken: authCookie,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        alert("Recording saved!");
+        setShowSaveForm(false);
+        setRecordingTitle("");
+        setRecordingDescription("");
+      } else {
+        alert("Failed to save recording.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error saving recording.");
+    }
   };
 
   // WAV conversion helpers
@@ -259,7 +303,11 @@ export default function DesktopStage() {
     let index = 44;
     for (let i = 0; i < interleaved.length; i++, index += 2) {
       const sample = Math.max(-1, Math.min(1, interleaved[i]));
-      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      view.setInt16(
+        index,
+        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+        true
+      );
     }
 
     return new Blob([view], { type: "audio/wav" });
@@ -267,7 +315,8 @@ export default function DesktopStage() {
 
   function interleave(buffer) {
     const inputL = buffer.getChannelData(0);
-    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const inputR =
+      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
     const interleaved = new Float32Array(buffer.length * 2);
     for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
       interleaved[j] = inputL[i];
@@ -308,7 +357,11 @@ export default function DesktopStage() {
             {Object.keys(ANIMAL_IMAGES).map(animal => (
               <div key={animal} className="animal-member">
                 <img
-                  src={playingAnimals[animal] ? ANIMAL_IMAGES[animal][1] : ANIMAL_IMAGES[animal][0]}
+                  src={
+                    playingAnimals[animal]
+                      ? ANIMAL_IMAGES[animal][1]
+                      : ANIMAL_IMAGES[animal][0]
+                  }
                   alt={`${animal} instrument`}
                   className={playingAnimals[animal] ? "playing" : ""}
                 />
@@ -367,9 +420,47 @@ export default function DesktopStage() {
             >
               ⬇
             </button>
+
+            <button
+              onClick={() => setShowSaveForm(true)}
+              disabled={recordedNotes.length === 0}
+              className="circle-btn export"
+            >
+              <span className="material-symbols-outlined export-icon">
+                save
+              </span>
+            </button>
           </div>
         </div>
 
+        {showSaveForm && (
+          <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+              <h3>Save Your Recording</h3>
+              <label>
+                Title:
+                <input
+                  type="text"
+                  value={recordingTitle}
+                  onChange={(e) => setRecordingTitle(e.target.value)}
+                  placeholder="Your Recording"
+                />
+              </label>
+              <label>
+                Description:
+                <textarea
+                  value={recordingDescription}
+                  onChange={(e) => setRecordingDescription(e.target.value)}
+                  placeholder="Description of your recording."
+                />
+              </label>
+              <div className="form-buttons">
+                <button onClick={() => setShowSaveForm(false)}>Cancel</button>
+                <button onClick={saveRecordingLocally}>Save</button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Track list */}
         <div className="track-list">
           <h3>Recorded Tracks</h3>
