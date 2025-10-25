@@ -251,7 +251,7 @@ export default function DesktopStage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            recording: recordedNotes,
+            recording: recordedTracks,
             title: recordingTitle,
             description: recordingDescription,
             userToken: authCookie,
@@ -423,7 +423,7 @@ export default function DesktopStage() {
 
             <button
               onClick={() => setShowSaveForm(true)}
-              disabled={recordedNotes.length === 0}
+              disabled={recordedTracks.length === 0}
               className="circle-btn export"
             >
               <span className="material-symbols-outlined export-icon">
