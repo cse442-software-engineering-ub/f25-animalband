@@ -24,7 +24,8 @@ export default function DesktopStage() {
 
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedNotes, setRecordedNotes] = useState([]);
+  const [recordedTracks, setRecordedTracks] = useState([]); // multiple tracks
+  const [currentTrack, setCurrentTrack] = useState([]);
   const [recordStartTime, setRecordStartTime] = useState(null);
 
   // Playback state
@@ -37,32 +38,6 @@ export default function DesktopStage() {
 
   const audioContextRef = useRef(null);
 
-  // ✅ Fetch user on mount
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
-          { credentials: "include" }
-        );
-        const data = await res.json();
-        if (data.loggedIn) {
-          setUser(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch user", err);
-      }
-    };
-    checkUser();
-  }, []);
-
-  useEffect(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext ||
-        window.webkitAudioContext)();
-    }
-  }, []);
-
   const ANIMAL_IMAGES = {
     hamster: [Hamster, HamsterPlaying],
     bird: [Bird, BirdPlaying],
@@ -71,6 +46,40 @@ export default function DesktopStage() {
     snake: [Snake, SnakePlaying],
   };
 
+  const animalKeyMap = {
+    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+    c: "bird", v: "bird", b: "bird", n: "bird",
+    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+    q: "snake", w: "snake", e: "snake", r: "snake",
+  };
+
+  // Fetch user
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+          { credentials: "include" }
+        );
+        const data = await res.json();
+        if (data.loggedIn) setUser(data);
+      } catch (err) {
+        console.error("Failed to fetch user", err);
+      }
+    };
+    checkUser();
+  }, []);
+
+  // Initialize AudioContext
+  useEffect(() => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
+    }
+  }, []);
+
+  // Load sounds
   useEffect(() => {
     const loadAllSounds = async () => {
       const loadedSounds = {};
@@ -82,6 +91,7 @@ export default function DesktopStage() {
     loadAllSounds();
   }, []);
 
+  // Handle key press
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (showSaveForm) return;
@@ -89,49 +99,24 @@ export default function DesktopStage() {
       const key = e.key.toLowerCase();
       if (!sounds[key]) return;
 
-      const animalMap = {
-        a: "hamster",
-        s: "hamster",
-        d: "hamster",
-        f: "hamster",
-        c: "bird",
-        v: "bird",
-        b: "bird",
-        n: "bird",
-        h: "ostrich",
-        j: "ostrich",
-        k: "ostrich",
-        l: "ostrich",
-        u: "kangaroo",
-        i: "kangaroo",
-        o: "kangaroo",
-        p: "kangaroo",
-        q: "snake",
-        w: "snake",
-        e: "snake",
-        r: "snake",
-      };
-
-      const animal = animalMap[key];
+      const animal = animalKeyMap[key];
       if (!animal) return;
 
       if (isRecording) {
         const timeSinceStart = performance.now() - recordStartTime;
-        setRecordedNotes((prev) => [...prev, { key, time: timeSinceStart }]);
+        setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
       }
 
       playSound(sounds[key], masterVolume);
-
-      setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-      setTimeout(() => {
-        setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
-      }, 300);
+      setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+      setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [sounds, masterVolume, isRecording, recordStartTime, showSaveForm]);
 
+  // Load master volume
   useEffect(() => {
     const savedVol = parseFloat(localStorage.getItem("masterVolume") || "1");
     setMasterVol(savedVol);
@@ -142,59 +127,84 @@ export default function DesktopStage() {
     localStorage.setItem("masterVolume", masterVolume);
   }, [masterVolume]);
 
-  const playRecording = () => {
-    if (recordedNotes.length === 0 || !audioContextRef.current) return;
-
-    setIsPlaying(true);
-    const audioContext = audioContextRef.current;
-    const animalMap = {
-      a: "hamster",
-      s: "hamster",
-      d: "hamster",
-      f: "hamster",
-      c: "bird",
-      v: "bird",
-      b: "bird",
-      n: "bird",
-      h: "ostrich",
-      j: "ostrich",
-      k: "ostrich",
-      l: "ostrich",
-      u: "kangaroo",
-      i: "kangaroo",
-      o: "kangaroo",
-      p: "kangaroo",
-      q: "snake",
-      w: "snake",
-      e: "snake",
-      r: "snake",
-    };
-
-    recordedNotes.forEach(({ key, time }) => {
-      const animal = animalMap[key];
-      if (!animal || !sounds[key]) return;
-
-      const source = audioContext.createBufferSource();
-      source.buffer = sounds[key];
-      const gainNode = audioContext.createGain();
-      gainNode.gain.value = masterVolume;
-      source.connect(gainNode).connect(audioContext.destination);
-      source.start(audioContext.currentTime + time / 1000);
-
-      setTimeout(() => {
-        setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-        setTimeout(() => {
-          setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
-        }, 300);
-      }, time);
-    });
-
-    const totalTime = recordedNotes[recordedNotes.length - 1].time + 400;
-    setTimeout(() => setIsPlaying(false), totalTime);
+  // Start/stop recording with overdub playback
+  const toggleRecording = () => {
+    if (!isRecording) {
+      setCurrentTrack([]);
+      setRecordStartTime(performance.now());
+      setIsRecording(true);
+      // Play existing tracks while recording
+      if (recordedTracks.length > 0) playTracksDuringRecording();
+    } else {
+      setRecordedTracks(prev => [...prev, currentTrack]);
+      setIsRecording(false);
+    }
   };
 
+  // Play existing tracks during recording
+  const playTracksDuringRecording = () => {
+    if (!audioContextRef.current) return;
+    const audioContext = audioContextRef.current;
+
+    recordedTracks.forEach(track => {
+      track.forEach(({ key, time }) => {
+        if (!sounds[key]) return;
+        const animal = animalKeyMap[key];
+        const source = audioContext.createBufferSource();
+        source.buffer = sounds[key];
+
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = masterVolume;
+
+        source.connect(gainNode).connect(audioContext.destination);
+        source.start(audioContext.currentTime + time / 1000);
+
+        setTimeout(() => {
+          setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+          setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+        }, time);
+      });
+    });
+  };
+
+  // Play all tracks simultaneously
+  const playAllTracks = () => {
+    if (!audioContextRef.current || recordedTracks.length === 0) return;
+    setIsPlaying(true);
+    const audioContext = audioContextRef.current;
+
+    recordedTracks.forEach(track => {
+      track.forEach(({ key, time }) => {
+        if (!sounds[key]) return;
+        const animal = animalKeyMap[key];
+        const source = audioContext.createBufferSource();
+        source.buffer = sounds[key];
+
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = masterVolume;
+
+        source.connect(gainNode).connect(audioContext.destination);
+        source.start(audioContext.currentTime + time / 1000);
+
+        setTimeout(() => {
+          setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+          setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+        }, time);
+      });
+    });
+
+    const longestTrack = Math.max(...recordedTracks.map(track => track.length ? track[track.length - 1].time : 0));
+    setTimeout(() => setIsPlaying(false), longestTrack + 400);
+  };
+
+  // Delete a track
+  const deleteTrack = (index) => {
+    setRecordedTracks(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Export combined tracks
   const exportRecording = async () => {
-    if (recordedNotes.length === 0 || !audioContextRef.current) return;
+    if (!audioContextRef.current || recordedTracks.length === 0) return;
 
     const fileName = prompt(
       "Enter a name for your recording:",
@@ -202,37 +212,13 @@ export default function DesktopStage() {
     );
     if (!fileName) return;
 
-    const duration =
-      (recordedNotes[recordedNotes.length - 1].time + 1000) / 1000;
+    const allNotes = recordedTracks.flat();
+    const duration = (allNotes.length ? allNotes[allNotes.length - 1].time + 1000 : 0) / 1000;
     const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
 
-    const animalMap = {
-      a: "hamster",
-      s: "hamster",
-      d: "hamster",
-      f: "hamster",
-      c: "bird",
-      v: "bird",
-      b: "bird",
-      n: "bird",
-      h: "ostrich",
-      j: "ostrich",
-      k: "ostrich",
-      l: "ostrich",
-      u: "kangaroo",
-      i: "kangaroo",
-      o: "kangaroo",
-      p: "kangaroo",
-      q: "snake",
-      w: "snake",
-      e: "snake",
-      r: "snake",
-    };
-
-    for (const { key, time } of recordedNotes) {
+    allNotes.forEach(({ key, time }) => {
       const buffer = sounds[key];
-      if (!buffer) continue;
-
+      if (!buffer) return;
       const source = offlineCtx.createBufferSource();
       source.buffer = buffer;
 
@@ -241,7 +227,7 @@ export default function DesktopStage() {
 
       source.connect(gainNode).connect(offlineCtx.destination);
       source.start(time / 1000);
-    }
+    });
 
     const renderedBuffer = await offlineCtx.startRendering();
     const wavBlob = bufferToWav(renderedBuffer);
@@ -260,7 +246,7 @@ export default function DesktopStage() {
     const authCookie = cookieObj["auth_token"] || "";
     try {
       const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php/saveRecordingsLocal.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -287,6 +273,7 @@ export default function DesktopStage() {
     }
   };
 
+  // WAV conversion helpers
   function bufferToWav(buffer) {
     const numOfChan = buffer.numberOfChannels;
     const length = buffer.length * numOfChan * 2 + 44;
@@ -294,39 +281,23 @@ export default function DesktopStage() {
     const view = new DataView(bufferArray);
 
     const writeString = (view, offset, string) => {
-      for (let i = 0; i < string.length; i++) {
-        view.setUint8(offset + i, string.charCodeAt(i));
-      }
+      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
     };
 
     let offset = 0;
-
-    writeString(view, offset, "RIFF");
-    offset += 4;
-    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true);
-    offset += 4;
-    writeString(view, offset, "WAVE");
-    offset += 4;
-    writeString(view, offset, "fmt ");
-    offset += 4;
-    view.setUint32(offset, 16, true);
-    offset += 4;
-    view.setUint16(offset, 1, true);
-    offset += 2;
-    view.setUint16(offset, numOfChan, true);
-    offset += 2;
-    view.setUint32(offset, buffer.sampleRate, true);
-    offset += 4;
-    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
-    offset += 4;
-    view.setUint16(offset, numOfChan * 2, true);
-    offset += 2;
-    view.setUint16(offset, 16, true);
-    offset += 2;
-    writeString(view, offset, "data");
-    offset += 4;
-    view.setUint32(offset, buffer.length * numOfChan * 2, true);
-    offset += 4;
+    writeString(view, offset, "RIFF"); offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "WAVE"); offset += 4;
+    writeString(view, offset, "fmt "); offset += 4;
+    view.setUint32(offset, 16, true); offset += 4;
+    view.setUint16(offset, 1, true); offset += 2;
+    view.setUint16(offset, numOfChan, true); offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
+    view.setUint16(offset, numOfChan * 2, true); offset += 2;
+    view.setUint16(offset, 16, true); offset += 2;
+    writeString(view, offset, "data"); offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
 
     const interleaved = interleave(buffer);
     let index = 44;
@@ -366,18 +337,8 @@ export default function DesktopStage() {
           <div className="header-buttons">
             {!user ? (
               <>
-                <button
-                  className="btn-login"
-                  onClick={() => navigate("/login")}
-                >
-                  Login
-                </button>
-                <button
-                  className="btn-register"
-                  onClick={() => navigate("/register")}
-                >
-                  Register
-                </button>
+                <button className="btn-login" onClick={() => navigate("/login")}>Login</button>
+                <button className="btn-register" onClick={() => navigate("/register")}>Register</button>
               </>
             ) : (
               <img
@@ -385,13 +346,7 @@ export default function DesktopStage() {
                 alt="Profile"
                 className="profile-pic"
                 onClick={() => navigate("/account")}
-                style={{
-                  width: "75px",
-                  height: "75px",
-                  borderRadius: "50%",
-                  cursor: "pointer",
-                  objectFit: "cover",
-                }}
+                style={{ width: "75px", height: "75px", borderRadius: "50%", cursor: "pointer", objectFit: "cover" }}
               />
             )}
           </div>
@@ -399,7 +354,7 @@ export default function DesktopStage() {
 
         <section className="band-stage">
           <div className="animals-container">
-            {Object.keys(ANIMAL_IMAGES).map((animal) => (
+            {Object.keys(ANIMAL_IMAGES).map(animal => (
               <div key={animal} className="animal-member">
                 <img
                   src={
@@ -412,15 +367,13 @@ export default function DesktopStage() {
                 />
                 <div className="animal-controls">
                   <p className="key-text">
-                    {
-                      Object.entries({
-                        hamster: "A S D F",
-                        bird: "C V B N",
-                        ostrich: "H J K L",
-                        kangaroo: "U I O P",
-                        snake: "Q W E R",
-                      })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]
-                    }
+                    {Object.entries({
+                      hamster: "A S D F",
+                      bird: "C V B N",
+                      ostrich: "H J K L",
+                      kangaroo: "U I O P",
+                      snake: "Q W E R",
+                    })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]}
                   </p>
                 </div>
               </div>
@@ -436,7 +389,7 @@ export default function DesktopStage() {
             max="1"
             step="0.01"
             value={masterVolume}
-            onChange={(e) => {
+            onChange={e => {
               const newVol = parseFloat(e.target.value);
               setMasterVol(newVol);
               setMasterVolume(newVol);
@@ -446,23 +399,15 @@ export default function DesktopStage() {
 
           <div className="circle-buttons">
             <button
-              onClick={() => {
-                if (!isRecording) {
-                  setRecordedNotes([]);
-                  setRecordStartTime(performance.now());
-                  setIsRecording(true);
-                } else {
-                  setIsRecording(false);
-                }
-              }}
+              onClick={toggleRecording}
               className={`circle-btn ${isRecording ? "stop" : "record"}`}
             >
               {isRecording ? "■" : "●"}
             </button>
 
             <button
-              onClick={playRecording}
-              disabled={isRecording || recordedNotes.length === 0}
+              onClick={playAllTracks}
+              disabled={isRecording || recordedTracks.length === 0}
               className={`circle-btn play ${isPlaying ? "playing" : ""}`}
             >
               ►
@@ -470,7 +415,7 @@ export default function DesktopStage() {
 
             <button
               onClick={exportRecording}
-              disabled={recordedNotes.length === 0}
+              disabled={recordedTracks.length === 0}
               className="circle-btn export"
             >
               ⬇
@@ -516,6 +461,19 @@ export default function DesktopStage() {
             </div>
           </div>
         )}
+        {/* Track list */}
+        <div className="track-list">
+          <h3>Recorded Tracks</h3>
+          {recordedTracks.length === 0 && <p>No tracks yet.</p>}
+          {recordedTracks.map((track, index) => (
+            <div key={index} className="track-item">
+              <span>Track {index + 1}</span>
+              <div className="track-buttons">
+                <button onClick={() => deleteTrack(index)}>Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
 
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
@@ -525,3 +483,4 @@ export default function DesktopStage() {
     </div>
   );
 }
+
