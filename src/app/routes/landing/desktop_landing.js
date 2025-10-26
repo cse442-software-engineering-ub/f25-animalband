@@ -15,6 +15,15 @@ export default function Landing() {
   const [postCount, setPostCount] = useState(null);
   const [loopCount, setLoopCount] = useState(null);
 
+  // Featured songs like state
+  const [likedSongs, setLikedSongs] = useState([false, false, false]);
+
+  const toggleLike = (index) => {
+    setLikedSongs((prev) =>
+      prev.map((liked, i) => (i === index ? !liked : liked))
+    );
+  };
+
   // Fetch user info
   useEffect(() => {
     const checkUser = async () => {
@@ -74,7 +83,7 @@ export default function Landing() {
     fetchPostCount();
   }, []);
 
-  // Fetch loop count from localRecordings
+  // Fetch loop count
   useEffect(() => {
     const fetchLoopCount = async () => {
       try {
@@ -223,6 +232,29 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Featured Songs */}
+      <section className="featured-songs-section">
+        <h2 className="featured-songs-title">Today's Top Songs</h2>
+        <div className="featured-songs-grid">
+          {[1, 2, 3].map((_, index) => (
+            <div className="song-card" key={index}>
+              <h3 className="song-title">Song Title {index + 1}</h3>
+              <button className="song-play-btn">
+                <span className="material-symbols-outlined">play_arrow</span>
+              </button>
+              <button
+                className="song-like-btn"
+                onClick={() => toggleLike(index)}
+              >
+                <span className="material-symbols-outlined">
+                  {likedSongs[index] ? "favorite" : "favorite_border"}
+                </span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Stats */}
       <section className="stats-section">
         <div className="stats-container">
@@ -234,7 +266,9 @@ export default function Landing() {
           </div>
           <div className="stat-card">
             <p className="stat-number">
-              {memberCount !== null ? memberCount.toLocaleString() : "Loading..."}
+              {memberCount !== null
+                ? memberCount.toLocaleString()
+                : "Loading..."}
             </p>
             <p className="stat-label">Members</p>
           </div>
@@ -252,7 +286,7 @@ export default function Landing() {
         <h3>Register for free and rock out with your animals today!</h3>
       </footer>
 
-      {/* Material Icons Font */}
+      {/* Material Icons */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
@@ -260,5 +294,6 @@ export default function Landing() {
     </div>
   );
 }
+
 
 
