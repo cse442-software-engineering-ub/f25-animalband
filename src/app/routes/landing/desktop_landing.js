@@ -15,13 +15,11 @@ export default function Landing() {
   const [postCount, setPostCount] = useState(null);
   const [loopCount, setLoopCount] = useState(null);
 
-  // Featured songs like state
-  const [likedSongs, setLikedSongs] = useState([false, false, false]);
+  // Track which song is playing (-1 = none)
+  const [playingSong, setPlayingSong] = useState(-1);
 
-  const toggleLike = (index) => {
-    setLikedSongs((prev) =>
-      prev.map((liked, i) => (i === index ? !liked : liked))
-    );
+  const togglePlay = (index) => {
+    setPlayingSong((prev) => (prev === index ? -1 : index));
   };
 
   // Fetch user info
@@ -53,8 +51,6 @@ export default function Landing() {
         const data = await res.json();
         if (data.memberCount !== undefined) {
           setMemberCount(data.memberCount);
-        } else {
-          console.error("Invalid response format for member count", data);
         }
       } catch (err) {
         console.error("Failed to fetch member count", err);
@@ -73,8 +69,6 @@ export default function Landing() {
         const data = await res.json();
         if (data.postCount !== undefined) {
           setPostCount(data.postCount);
-        } else {
-          console.error("Invalid response format for post count", data);
         }
       } catch (err) {
         console.error("Failed to fetch post count", err);
@@ -93,8 +87,6 @@ export default function Landing() {
         const data = await res.json();
         if (data.loopCount !== undefined) {
           setLoopCount(data.loopCount);
-        } else {
-          console.error("Invalid response format for loop count", data);
         }
       } catch (err) {
         console.error("Failed to fetch loop count", err);
@@ -239,15 +231,13 @@ export default function Landing() {
           {[1, 2, 3].map((_, index) => (
             <div className="song-card" key={index}>
               <h3 className="song-title">Song Title {index + 1}</h3>
-              <button className="song-play-btn">
-                <span className="material-symbols-outlined">play_arrow</span>
-              </button>
+              <p className="song-author">by Artist {index + 1}</p>
               <button
-                className="song-like-btn"
-                onClick={() => toggleLike(index)}
+                className="song-play-btn"
+                onClick={() => togglePlay(index)}
               >
                 <span className="material-symbols-outlined">
-                  {likedSongs[index] ? "favorite" : "favorite_border"}
+                  {playingSong === index ? "pause" : "play_arrow"}
                 </span>
               </button>
             </div>
@@ -294,6 +284,7 @@ export default function Landing() {
     </div>
   );
 }
+
 
 
 
