@@ -16,6 +16,14 @@ export default function MobileLanding() {
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
 
+  // Songs
+  const topSongs = [
+    { title: "Animal Jam", author: "DJ Owl" },
+    { title: "Paws and Beats", author: "Cat Band" },
+    { title: "Roar Remix", author: "Lion Orchestra" },
+  ];
+  const [playingIndex, setPlayingIndex] = useState(null);
+
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -24,9 +32,7 @@ export default function MobileLanding() {
           { credentials: "include" }
         );
         const data = await res.json();
-        if (data.loggedIn) {
-          setUser(data);
-        }
+        if (data.loggedIn) setUser(data);
       } catch (err) {
         console.error("Failed to fetch user", err);
       }
@@ -35,11 +41,8 @@ export default function MobileLanding() {
   }, []);
 
   const handleAccountClick = () => {
-    if (user) {
-      navigate("/account");
-    } else {
-      navigate("/login");
-    }
+    if (user) navigate("/account");
+    else navigate("/login");
   };
 
   const handleNavigation = (path) => {
@@ -49,12 +52,10 @@ export default function MobileLanding() {
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
-
     const onScroll = () => {
       const idx = Math.round(el.scrollLeft / el.clientWidth);
       if (idx !== active) setActive(idx);
     };
-
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, [active]);
@@ -65,15 +66,17 @@ export default function MobileLanding() {
     el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
   };
 
+  const togglePlay = (index) => {
+    setPlayingIndex(playingIndex === index ? null : index);
+  };
+
   return (
     <div className="m-landing">
-
       <header className={`m-header ${user ? "is-logged-in" : ""}`}>
         <div className="m-site-title">
           <span className="material-symbols-outlined m-paw" aria-hidden>pets</span>
           <span className="m-name">ANIMALBAND</span>
         </div>
-
         <div className={`m-auth ${user ? "is-logged-in" : ""}`}>
           {!user ? (
             <>
@@ -91,7 +94,6 @@ export default function MobileLanding() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="m-main">
         <h1 className="m-title">Create Music with Animals</h1>
         <p className="m-sub">
@@ -109,7 +111,6 @@ export default function MobileLanding() {
             ))}
           </div>
 
-          {/* Dots */}
           <div className="m-dots" role="tablist" aria-label="Select image">
             {slides.map((_, i) => (
               <button
@@ -128,7 +129,6 @@ export default function MobileLanding() {
 
         {/* Features */}
         <section className="m-features">
-          {/* Stage */}
           <Link to="/stage" className="m-card">
             <span className="material-symbols-outlined m-card-icon">piano</span>
             <div className="m-card-text">
@@ -136,7 +136,6 @@ export default function MobileLanding() {
               <div className="m-card-sub">Play instruments with your favorite animals.</div>
             </div>
           </Link>
-          {/* Looping */}
           <Link to="/looping" className="m-card">
             <span className="material-symbols-outlined m-card-icon">instant_mix</span>
             <div className="m-card-text">
@@ -144,7 +143,6 @@ export default function MobileLanding() {
               <div className="m-card-sub">Layer beats & notes with a visual mixer.</div>
             </div>
           </Link>
-          {/* Forum */}
           <Link to="/forum" className="m-card">
             <span className="material-symbols-outlined m-card-icon">chat</span>
             <div className="m-card-text">
@@ -152,7 +150,6 @@ export default function MobileLanding() {
               <div className="m-card-sub">Share your tracks, ask for help, and get feedback.</div>
             </div>
           </Link>
-          {/* Customization */}
           <Link to="/stage" className="m-card">
             <span className="material-symbols-outlined m-card-icon">edit</span>
             <div className="m-card-text">
@@ -161,6 +158,27 @@ export default function MobileLanding() {
             </div>
           </Link>
         </section>
+
+        {/* Today's Top Songs */}
+<section className="m-top-songs">
+  <h2 className="m-top-songs-title">Today's Top Songs</h2>
+  <div className="m-top-songs-list">
+    {topSongs.map((song, index) => (
+      <div key={index} className="m-song-card">
+        <div className="m-song-info">
+          <div className="m-song-title">{song.title}</div>
+          <div className="m-song-author">{song.author}</div>
+        </div>
+        <button className="m-play-btn" onClick={() => togglePlay(index)}>
+          <span className="material-symbols-outlined">
+            {playingIndex === index ? "pause" : "play_arrow"}
+          </span>
+        </button>
+      </div>
+    ))}
+  </div>
+</section>
+
 
         {/* Stats */}
         <section className="m-stats">
@@ -179,12 +197,10 @@ export default function MobileLanding() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="m-footer">
         Register for free and rock out with your animals today!
       </footer>
 
-      {/* Material Icons Font */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
