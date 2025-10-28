@@ -93,21 +93,30 @@ export default function DesktopStage() {
   // Handle key press
   useEffect(() => {
     const handleKeyDown = (e) => {
-      const key = e.key.toLowerCase();
-      if (!sounds[key]) return;
+    // Prevent sound triggers while typing in text fields
+    if (
+      e.target.tagName === "INPUT" ||
+      e.target.tagName === "TEXTAREA" ||
+      e.target.isContentEditable
+    ) {
+      return;
+    }
 
-      const animal = animalKeyMap[key];
-      if (!animal) return;
+    const key = e.key.toLowerCase();
+    if (!sounds[key]) return;
 
-      if (isRecording) {
-        const timeSinceStart = performance.now() - recordStartTime;
-        setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
-      }
+    const animal = animalKeyMap[key];
+    if (!animal) return;
 
-      playSound(sounds[key], masterVolume);
-      setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-      setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
-    };
+    if (isRecording) {
+      const timeSinceStart = performance.now() - recordStartTime;
+      setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
+    }
+
+    playSound(sounds[key], masterVolume);
+    setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+    setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+  };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
