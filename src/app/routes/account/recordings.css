@@ -1,0 +1,171 @@
+.my-recordings-page {
+    padding: 2rem;
+    font-family: sans-serif;
+    background-color: #f8f8f8;
+    min-height: 100vh;
+}
+
+.my-recordings-page h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.recordings-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+.recording-box {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    width: 250px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.recording-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.recording-box h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+}
+
+.recording-box p {
+    color: #555;
+    font-size: 0.95rem;
+}
+
+/* Modal Styling */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+}
+
+.modal-content audio {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.close-button {
+    margin-top: 1.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #007bff;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.close-button:hover {
+    background-color: #0056b3;
+}
+
+/* ==== Fix Header Off-Screen Without Global Changes ==== */
+.ea-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f4f3f3;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden; /* prevent sideways scrolling */
+  box-sizing: border-box;
+}
+
+/* === Scoped header layout fix === */
+.ea-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #E4E2E2;
+  overflow-x: hidden;
+}
+
+/* Make the header stretch full width across the page */
+.ea-header {
+  width: 100%;
+  background-color: #D9D9D9;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  position: relative;
+  box-sizing: border-box;
+  z-index: 10;
+  min-height: 100px;
+}
+
+/* Center the logo properly within the header */
+.ea-logo-section {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%); /* true center both horizontally & vertically */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+/* Prevent logo from pushing layout up */
+.ea-logo-section h1 {
+  margin: 0;
+  line-height: 1;
+}
+
+/* Maintain paw and title sizing */
+.ea-paw-icon {
+  font-size: 4.5rem !important;
+  color: #735442;
+  line-height: 1;
+  margin-top: 0.25rem;
+}
+
+.ea-site-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #000;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* Sidebar and content alignment remain consistent */
+.ea-layout {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 2rem auto;
+  gap: 2rem;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
