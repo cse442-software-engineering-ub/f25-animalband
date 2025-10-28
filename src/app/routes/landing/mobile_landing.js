@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
+
 import "./mobile_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
@@ -22,7 +24,31 @@ export default function MobileLanding() {
     { title: "Paws and Beats", author: "Cat Band" },
     { title: "Roar Remix", author: "Lion Orchestra" },
   ];
-  const [playingIndex, setPlayingIndex] = useState(null);
+  const [featuredSongs, setFeaturedSongs] = useState([]);
+  const [buffers, setBuffers] = useState(null);
+  const [playingIndex, setPlayingIndex] = useState(-1);
+  const stopRef = useRef(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const b = await preloadLandingSounds();
+        setBuffers(b);
+      } catch (e) {
+        console.error("Failed to preload sounds", e);
+      }
+    })();
+  }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php");
+        const d = await r.json();
+        if (d?.success && Array.isArray(d.songs)) setFeaturedSongs(d.songs);
+      } catch (e) {
+        console.error("Failed to fetch featured songs", e);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -48,6 +74,33 @@ export default function MobileLanding() {
   const handleNavigation = (path) => {
     navigate(path);
   };
+  const stopAll = () => {
+    if (stopRef.current) {
+      stopRef.current();
+      stopRef.current = null;
+    }
+  };
+
+  const togglePlay = (index) => {
+    if (!buffers) return;
+    if (playingIndex === index) {
+      stopAll();
+      setPlayingIndex(-1);
+      return;
+    }
+    stopAll();
+    const song = featuredSongs[index];
+    if (!song) return;
+    stopRef.current = schedulePlayback(buffers, song.recording, () => {
+      setPlayingIndex(-1);
+      stopRef.current = null;
+    });
+    setPlayingIndex(index);
+  };
+
+  useEffect(() => {
+    return () => stopAll();
+  }, []);
 
   useEffect(() => {
     const el = trackRef.current;
@@ -64,10 +117,6 @@ export default function MobileLanding() {
     const el = trackRef.current;
     if (!el) return;
     el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
-  };
-
-  const togglePlay = (index) => {
-    setPlayingIndex(playingIndex === index ? null : index);
   };
 
   return (
@@ -160,24 +209,44 @@ export default function MobileLanding() {
         </section>
 
         {/* Today's Top Songs */}
-<section className="m-top-songs">
-  <h2 className="m-top-songs-title">Today's Top Songs</h2>
-  <div className="m-top-songs-list">
-    {topSongs.map((song, index) => (
-      <div key={index} className="m-song-card">
-        <div className="m-song-info">
-          <div className="m-song-title">{song.title}</div>
-          <div className="m-song-author">{song.author}</div>
-        </div>
-        <button className="m-play-btn" onClick={() => togglePlay(index)}>
-          <span className="material-symbols-outlined">
-            {playingIndex === index ? "pause" : "play_arrow"}
-          </span>
-        </button>
-      </div>
-    ))}
-  </div>
-</section>
+        <section className="m-top-songs">
+          <h2 className="m-top-songs-title">Today's Top Songs</h2>
+
+          <div className="m-top-songs-list">
+            {featuredSongs.length === 0 && [0, 1, 2].map(i => (
+              <div key={`sk-${i}`} className="m-song-card">
+                <div className="m-song-info">
+                  <div className="m-song-title">Loading…</div>
+                  <div className="m-song-author">&nbsp;</div>
+                </div>
+                <button className="m-play-btn" disabled>
+                  <span className="material-symbols-outlined">hourglass_top</span>
+                </button>
+              </div>
+            ))}
+
+            {featuredSongs.map((song, index) => (
+              <div key={song.id} className="m-song-card">
+                <div className="m-song-info">
+                  <div className="m-song-title">{song.title || `Untitled #${song.id}`}</div>
+                  <div className="m-song-author">by {song.author}</div>
+                </div>
+
+                <button
+                  className="m-play-btn"
+                  disabled={!buffers}
+                  onClick={() => togglePlay(index)}
+                  title={!buffers ? "Loading sounds..." : (playingIndex === index ? "Stop" : "Play")}
+                >
+                  <span className="material-symbols-outlined">
+                    {playingIndex === index ? "stop" : "play_arrow"}
+                  </span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+
 
 
         {/* Stats */}
