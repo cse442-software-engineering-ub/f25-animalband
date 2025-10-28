@@ -51,19 +51,23 @@ export default function MyRecordings() {
     let loadedCount = 0;
 
     allImages.forEach((src) => {
-      const img = new Image();
-      img.onload = () => {
-        loadedCount++;
-        if (loadedCount === allImages.length) {
-          setImagesLoaded(true);
-          console.log("All animal images fully preloaded");
-        }
-      };
-      img.onerror = () => console.warn("Failed to preload:", src);
-      img.src = src;
+      fetch(src)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const img = new Image();
+          img.onload = () => {
+            loadedCount++;
+            if (loadedCount === allImages.length) {
+              setImagesLoaded(true);
+              console.log("All animal images fully preloaded");
+            }
+          };
+          img.onerror = () => console.warn("Failed to preload:", src);
+          img.src = URL.createObjectURL(blob);
+        })
+        .catch((err) => console.warn("Failed to fetch image:", src, err));
     });
   }, []);
-
 
   const animalKeyMap = {
     a: "hamster",
@@ -197,6 +201,9 @@ export default function MyRecordings() {
 
     setIsPlaying(true);
 
+    // Track the total playback time
+    let longestTime = 0;
+
     recordedNotes.forEach((track) => {
       track.forEach(({ key, time }) => {
         const buffer = sounds[key];
@@ -214,25 +221,34 @@ export default function MyRecordings() {
         source.connect(gainNode).connect(audioContext.destination);
         source.start(audioContext.currentTime + time / 1000);
 
-        // 🧩 Track active sources so we can stop them later
+        // Keep track so we can stop later
         activeSourcesRef.current.push(source);
-
-        // Remove from list once finished
         source.onended = () => {
           activeSourcesRef.current = activeSourcesRef.current.filter(
             (s) => s !== source
           );
         };
+
+        // Animate the corresponding animal
+        const animal = animalKeyMap[key];
+        if (animal) {
+          setTimeout(() => {
+            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+            setTimeout(() => {
+              setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
+            }, 500); // duration of "rockin'" animation
+          }, time);
+        }
+
+        if (time > longestTime) longestTime = time;
       });
     });
 
-    // Find total playback time
-    const longest = Math.max(
-      ...recordedNotes.map((track) =>
-        track.length ? track[track.length - 1].time : 0
-      )
-    );
-    setTimeout(() => setIsPlaying(false), longest + 500);
+    // Stop playing after the recording finishes
+    setTimeout(() => {
+      setIsPlaying(false);
+      setPlayingAnimals({});
+    }, longestTime + 500);
   };
 
   const stopAllSounds = () => {
@@ -322,20 +338,26 @@ export default function MyRecordings() {
 
                 {/* mini animal stage */}
                 <div className="mini-stage">
-                  {Object.keys(ANIMAL_IMAGES).map((animal) => (
-                    <img
-                      key={animal}
-                      src={
-                        playingAnimals[animal]
-                          ? ANIMAL_IMAGES[animal][1]
-                          : ANIMAL_IMAGES[animal][0]
-                      }
-                      alt={animal}
-                      className={`mini-animal ${
-                        playingAnimals[animal] ? "playing" : ""
-                      }`}
-                    />
-                  ))}
+                  {Object.keys(ANIMAL_IMAGES)
+                    .filter((animal) =>
+                      recordedNotes.some((track) =>
+                        track.some((note) => animalKeyMap[note.key] === animal)
+                      )
+                    )
+                    .map((animal) => (
+                      <img
+                        key={animal}
+                        src={
+                          playingAnimals[animal]
+                            ? ANIMAL_IMAGES[animal][1]
+                            : ANIMAL_IMAGES[animal][0]
+                        }
+                        alt={animal}
+                        className={`mini-animal ${
+                          playingAnimals[animal] ? "playing" : ""
+                        }`}
+                      />
+                    ))}
                 </div>
 
                 <button
