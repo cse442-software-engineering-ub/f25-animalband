@@ -1,8 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./recordings.css";
-import "./desktop_edit_account.css"; // reuse shared layout + header + sidebar styles
+import "./desktop_edit_account.css";
 import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
+
+import Ostrich from "../../../assets/ostrich.png";
+import OstrichPlaying from "../../../assets/ostrichrockin.png";
+import Bird from "../../../assets/bird.png";
+import BirdPlaying from "../../../assets/birdrockin.png";
+import Hamster from "../../../assets/hamster.png";
+import HamsterPlaying from "../../../assets/hamsterrockin.png";
+import Kangaroo from "../../../assets/kangaroo.png";
+import KangarooPlaying from "../../../assets/kangaroorockin.png";
+import Snake from "../../../assets/snake.png";
+import SnakePlaying from "../../../assets/snakerockin.png";
 
 const PHP_URL =
   "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php";
@@ -18,29 +29,64 @@ export default function MyRecordings() {
 
   const [sounds, setSounds] = useState({});
   const [isPlaying, setIsPlaying] = useState(false);
-  const masterVolume = 1;
+  const [playingAnimals, setPlayingAnimals] = useState({});
 
+  const masterVolume = 1;
   const audioContextRef = useRef(null);
 
-  // ------------------ LOCAL LOADSOUND ------------------
+  // --- animal mappings + images (same as stage) ---
+  const ANIMAL_IMAGES = {
+    hamster: [Hamster, HamsterPlaying],
+    bird: [Bird, BirdPlaying],
+    ostrich: [Ostrich, OstrichPlaying],
+    kangaroo: [Kangaroo, KangarooPlaying],
+    snake: [Snake, SnakePlaying],
+  };
+
+  useEffect(() => {
+    const preload = (src) => {
+      const img = new Image();
+      img.src = src;
+    };
+
+    Object.values(ANIMAL_IMAGES)
+      .flat() // flatten idle + playing pairs
+      .forEach(preload);
+  }, []);
+
+  const animalKeyMap = {
+    a: "hamster",
+    s: "hamster",
+    d: "hamster",
+    f: "hamster",
+    c: "bird",
+    v: "bird",
+    b: "bird",
+    n: "bird",
+    h: "ostrich",
+    j: "ostrich",
+    k: "ostrich",
+    l: "ostrich",
+    u: "kangaroo",
+    i: "kangaroo",
+    o: "kangaroo",
+    p: "kangaroo",
+    q: "snake",
+    w: "snake",
+    e: "snake",
+    r: "snake",
+  };
+
+  // --- load sound files ---
   const loadSoundForPage = async (filename) => {
     const audioContext = audioContextRef.current;
-    if (!audioContext) throw new Error("AudioContext not initialized");
-
     const url = `${process.env.PUBLIC_URL}/stage_sounds/${filename}`;
-    console.log("[DEBUG] Fetching:", url);
-
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} - Could not load ${url}`);
-    }
-
     const arrayBuffer = await response.arrayBuffer();
     return await audioContext.decodeAudioData(arrayBuffer);
   };
-  // -----------------------------------------------------
 
-  // Load user info for header
+  // --- user fetch ---
   useEffect(() => {
     (async () => {
       try {
@@ -62,17 +108,12 @@ export default function MyRecordings() {
     })();
   }, [navigate]);
 
-  // Initialize AudioContext
+  // --- audio context + sound buffers ---
   useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext ||
         window.webkitAudioContext)();
     }
-  }, []);
-
-  // Load sounds into buffers using local loadSoundForPage
-  useEffect(() => {
-    if (!audioContextRef.current) return;
 
     const loadAllSounds = async () => {
       const loadedSounds = {};
@@ -87,9 +128,9 @@ export default function MyRecordings() {
     };
 
     loadAllSounds();
-  }, [audioContextRef.current]);
+  }, []);
 
-  // Fetch recordings
+  // --- fetch recordings ---
   useEffect(() => {
     const fetchRecordings = async () => {
       const cookies = document.cookie.split("; ");
@@ -132,41 +173,50 @@ export default function MyRecordings() {
     setRecordedNotes([]);
   };
 
+  // --- play recording with animation ---
   const playRecording = async () => {
-    console.log("START OF PLAYRECORDING");
-    console.log(recordedNotes);
     if (recordedNotes.length === 0) return;
 
     const audioContext = audioContextRef.current;
     if (!audioContext) return;
 
-    // Resume AudioContext (must be done on user gesture)
     if (audioContext.state === "suspended") {
       await audioContext.resume();
     }
 
-    console.log("setisplaying reached");
     setIsPlaying(true);
 
-    recordedNotes.forEach(track => {
+    recordedNotes.forEach((track) => {
       track.forEach(({ key, time }) => {
         const buffer = sounds[key];
-        if (!buffer) {
-          console.warn(`Sound for key ${key} not loaded`);
-          return;
-        }
-
+        if (!buffer) return;
+        const animal = animalKeyMap[key];
         const source = audioContext.createBufferSource();
         source.buffer = buffer;
+
         const gainNode = audioContext.createGain();
         gainNode.gain.value = masterVolume;
+
         source.connect(gainNode).connect(audioContext.destination);
         source.start(audioContext.currentTime + time / 1000);
+
+        // Animate animals just like stage
+        setTimeout(() => {
+          setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+          setTimeout(() => {
+            setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
+          }, 300);
+        }, time);
       });
     });
 
-    const totalTime = recordedNotes[recordedNotes.length - 1].time + 400;
-    setTimeout(() => setIsPlaying(false), totalTime);
+    // Find total playback time
+    const longest = Math.max(
+      ...recordedNotes.map((track) =>
+        track.length ? track[track.length - 1].time : 0
+      )
+    );
+    setTimeout(() => setIsPlaying(false), longest + 500);
   };
 
   if (loading) return <p className="ea-loading">Loading…</p>;
@@ -240,6 +290,25 @@ export default function MyRecordings() {
               >
                 <h2>{selectedRecording.title}</h2>
                 <p>{selectedRecording.description}</p>
+
+                {/* mini animal stage */}
+                <div className="mini-stage">
+                  {Object.keys(ANIMAL_IMAGES).map((animal) => (
+                    <img
+                      key={animal}
+                      src={
+                        playingAnimals[animal]
+                          ? ANIMAL_IMAGES[animal][1]
+                          : ANIMAL_IMAGES[animal][0]
+                      }
+                      alt={animal}
+                      className={`mini-animal ${
+                        playingAnimals[animal] ? "playing" : ""
+                      }`}
+                    />
+                  ))}
+                </div>
+
                 <button onClick={playRecording} className="play-button">
                   {isPlaying ? "Playing…" : "Play Recording"}
                 </button>
