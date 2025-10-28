@@ -360,22 +360,24 @@ export default function MyRecordings() {
                     ))}
                 </div>
 
-                <button
-                  onClick={playRecording}
-                  disabled={!imagesLoaded}
-                  className="play-button"
-                >
-                  {isPlaying ? "Playing…" : "Play Recording"}
-                </button>
-                <button
-                  className="close-button"
-                  onClick={() => {
-                    stopAllSounds();
-                    closeModal();
-                  }}
-                >
-                  Close
-                </button>
+                <div className="buttons-row">
+                  <button
+                    onClick={playRecording}
+                    disabled={!imagesLoaded}
+                    className="play-button"
+                  >
+                    ▶
+                  </button>
+                  <button
+                    className="close-button"
+                    onClick={() => {
+                      stopAllSounds();
+                      closeModal();
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             </div>
           )}
