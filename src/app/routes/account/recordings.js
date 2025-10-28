@@ -33,6 +33,7 @@ export default function MyRecordings() {
 
   const masterVolume = 1;
   const audioContextRef = useRef(null);
+  const activeSourcesRef = useRef([]);
 
   // --- animal mappings + images (same as stage) ---
   const ANIMAL_IMAGES = {
@@ -43,16 +44,26 @@ export default function MyRecordings() {
     snake: [Snake, SnakePlaying],
   };
 
-  useEffect(() => {
-    const preload = (src) => {
-      const img = new Image();
-      img.src = src;
-    };
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
-    Object.values(ANIMAL_IMAGES)
-      .flat() // flatten idle + playing pairs
-      .forEach(preload);
+  useEffect(() => {
+    const allImages = Object.values(ANIMAL_IMAGES).flat();
+    let loadedCount = 0;
+
+    allImages.forEach((src) => {
+      const img = new Image();
+      img.onload = () => {
+        loadedCount++;
+        if (loadedCount === allImages.length) {
+          setImagesLoaded(true);
+          console.log("All animal images fully preloaded");
+        }
+      };
+      img.onerror = () => console.warn("Failed to preload:", src);
+      img.src = src;
+    });
   }, []);
+
 
   const animalKeyMap = {
     a: "hamster",
@@ -189,8 +200,11 @@ export default function MyRecordings() {
     recordedNotes.forEach((track) => {
       track.forEach(({ key, time }) => {
         const buffer = sounds[key];
-        if (!buffer) return;
-        const animal = animalKeyMap[key];
+        if (!buffer) {
+          console.warn(`Sound for key ${key} not loaded`);
+          return;
+        }
+
         const source = audioContext.createBufferSource();
         source.buffer = buffer;
 
@@ -200,13 +214,15 @@ export default function MyRecordings() {
         source.connect(gainNode).connect(audioContext.destination);
         source.start(audioContext.currentTime + time / 1000);
 
-        // Animate animals just like stage
-        setTimeout(() => {
-          setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-          setTimeout(() => {
-            setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
-          }, 300);
-        }, time);
+        // 🧩 Track active sources so we can stop them later
+        activeSourcesRef.current.push(source);
+
+        // Remove from list once finished
+        source.onended = () => {
+          activeSourcesRef.current = activeSourcesRef.current.filter(
+            (s) => s !== source
+          );
+        };
       });
     });
 
@@ -218,6 +234,19 @@ export default function MyRecordings() {
     );
     setTimeout(() => setIsPlaying(false), longest + 500);
   };
+
+  const stopAllSounds = () => {
+    activeSourcesRef.current.forEach((src) => {
+      try {
+        src.stop(0);
+      } catch (e) {
+        // already stopped
+      }
+    });
+    activeSourcesRef.current = [];
+    setIsPlaying(false);
+  };
+
 
   if (loading) return <p className="ea-loading">Loading…</p>;
 
@@ -309,10 +338,20 @@ export default function MyRecordings() {
                   ))}
                 </div>
 
-                <button onClick={playRecording} className="play-button">
+                <button
+                  onClick={playRecording}
+                  disabled={!imagesLoaded}
+                  className="play-button"
+                >
                   {isPlaying ? "Playing…" : "Play Recording"}
                 </button>
-                <button className="close-button" onClick={closeModal}>
+                <button
+                  className="close-button"
+                  onClick={() => {
+                    stopAllSounds();
+                    closeModal();
+                  }}
+                >
                   Close
                 </button>
               </div>
