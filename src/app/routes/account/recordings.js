@@ -148,19 +148,21 @@ export default function MyRecordings() {
     console.log("setisplaying reached");
     setIsPlaying(true);
 
-    recordedNotes.forEach(({ key, time }) => {
-      const buffer = sounds[key];
-      if (!buffer) {
-        console.warn(`Sound for key ${key} not loaded`);
-        return;
-      }
+    recordedNotes.forEach(track => {
+      track.forEach(({ key, time }) => {
+        const buffer = sounds[key];
+        if (!buffer) {
+          console.warn(`Sound for key ${key} not loaded`);
+          return;
+        }
 
-      const source = audioContext.createBufferSource();
-      source.buffer = buffer;
-      const gainNode = audioContext.createGain();
-      gainNode.gain.value = masterVolume;
-      source.connect(gainNode).connect(audioContext.destination);
-      source.start(audioContext.currentTime + time / 1000);
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = masterVolume;
+        source.connect(gainNode).connect(audioContext.destination);
+        source.start(audioContext.currentTime + time / 1000);
+      });
     });
 
     const totalTime = recordedNotes[recordedNotes.length - 1].time + 400;
