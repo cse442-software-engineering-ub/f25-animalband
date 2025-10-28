@@ -339,3 +339,81 @@
     padding: 2rem 1rem;
   }
 }
+
+/* Featured Songs Section */
+.featured-songs-section {
+  background-color: #F9F9F9;
+  padding: 1.5rem 1rem 2rem; /* Reduced vertical padding */
+  text-align: center;
+}
+
+.featured-songs-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #000;
+  margin-bottom: 1rem; /* Reduced margin */
+}
+
+.featured-songs-grid {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem; /* Slightly smaller gap */
+  flex-wrap: wrap;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.song-card {
+  background-color: #F0F0F0;
+  border-radius: 0.5rem;
+  width: 200px;
+  height: auto; /* Adjust height automatically */
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; /* Align content at top */
+  padding: 0.75rem; /* Reduced padding */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.song-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.song-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 0.25rem; /* Reduce space to author */
+}
+
+.song-author {
+  font-size: 0.85rem;
+  color: #6E6E6E;
+  margin-bottom: 0.5rem; /* Less vertical space below author */
+}
+
+.song-play-btn {
+  background-color: #178C3A;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 2rem;
+  transition: background-color 0.2s;
+  margin-top: 0.5rem; /* Slight space above play button */
+}
+
+.song-play-btn:hover {
+  background-color: #15803d;
+}
+
+

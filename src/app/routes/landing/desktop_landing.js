@@ -1,6 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
 import "./desktop_landing.css";
+
+
 
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
@@ -14,6 +17,28 @@ export default function Landing() {
   const [memberCount, setMemberCount] = useState(null);
   const [postCount, setPostCount] = useState(null);
   const [loopCount, setLoopCount] = useState(null);
+
+  const [featuredSongs, setFeaturedSongs] = useState([]);
+  const [buffers, setBuffers] = useState(null);
+  const [playingIndex, setPlayingIndex] = useState(-1);
+  const stopRef = useRef(null);
+
+  const togglePlay = (idx) => {
+    if (!buffers) return;
+    if (playingIndex === idx) {
+      stopAll();
+      setPlayingIndex(-1);
+      return;
+    }
+    stopAll();
+    const song = featuredSongs[idx];
+    if (!song) return;
+    stopRef.current = schedulePlayback(buffers, song.recording, () => {
+      setPlayingIndex(-1);
+      stopRef.current = null;
+    });
+    setPlayingIndex(idx);
+  };
 
   // Fetch user info
   useEffect(() => {
@@ -44,8 +69,6 @@ export default function Landing() {
         const data = await res.json();
         if (data.memberCount !== undefined) {
           setMemberCount(data.memberCount);
-        } else {
-          console.error("Invalid response format for member count", data);
         }
       } catch (err) {
         console.error("Failed to fetch member count", err);
@@ -64,8 +87,6 @@ export default function Landing() {
         const data = await res.json();
         if (data.postCount !== undefined) {
           setPostCount(data.postCount);
-        } else {
-          console.error("Invalid response format for post count", data);
         }
       } catch (err) {
         console.error("Failed to fetch post count", err);
@@ -74,7 +95,7 @@ export default function Landing() {
     fetchPostCount();
   }, []);
 
-  // Fetch loop count from localRecordings
+  // Fetch loop count
   useEffect(() => {
     const fetchLoopCount = async () => {
       try {
@@ -84,8 +105,6 @@ export default function Landing() {
         const data = await res.json();
         if (data.loopCount !== undefined) {
           setLoopCount(data.loopCount);
-        } else {
-          console.error("Invalid response format for loop count", data);
         }
       } catch (err) {
         console.error("Failed to fetch loop count", err);
@@ -93,6 +112,41 @@ export default function Landing() {
     };
     fetchLoopCount();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const b = await preloadLandingSounds();
+        setBuffers(b);
+      } catch (e) { console.error(e); }
+    })();
+  }, []);
+
+
+  useEffect(() => {
+    return () => {
+      if (stopRef.current) {
+        stopRef.current();
+        stopRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php");
+        const d = await r.json();
+        if (d?.success && Array.isArray(d.songs)) setFeaturedSongs(d.songs);
+      } catch (e) { console.error("Failed to fetch featured songs", e); }
+    })();
+  }, []);
+  const stopAll = () => {
+    if (stopRef.current) { stopRef.current(); stopRef.current = null; }
+  };
+
+
+
 
   const handleAccountClick = () => {
     if (user) {
@@ -223,6 +277,32 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Featured Songs */}
+      <section className="featured-songs-section">
+        <h2 className="featured-songs-title">Today’s Top Songs</h2>
+
+        <div className="featured-songs-grid">
+          {featuredSongs.length === 0 && [0, 1, 2].map(i => (
+            <div className="song-card" key={`sk-${i}`}>Loading…</div>
+          ))}
+
+          {featuredSongs.map((song, index) => (
+            <div className="song-card" key={song.id}>
+              <h3 className="song-title">{song.title || `Untitled #${song.id}`}</h3>
+              <p className="song-author">by {song.author}</p>
+              {song.description && <p className="song-desc">{song.description}</p>}
+
+              <button className="song-play-btn" onClick={() => togglePlay(index)}>
+                <span className="material-symbols-outlined">
+                  {playingIndex === index ? "stop" : "play_arrow"}
+                </span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+
       {/* Stats */}
       <section className="stats-section">
         <div className="stats-container">
@@ -234,7 +314,9 @@ export default function Landing() {
           </div>
           <div className="stat-card">
             <p className="stat-number">
-              {memberCount !== null ? memberCount.toLocaleString() : "Loading..."}
+              {memberCount !== null
+                ? memberCount.toLocaleString()
+                : "Loading..."}
             </p>
             <p className="stat-label">Members</p>
           </div>
@@ -252,7 +334,7 @@ export default function Landing() {
         <h3>Register for free and rock out with your animals today!</h3>
       </footer>
 
-      {/* Material Icons Font */}
+      {/* Material Icons */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
@@ -260,5 +342,7 @@ export default function Landing() {
     </div>
   );
 }
+
+
 
 
