@@ -1,6 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
 import "./desktop_landing.css";
+
+
 
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
@@ -15,11 +18,26 @@ export default function Landing() {
   const [postCount, setPostCount] = useState(null);
   const [loopCount, setLoopCount] = useState(null);
 
-  // Track which song is playing (-1 = none)
-  const [playingSong, setPlayingSong] = useState(-1);
+  const [featuredSongs, setFeaturedSongs] = useState([]);
+  const [buffers, setBuffers] = useState(null);
+  const [playingIndex, setPlayingIndex] = useState(-1);
+  const stopRef = useRef(null);
 
-  const togglePlay = (index) => {
-    setPlayingSong((prev) => (prev === index ? -1 : index));
+  const togglePlay = (idx) => {
+    if (!buffers) return;
+    if (playingIndex === idx) {
+      stopAll();
+      setPlayingIndex(-1);
+      return;
+    }
+    stopAll();
+    const song = featuredSongs[idx];
+    if (!song) return;
+    stopRef.current = schedulePlayback(buffers, song.recording, () => {
+      setPlayingIndex(-1);
+      stopRef.current = null;
+    });
+    setPlayingIndex(idx);
   };
 
   // Fetch user info
@@ -94,6 +112,41 @@ export default function Landing() {
     };
     fetchLoopCount();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const b = await preloadLandingSounds();
+        setBuffers(b);
+      } catch (e) { console.error(e); }
+    })();
+  }, []);
+
+
+  useEffect(() => {
+    return () => {
+      if (stopRef.current) {
+        stopRef.current();
+        stopRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php");
+        const d = await r.json();
+        if (d?.success && Array.isArray(d.songs)) setFeaturedSongs(d.songs);
+      } catch (e) { console.error("Failed to fetch featured songs", e); }
+    })();
+  }, []);
+  const stopAll = () => {
+    if (stopRef.current) { stopRef.current(); stopRef.current = null; }
+  };
+
+
+
 
   const handleAccountClick = () => {
     if (user) {
@@ -226,24 +279,29 @@ export default function Landing() {
 
       {/* Featured Songs */}
       <section className="featured-songs-section">
-        <h2 className="featured-songs-title">Today's Top Songs</h2>
+        <h2 className="featured-songs-title">Today’s Top Songs</h2>
+
         <div className="featured-songs-grid">
-          {[1, 2, 3].map((_, index) => (
-            <div className="song-card" key={index}>
-              <h3 className="song-title">Song Title {index + 1}</h3>
-              <p className="song-author">by Artist {index + 1}</p>
-              <button
-                className="song-play-btn"
-                onClick={() => togglePlay(index)}
-              >
+          {featuredSongs.length === 0 && [0, 1, 2].map(i => (
+            <div className="song-card" key={`sk-${i}`}>Loading…</div>
+          ))}
+
+          {featuredSongs.map((song, index) => (
+            <div className="song-card" key={song.id}>
+              <h3 className="song-title">{song.title || `Untitled #${song.id}`}</h3>
+              <p className="song-author">by {song.author}</p>
+              {song.description && <p className="song-desc">{song.description}</p>}
+
+              <button className="song-play-btn" onClick={() => togglePlay(index)}>
                 <span className="material-symbols-outlined">
-                  {playingSong === index ? "pause" : "play_arrow"}
+                  {playingIndex === index ? "stop" : "play_arrow"}
                 </span>
               </button>
             </div>
           ))}
         </div>
       </section>
+
 
       {/* Stats */}
       <section className="stats-section">
