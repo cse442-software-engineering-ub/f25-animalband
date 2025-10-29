@@ -1,8 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./recordings.css";
-import "./desktop_edit_account.css"; // reuse shared layout + header + sidebar styles
+import "./desktop_edit_account.css";
 import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
+
+import Ostrich from "../../../assets/ostrich.png";
+import OstrichPlaying from "../../../assets/ostrichrockin.png";
+import Bird from "../../../assets/bird.png";
+import BirdPlaying from "../../../assets/birdrockin.png";
+import Hamster from "../../../assets/hamster.png";
+import HamsterPlaying from "../../../assets/hamsterrockin.png";
+import Kangaroo from "../../../assets/kangaroo.png";
+import KangarooPlaying from "../../../assets/kangaroorockin.png";
+import Snake from "../../../assets/snake.png";
+import SnakePlaying from "../../../assets/snakerockin.png";
 
 const PHP_URL =
   "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php";
@@ -18,29 +29,79 @@ export default function MyRecordings() {
 
   const [sounds, setSounds] = useState({});
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playingAnimals, setPlayingAnimals] = useState({});
+
   const masterVolume = 1;
-
   const audioContextRef = useRef(null);
+  const activeSourcesRef = useRef([]);
 
-  // ------------------ LOCAL LOADSOUND ------------------
+  // --- animal mappings + images (same as stage) ---
+  const ANIMAL_IMAGES = {
+    hamster: [Hamster, HamsterPlaying],
+    bird: [Bird, BirdPlaying],
+    ostrich: [Ostrich, OstrichPlaying],
+    kangaroo: [Kangaroo, KangarooPlaying],
+    snake: [Snake, SnakePlaying],
+  };
+
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
+  useEffect(() => {
+    const allImages = Object.values(ANIMAL_IMAGES).flat();
+    let loadedCount = 0;
+
+    allImages.forEach((src) => {
+      fetch(src)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const img = new Image();
+          img.onload = () => {
+            loadedCount++;
+            if (loadedCount === allImages.length) {
+              setImagesLoaded(true);
+              console.log("All animal images fully preloaded");
+            }
+          };
+          img.onerror = () => console.warn("Failed to preload:", src);
+          img.src = URL.createObjectURL(blob);
+        })
+        .catch((err) => console.warn("Failed to fetch image:", src, err));
+    });
+  }, []);
+
+  const animalKeyMap = {
+    a: "hamster",
+    s: "hamster",
+    d: "hamster",
+    f: "hamster",
+    c: "bird",
+    v: "bird",
+    b: "bird",
+    n: "bird",
+    h: "ostrich",
+    j: "ostrich",
+    k: "ostrich",
+    l: "ostrich",
+    u: "kangaroo",
+    i: "kangaroo",
+    o: "kangaroo",
+    p: "kangaroo",
+    q: "snake",
+    w: "snake",
+    e: "snake",
+    r: "snake",
+  };
+
+  // --- load sound files ---
   const loadSoundForPage = async (filename) => {
     const audioContext = audioContextRef.current;
-    if (!audioContext) throw new Error("AudioContext not initialized");
-
     const url = `${process.env.PUBLIC_URL}/stage_sounds/${filename}`;
-    console.log("[DEBUG] Fetching:", url);
-
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} - Could not load ${url}`);
-    }
-
     const arrayBuffer = await response.arrayBuffer();
     return await audioContext.decodeAudioData(arrayBuffer);
   };
-  // -----------------------------------------------------
 
-  // Load user info for header
+  // --- user fetch ---
   useEffect(() => {
     (async () => {
       try {
@@ -62,17 +123,12 @@ export default function MyRecordings() {
     })();
   }, [navigate]);
 
-  // Initialize AudioContext
+  // --- audio context + sound buffers ---
   useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext ||
         window.webkitAudioContext)();
     }
-  }, []);
-
-  // Load sounds into buffers using local loadSoundForPage
-  useEffect(() => {
-    if (!audioContextRef.current) return;
 
     const loadAllSounds = async () => {
       const loadedSounds = {};
@@ -87,9 +143,9 @@ export default function MyRecordings() {
     };
 
     loadAllSounds();
-  }, [audioContextRef.current]);
+  }, []);
 
-  // Fetch recordings
+  // --- fetch recordings ---
   useEffect(() => {
     const fetchRecordings = async () => {
       const cookies = document.cookie.split("; ");
@@ -132,23 +188,23 @@ export default function MyRecordings() {
     setRecordedNotes([]);
   };
 
+  // --- play recording with animation ---
   const playRecording = async () => {
-    console.log("START OF PLAYRECORDING");
-    console.log(recordedNotes);
     if (recordedNotes.length === 0) return;
 
     const audioContext = audioContextRef.current;
     if (!audioContext) return;
 
-    // Resume AudioContext (must be done on user gesture)
     if (audioContext.state === "suspended") {
       await audioContext.resume();
     }
 
-    console.log("setisplaying reached");
     setIsPlaying(true);
 
-    recordedNotes.forEach(track => {
+    // Track the total playback time
+    let longestTime = 0;
+
+    recordedNotes.forEach((track) => {
       track.forEach(({ key, time }) => {
         const buffer = sounds[key];
         if (!buffer) {
@@ -158,16 +214,55 @@ export default function MyRecordings() {
 
         const source = audioContext.createBufferSource();
         source.buffer = buffer;
+
         const gainNode = audioContext.createGain();
         gainNode.gain.value = masterVolume;
+
         source.connect(gainNode).connect(audioContext.destination);
         source.start(audioContext.currentTime + time / 1000);
+
+        // Keep track so we can stop later
+        activeSourcesRef.current.push(source);
+        source.onended = () => {
+          activeSourcesRef.current = activeSourcesRef.current.filter(
+            (s) => s !== source
+          );
+        };
+
+        // Animate the corresponding animal
+        const animal = animalKeyMap[key];
+        if (animal) {
+          setTimeout(() => {
+            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+            setTimeout(() => {
+              setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
+            }, 500); // duration of "rockin'" animation
+          }, time);
+        }
+
+        if (time > longestTime) longestTime = time;
       });
     });
 
-    const totalTime = recordedNotes[recordedNotes.length - 1].time + 400;
-    setTimeout(() => setIsPlaying(false), totalTime);
+    // Stop playing after the recording finishes
+    setTimeout(() => {
+      setIsPlaying(false);
+      setPlayingAnimals({});
+    }, longestTime + 500);
   };
+
+  const stopAllSounds = () => {
+    activeSourcesRef.current.forEach((src) => {
+      try {
+        src.stop(0);
+      } catch (e) {
+        // already stopped
+      }
+    });
+    activeSourcesRef.current = [];
+    setIsPlaying(false);
+  };
+
 
   if (loading) return <p className="ea-loading">Loading…</p>;
 
@@ -240,12 +335,49 @@ export default function MyRecordings() {
               >
                 <h2>{selectedRecording.title}</h2>
                 <p>{selectedRecording.description}</p>
-                <button onClick={playRecording} className="play-button">
-                  {isPlaying ? "Playing…" : "Play Recording"}
-                </button>
-                <button className="close-button" onClick={closeModal}>
-                  Close
-                </button>
+
+                {/* mini animal stage */}
+                <div className="mini-stage">
+                  {Object.keys(ANIMAL_IMAGES)
+                    .filter((animal) =>
+                      recordedNotes.some((track) =>
+                        track.some((note) => animalKeyMap[note.key] === animal)
+                      )
+                    )
+                    .map((animal) => (
+                      <img
+                        key={animal}
+                        src={
+                          playingAnimals[animal]
+                            ? ANIMAL_IMAGES[animal][1]
+                            : ANIMAL_IMAGES[animal][0]
+                        }
+                        alt={animal}
+                        className={`mini-animal ${
+                          playingAnimals[animal] ? "playing" : ""
+                        }`}
+                      />
+                    ))}
+                </div>
+
+                <div className="buttons-row">
+                  <button
+                    onClick={playRecording}
+                    disabled={!imagesLoaded}
+                    className="play-button"
+                  >
+                    ▶
+                  </button>
+                  <button
+                    className="close-button"
+                    onClick={() => {
+                      stopAllSounds();
+                      closeModal();
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             </div>
           )}
