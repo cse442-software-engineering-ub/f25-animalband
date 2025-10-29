@@ -6,7 +6,7 @@ let masterGainNode = null;
 export const getAudioCtx = () => {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    console.log("[DEBUG] Created AudioContext");
+    //console.log("[DEBUG] Created AudioContext");
 
     // Create master gain node
     masterGainNode = audioCtx.createGain();
@@ -20,7 +20,7 @@ export const getAudioCtx = () => {
 export const setMasterVolume = (value) => {
   if (masterGainNode) {
     masterGainNode.gain.value = value;
-    console.log("[DEBUG] Master volume set to:", value);
+    //console.log("[DEBUG] Master volume set to:", value);
   }
 };
 
@@ -33,8 +33,8 @@ export const playSound = (buffer, gainValue = 1) => {
   const gainNode = ctx.createGain();
   gainNode.gain.value = gainValue;
 
-  console.log("[DEBUG] masterGainNode:", masterGainNode);
-  console.log("[DEBUG] masterGainNode.gain.value:", masterGainNode?.gain.value);
+  //console.log("[DEBUG] masterGainNode:", masterGainNode);
+  //console.log("[DEBUG] masterGainNode.gain.value:", masterGainNode?.gain.value);
 
   source.connect(gainNode).connect(masterGainNode);
 

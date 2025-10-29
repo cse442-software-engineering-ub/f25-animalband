@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
+
 import "./mobile_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
@@ -16,6 +18,38 @@ export default function MobileLanding() {
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
 
+  // Songs
+  const topSongs = [
+    { title: "Animal Jam", author: "DJ Owl" },
+    { title: "Paws and Beats", author: "Cat Band" },
+    { title: "Roar Remix", author: "Lion Orchestra" },
+  ];
+  const [featuredSongs, setFeaturedSongs] = useState([]);
+  const [buffers, setBuffers] = useState(null);
+  const [playingIndex, setPlayingIndex] = useState(-1);
+  const stopRef = useRef(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const b = await preloadLandingSounds();
+        setBuffers(b);
+      } catch (e) {
+        console.error("Failed to preload sounds", e);
+      }
+    })();
+  }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php");
+        const d = await r.json();
+        if (d?.success && Array.isArray(d.songs)) setFeaturedSongs(d.songs);
+      } catch (e) {
+        console.error("Failed to fetch featured songs", e);
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -24,9 +58,7 @@ export default function MobileLanding() {
           { credentials: "include" }
         );
         const data = await res.json();
-        if (data.loggedIn) {
-          setUser(data);
-        }
+        if (data.loggedIn) setUser(data);
       } catch (err) {
         console.error("Failed to fetch user", err);
       }
@@ -35,26 +67,48 @@ export default function MobileLanding() {
   }, []);
 
   const handleAccountClick = () => {
-    if (user) {
-      navigate("/account");
-    } else {
-      navigate("/login");
-    }
+    if (user) navigate("/account");
+    else navigate("/login");
   };
 
   const handleNavigation = (path) => {
     navigate(path);
   };
+  const stopAll = () => {
+    if (stopRef.current) {
+      stopRef.current();
+      stopRef.current = null;
+    }
+  };
+
+  const togglePlay = (index) => {
+    if (!buffers) return;
+    if (playingIndex === index) {
+      stopAll();
+      setPlayingIndex(-1);
+      return;
+    }
+    stopAll();
+    const song = featuredSongs[index];
+    if (!song) return;
+    stopRef.current = schedulePlayback(buffers, song.recording, () => {
+      setPlayingIndex(-1);
+      stopRef.current = null;
+    });
+    setPlayingIndex(index);
+  };
+
+  useEffect(() => {
+    return () => stopAll();
+  }, []);
 
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
-
     const onScroll = () => {
       const idx = Math.round(el.scrollLeft / el.clientWidth);
       if (idx !== active) setActive(idx);
     };
-
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, [active]);
@@ -67,13 +121,11 @@ export default function MobileLanding() {
 
   return (
     <div className="m-landing">
-
       <header className={`m-header ${user ? "is-logged-in" : ""}`}>
         <div className="m-site-title">
           <span className="material-symbols-outlined m-paw" aria-hidden>pets</span>
           <span className="m-name">ANIMALBAND</span>
         </div>
-
         <div className={`m-auth ${user ? "is-logged-in" : ""}`}>
           {!user ? (
             <>
@@ -91,7 +143,6 @@ export default function MobileLanding() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="m-main">
         <h1 className="m-title">Create Music with Animals</h1>
         <p className="m-sub">
@@ -109,7 +160,6 @@ export default function MobileLanding() {
             ))}
           </div>
 
-          {/* Dots */}
           <div className="m-dots" role="tablist" aria-label="Select image">
             {slides.map((_, i) => (
               <button
@@ -128,7 +178,6 @@ export default function MobileLanding() {
 
         {/* Features */}
         <section className="m-features">
-          {/* Stage */}
           <Link to="/stage" className="m-card">
             <span className="material-symbols-outlined m-card-icon">piano</span>
             <div className="m-card-text">
@@ -136,7 +185,6 @@ export default function MobileLanding() {
               <div className="m-card-sub">Play instruments with your favorite animals.</div>
             </div>
           </Link>
-          {/* Looping */}
           <Link to="/looping" className="m-card">
             <span className="material-symbols-outlined m-card-icon">instant_mix</span>
             <div className="m-card-text">
@@ -144,7 +192,6 @@ export default function MobileLanding() {
               <div className="m-card-sub">Layer beats & notes with a visual mixer.</div>
             </div>
           </Link>
-          {/* Forum */}
           <Link to="/forum" className="m-card">
             <span className="material-symbols-outlined m-card-icon">chat</span>
             <div className="m-card-text">
@@ -152,7 +199,6 @@ export default function MobileLanding() {
               <div className="m-card-sub">Share your tracks, ask for help, and get feedback.</div>
             </div>
           </Link>
-          {/* Customization */}
           <Link to="/stage" className="m-card">
             <span className="material-symbols-outlined m-card-icon">edit</span>
             <div className="m-card-text">
@@ -161,6 +207,47 @@ export default function MobileLanding() {
             </div>
           </Link>
         </section>
+
+        {/* Today's Top Songs */}
+        <section className="m-top-songs">
+          <h2 className="m-top-songs-title">Today's Top Songs</h2>
+
+          <div className="m-top-songs-list">
+            {featuredSongs.length === 0 && [0, 1, 2].map(i => (
+              <div key={`sk-${i}`} className="m-song-card">
+                <div className="m-song-info">
+                  <div className="m-song-title">Loading…</div>
+                  <div className="m-song-author">&nbsp;</div>
+                </div>
+                <button className="m-play-btn" disabled>
+                  <span className="material-symbols-outlined">hourglass_top</span>
+                </button>
+              </div>
+            ))}
+
+            {featuredSongs.map((song, index) => (
+              <div key={song.id} className="m-song-card">
+                <div className="m-song-info">
+                  <div className="m-song-title">{song.title || `Untitled #${song.id}`}</div>
+                  <div className="m-song-author">by {song.author}</div>
+                </div>
+
+                <button
+                  className="m-play-btn"
+                  disabled={!buffers}
+                  onClick={() => togglePlay(index)}
+                  title={!buffers ? "Loading sounds..." : (playingIndex === index ? "Stop" : "Play")}
+                >
+                  <span className="material-symbols-outlined">
+                    {playingIndex === index ? "stop" : "play_arrow"}
+                  </span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+
 
         {/* Stats */}
         <section className="m-stats">
@@ -179,12 +266,10 @@ export default function MobileLanding() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="m-footer">
         Register for free and rock out with your animals today!
       </footer>
 
-      {/* Material Icons Font */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"

@@ -31,6 +31,10 @@ export default function DesktopStage() {
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Track settings: name, mute, solo
+  const [trackSettings, setTrackSettings] = useState([]);
+  const [editingTrack, setEditingTrack] = useState(null);
+  const [editingName, setEditingName] = useState("");
   //Local save state
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [recordingTitle, setRecordingTitle] = useState("");
@@ -94,23 +98,34 @@ export default function DesktopStage() {
   // Handle key press
   useEffect(() => {
     const handleKeyDown = (e) => {
+    // Prevent sound triggers while typing in text fields
+    if (
+      e.target.tagName === "INPUT" ||
+      e.target.tagName === "TEXTAREA" ||
+      e.target.isContentEditable
+    ) {
+      return;
+    }
       if (showSaveForm) return;
 
       const key = e.key.toLowerCase();
       if (!sounds[key]) return;
 
-      const animal = animalKeyMap[key];
-      if (!animal) return;
+    const key = e.key.toLowerCase();
+    if (!sounds[key]) return;
 
-      if (isRecording) {
-        const timeSinceStart = performance.now() - recordStartTime;
-        setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
-      }
+    const animal = animalKeyMap[key];
+    if (!animal) return;
 
-      playSound(sounds[key], masterVolume);
-      setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-      setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
-    };
+    if (isRecording) {
+      const timeSinceStart = performance.now() - recordStartTime;
+      setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
+    }
+
+    playSound(sounds[key], masterVolume);
+    setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+    setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+  };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -136,7 +151,14 @@ export default function DesktopStage() {
       // Play existing tracks while recording
       if (recordedTracks.length > 0) playTracksDuringRecording();
     } else {
-      setRecordedTracks(prev => [...prev, currentTrack]);
+      setRecordedTracks(prev => {
+        const newTracks = [...prev, currentTrack];
+        setTrackSettings(prevSettings => [
+          ...prevSettings,
+          { name: `Track ${newTracks.length}`, muted: false, solo: false }
+        ]);
+        return newTracks;
+      });
       setIsRecording(false);
     }
   };
@@ -173,7 +195,12 @@ export default function DesktopStage() {
     setIsPlaying(true);
     const audioContext = audioContextRef.current;
 
-    recordedTracks.forEach(track => {
+    const anySolo = trackSettings.some(t => t.solo);
+    const activeTracks = recordedTracks
+      .map((track, i) => ({ track, settings: trackSettings[i] }))
+      .filter(({ settings }) => anySolo ? settings.solo : !settings.muted);
+
+    activeTracks.forEach(({ track }) => {
       track.forEach(({ key, time }) => {
         if (!sounds[key]) return;
         const animal = animalKeyMap[key];
@@ -200,6 +227,7 @@ export default function DesktopStage() {
   // Delete a track
   const deleteTrack = (index) => {
     setRecordedTracks(prev => prev.filter((_, i) => i !== index));
+    setTrackSettings(prev => prev.filter((_, i) => i !== index));
   };
 
   // Export combined tracks
@@ -324,6 +352,33 @@ export default function DesktopStage() {
     }
     return interleaved;
   }
+
+  // Track control functions
+  const toggleMute = (index) => {
+    setTrackSettings(prev => prev.map((t, i) =>
+      i === index ? { ...t, muted: !t.muted, solo: false } : t
+    ));
+  };
+
+  const toggleSolo = (index) => {
+    setTrackSettings(prev => prev.map((t, i) =>
+      i === index ? { ...t, solo: !t.solo } : t
+    ));
+  };
+
+  const startRename = (index) => {
+    setEditingTrack(index);
+    setEditingName(trackSettings[index]?.name || `Track ${index + 1}`);
+  };
+
+  const finishRename = (index) => {
+    if (editingName.trim()) {
+      setTrackSettings(prev => prev.map((t, i) =>
+        i === index ? { ...t, name: editingName.trim() } : t
+      ));
+    }
+    setEditingTrack(null);
+  };
 
   return (
     <div className="stagestuff">
@@ -467,8 +522,29 @@ export default function DesktopStage() {
           {recordedTracks.length === 0 && <p>No tracks yet.</p>}
           {recordedTracks.map((track, index) => (
             <div key={index} className="track-item">
-              <span>Track {index + 1}</span>
+              {editingTrack === index ? (
+                <input
+                  type="text"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onBlur={() => finishRename(index)}
+                  onKeyDown={(e) => e.key === "Enter" && finishRename(index)}
+                  autoFocus
+                  style={{ marginRight: "10px" }}
+                />
+              ) : (
+                <span onDoubleClick={() => startRename(index)}>
+                  {trackSettings[index]?.name || `Track ${index + 1}`}
+                </span>
+              )}
               <div className="track-buttons">
+                <button onClick={() => toggleMute(index)}>
+                  {trackSettings[index]?.muted ? "Unmute" : "Mute"}
+                </button>
+                <button onClick={() => toggleSolo(index)}>
+                  {trackSettings[index]?.solo ? "Unsolo" : "Solo"}
+                </button>
+                <button onClick={() => startRename(index)}>Rename</button>
                 <button onClick={() => deleteTrack(index)}>Delete</button>
               </div>
             </div>
