@@ -3,8 +3,6 @@ import { useEffect, useState, useRef } from "react";
 import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
 import "./desktop_landing.css";
 
-
-
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
 import Hamster from "../../../assets/hamster.jpeg";
@@ -40,124 +38,141 @@ export default function Landing() {
     setPlayingIndex(idx);
   };
 
-  // Fetch user info
+  const stopAll = () => {
+    if (stopRef.current) { stopRef.current(); stopRef.current = null; }
+  };
+
+  const handleAccountClick = () => {
+    if (user) navigate("/account");
+    else navigate("/login");
+  };
+
+  const handleNavigation = (path) => navigate(path);
+
+  // Fetch user and counts
   useEffect(() => {
-    const checkUser = async () => {
+    const fetchUser = async () => {
       try {
         const res = await fetch(
           "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
           { credentials: "include" }
         );
         const data = await res.json();
-        if (data.loggedIn) {
-          setUser(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch user", err);
-      }
+        if (data.loggedIn) setUser(data);
+      } catch (err) { console.error(err); }
     };
-    checkUser();
+
+    const fetchCount = async (url, setter) => {
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        setter(data[Object.keys(data)[0]]);
+      } catch (err) { console.error(err); }
+    };
+
+    fetchUser();
+    fetchCount(
+      "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getMemberCount.php",
+      setMemberCount
+    );
+    fetchCount(
+      "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getPostCount.php",
+      setPostCount
+    );
+    fetchCount(
+      "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getLoopCount.php",
+      setLoopCount
+    );
   }, []);
 
-  // Fetch member count
   useEffect(() => {
-    const fetchMemberCount = async () => {
-      try {
-        const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getMemberCount.php"
-        );
-        const data = await res.json();
-        if (data.memberCount !== undefined) {
-          setMemberCount(data.memberCount);
-        }
-      } catch (err) {
-        console.error("Failed to fetch member count", err);
-      }
-    };
-    fetchMemberCount();
-  }, []);
-
-  // Fetch post count
-  useEffect(() => {
-    const fetchPostCount = async () => {
-      try {
-        const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getPostCount.php"
-        );
-        const data = await res.json();
-        if (data.postCount !== undefined) {
-          setPostCount(data.postCount);
-        }
-      } catch (err) {
-        console.error("Failed to fetch post count", err);
-      }
-    };
-    fetchPostCount();
-  }, []);
-
-  // Fetch loop count
-  useEffect(() => {
-    const fetchLoopCount = async () => {
-      try {
-        const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getLoopCount.php"
-        );
-        const data = await res.json();
-        if (data.loopCount !== undefined) {
-          setLoopCount(data.loopCount);
-        }
-      } catch (err) {
-        console.error("Failed to fetch loop count", err);
-      }
-    };
-    fetchLoopCount();
+    (async () => {
+      try { setBuffers(await preloadLandingSounds()); }
+      catch (e) { console.error(e); }
+    })();
   }, []);
 
   useEffect(() => {
     (async () => {
       try {
-        const b = await preloadLandingSounds();
-        setBuffers(b);
+        const r = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php"
+        );
+        const d = await r.json();
+        if (d?.success && Array.isArray(d.songs)) setFeaturedSongs(d.songs);
       } catch (e) { console.error(e); }
     })();
   }, []);
 
+  useEffect(() => () => stopAll(), []);
 
-  useEffect(() => {
-    return () => {
-      if (stopRef.current) {
-        stopRef.current();
-        stopRef.current = null;
-      }
+  // WAV download helper
+  const downloadWav = async (song) => {
+    if (!buffers || !song.recording) return;
+    const allNotes = song.recording;
+    const duration = (allNotes.length ? allNotes[allNotes.length - 1].time + 1000 : 0) / 1000;
+    const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
+
+    allNotes.forEach(({ key, time }) => {
+      const buffer = buffers[key];
+      if (!buffer) return;
+      const source = offlineCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(offlineCtx.destination);
+      source.start(time / 1000);
+    });
+
+    const renderedBuffer = await offlineCtx.startRendering();
+    const wavBlob = bufferToWav(renderedBuffer);
+
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${song.title || `song_${song.id}`}.wav`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const bufferToWav = (buffer) => {
+    const numOfChan = buffer.numberOfChannels;
+    const length = buffer.length * numOfChan * 2 + 44;
+    const bufferArray = new ArrayBuffer(length);
+    const view = new DataView(bufferArray);
+
+    let offset = 0;
+    const writeString = (view, offset, string) => {
+      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
     };
-  }, []);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php");
-        const d = await r.json();
-        if (d?.success && Array.isArray(d.songs)) setFeaturedSongs(d.songs);
-      } catch (e) { console.error("Failed to fetch featured songs", e); }
-    })();
-  }, []);
-  const stopAll = () => {
-    if (stopRef.current) { stopRef.current(); stopRef.current = null; }
-  };
+    writeString(view, offset, "RIFF"); offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "WAVE"); offset += 4;
+    writeString(view, offset, "fmt "); offset += 4;
+    view.setUint32(offset, 16, true); offset += 4;
+    view.setUint16(offset, 1, true); offset += 2;
+    view.setUint16(offset, numOfChan, true); offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
+    view.setUint16(offset, numOfChan * 2, true); offset += 2;
+    view.setUint16(offset, 16, true); offset += 2;
+    writeString(view, offset, "data"); offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
 
-
-
-
-  const handleAccountClick = () => {
-    if (user) {
-      navigate("/account");
-    } else {
-      navigate("/login");
+    const inputL = buffer.getChannelData(0);
+    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const interleaved = new Float32Array(buffer.length * 2);
+    for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
+      interleaved[j] = inputL[i];
+      interleaved[j + 1] = inputR[i];
     }
-  };
 
-  const handleNavigation = (path) => {
-    navigate(path);
+    let index = 44;
+    for (let i = 0; i < interleaved.length; i++, index += 2) {
+      const sample = Math.max(-1, Math.min(1, interleaved[i]));
+      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+    }
+
+    return new Blob([view], { type: "audio/wav" });
   };
 
   return (
@@ -171,18 +186,8 @@ export default function Landing() {
         <div className="header-buttons">
           {!user ? (
             <>
-              <button
-                className="btn-login"
-                onClick={() => handleNavigation("/login")}
-              >
-                Login
-              </button>
-              <button
-                className="btn-register"
-                onClick={() => handleNavigation("/register")}
-              >
-                Register
-              </button>
+              <button className="btn-login" onClick={() => handleNavigation("/login")}>Login</button>
+              <button className="btn-register" onClick={() => handleNavigation("/register")}>Register</button>
             </>
           ) : (
             <img
@@ -190,19 +195,13 @@ export default function Landing() {
               alt="Profile"
               className="profile-pic"
               onClick={handleAccountClick}
-              style={{
-                width: "75px",
-                height: "75px",
-                borderRadius: "50%",
-                cursor: "pointer",
-                objectFit: "cover",
-              }}
+              style={{ width: "75px", height: "75px", borderRadius: "50%", cursor: "pointer", objectFit: "cover" }}
             />
           )}
         </div>
       </header>
 
-      {/* Website Description */}
+      {/* Main description */}
       <section className="main-description">
         <h2 className="main-heading">Create Music with Animals</h2>
         <p className="subtitle">
@@ -211,64 +210,36 @@ export default function Landing() {
         </p>
       </section>
 
-      {/* Animal Stage */}
+      {/* Animal stage */}
       <section className="band-stage">
         <div className="animals-container">
-          <div className="animal-member">
-            <div className="hamster">
-              <img src={Hamster} alt="Hamster" />
+          {[Hamster, Snake, Bird, Kangaroo, Ostrich].map((img, idx) => (
+            <div key={idx} className="animal-member">
+              <img src={img} alt="Animal" />
             </div>
-          </div>
-          <div className="animal-member">
-            <div className="snake">
-              <img src={Snake} alt="Snake" />
-            </div>
-          </div>
-          <div className="animal-member">
-            <div className="bird">
-              <img src={Bird} alt="Bird" />
-            </div>
-          </div>
-          <div className="animal-member">
-            <div className="kangaroo">
-              <img src={Kangaroo} alt="Kangaroo" />
-            </div>
-          </div>
-          <div className="animal-member">
-            <div className="ostrich">
-              <img src={Ostrich} alt="Ostrich" />
-            </div>
-          </div>
+          ))}
         </div>
-        <Link to="/stage" className="btn-start-band">
-          Start Your Band
-        </Link>
+        <Link to="/stage" className="btn-start-band">Start Your Band</Link>
       </section>
 
       {/* Features */}
       <section className="features-section">
         <div className="features-grid">
-          {/* Stage */}
           <Link to="/stage" className="feature-card">
             <span className="material-symbols-outlined feature-icon">piano</span>
             <h3>Stage</h3>
             <p>Play instruments with your favorite animals.</p>
           </Link>
-          {/* Looping */}
           <Link to="/looping" className="feature-card">
-            <span className="material-symbols-outlined feature-icon">
-              instant_mix
-            </span>
+            <span className="material-symbols-outlined feature-icon">instant_mix</span>
             <h3>Looping</h3>
             <p>Layer beats & notes with a visual mixer.</p>
           </Link>
-          {/* Forum */}
           <Link to="/forum" className="feature-card">
             <span className="material-symbols-outlined feature-icon">chat</span>
             <h3>Forum</h3>
             <p>Share your tracks, ask for help, and get feedback.</p>
           </Link>
-          {/* Customization */}
           <Link to="/stage" className="feature-card">
             <span className="material-symbols-outlined feature-icon">edit</span>
             <h3>Customization</h3>
@@ -280,50 +251,41 @@ export default function Landing() {
       {/* Featured Songs */}
       <section className="featured-songs-section">
         <h2 className="featured-songs-title">Today’s Top Songs</h2>
-
         <div className="featured-songs-grid">
           {featuredSongs.length === 0 && [0, 1, 2].map(i => (
             <div className="song-card" key={`sk-${i}`}>Loading…</div>
           ))}
-
           {featuredSongs.map((song, index) => (
             <div className="song-card" key={song.id}>
               <h3 className="song-title">{song.title || `Untitled #${song.id}`}</h3>
               <p className="song-author">by {song.author}</p>
               {song.description && <p className="song-desc">{song.description}</p>}
-
-              <button className="song-play-btn" onClick={() => togglePlay(index)}>
-                <span className="material-symbols-outlined">
-                  {playingIndex === index ? "stop" : "play_arrow"}
-                </span>
-              </button>
+              <div className="song-button-group">
+                <button className="song-play-btn" onClick={() => togglePlay(index)}>
+                  <span className="material-symbols-outlined">{playingIndex === index ? "stop" : "play_arrow"}</span>
+                </button>
+                <button className="song-download-btn" onClick={() => downloadWav(song)}>
+                  <span className="material-symbols-outlined">download</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-
       {/* Stats */}
       <section className="stats-section">
         <div className="stats-container">
           <div className="stat-card">
-            <p className="stat-number">
-              {loopCount !== null ? loopCount.toLocaleString() : "Loading..."}
-            </p>
+            <p className="stat-number">{loopCount !== null ? loopCount.toLocaleString() : "Loading..."}</p>
             <p className="stat-label">Loops Created</p>
           </div>
           <div className="stat-card">
-            <p className="stat-number">
-              {memberCount !== null
-                ? memberCount.toLocaleString()
-                : "Loading..."}
-            </p>
+            <p className="stat-number">{memberCount !== null ? memberCount.toLocaleString() : "Loading..."}</p>
             <p className="stat-label">Members</p>
           </div>
           <div className="stat-card">
-            <p className="stat-number">
-              {postCount !== null ? postCount.toLocaleString() : "Loading..."}
-            </p>
+            <p className="stat-number">{postCount !== null ? postCount.toLocaleString() : "Loading..."}</p>
             <p className="stat-label">Posts</p>
           </div>
         </div>
@@ -334,14 +296,15 @@ export default function Landing() {
         <h3>Register for free and rock out with your animals today!</h3>
       </footer>
 
-      {/* Material Icons */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-        rel="stylesheet"
-      />
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     </div>
   );
 }
+
+
+
+
+
 
 
 
