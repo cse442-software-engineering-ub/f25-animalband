@@ -557,4 +557,3 @@ export default function DesktopStage() {
     </div>
   );
 }
-
