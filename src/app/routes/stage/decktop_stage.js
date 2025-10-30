@@ -109,9 +109,6 @@ export default function DesktopStage() {
       if (showSaveForm) return;
 
 
-    const key = e.key.toLowerCase();
-    if (!sounds[key]) return;
-
     const animal = animalKeyMap[key];
     if (!animal) return;
 
