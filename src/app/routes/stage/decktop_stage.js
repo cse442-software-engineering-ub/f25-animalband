@@ -98,8 +98,6 @@ export default function DesktopStage() {
   // Handle key press
   useEffect(() => {
     const handleKeyDown = (e) => {
-      const key = e.key.toLowerCase();
-      if (!sounds[key]) return;
     // Prevent sound triggers while typing in text fields
     if (
       e.target.tagName === "INPUT" ||
@@ -110,6 +108,9 @@ export default function DesktopStage() {
     }
       if (showSaveForm) return;
 
+
+    const key = e.key.toLowerCase();
+    if (!sounds[key]) return;
 
     const animal = animalKeyMap[key];
     if (!animal) return;
@@ -556,4 +557,3 @@ export default function DesktopStage() {
     </div>
   );
 }
-
