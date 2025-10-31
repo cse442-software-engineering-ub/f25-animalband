@@ -27,29 +27,32 @@ import ResetEmail from "./routes/login/desktop_reset_email.js";
 
 import MyRecordings from "./routes/account/recordings.js";
 
+import MyPlaylists from "./routes/playlists/my_playlists.js";
+import PlaylistDetail from "./routes/playlists/playlist_detail.js";
+
 import "../App.css";
 
 function NotFound() {
   return <h2>404 – Page not found</h2>;
 }
-function Landing(){
+function Landing() {
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileLanding /> : <DesktopLanding />;
 }
-function Account(){
+function Account() {
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileProfile /> : <DesktopProfile />;
 }
-function EditAccount(){
+function EditAccount() {
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileEditAccount /> : <DesktopEditAccount />;
 }
 
-function Forum(){
+function Forum() {
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileForum /> : <DesktopForum />;
 }
-function Stage(){
+function Stage() {
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileStage /> : <DesktopStage />;
 }
@@ -72,6 +75,8 @@ export default function App() {
           <Route path="/account-email" element={<ResetEmail />} />
           <Route path="/account/edit" element={<EditAccount />} />
           <Route path="/my-recordings" element={<MyRecordings />} />
+          <Route path="/playlists" element={<MyPlaylists />} />
+          <Route path="/playlists/:id" element={<PlaylistDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
