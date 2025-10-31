@@ -67,7 +67,7 @@ export default function MobileStage() {
     const checkUser = async () => {
       try {
         const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/getUser.php",
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
           { credentials: "include" }
         );
         const data = await res.json();
@@ -340,7 +340,7 @@ export default function MobileStage() {
             </>
           ) : (
             <img
-              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/${user.profilePic}`}
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
               alt="Profile"
               className="profile-pic"
               onClick={() => navigate("/account")}

@@ -1,4 +1,5 @@
 <?php
+// Allow cross-origin requests
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
@@ -6,41 +7,60 @@ header("Content-Type: application/json");
 $servername = "localhost";
 $username = "ikimos";
 $password = "50445468";
-$dbname = "cse442_2025_fall_team_h_db";
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli($servername, $username, $password, "cse442_2025_fall_team_h_db");
+
 if ($conn->connect_error) {
-    echo json_encode(["success" => false, "message" => "DB Connection failed: ".$conn->connect_error]);
+    die("Connection failed: " . $conn->connect_error);
+}
+
+$conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255),
+    content TEXT,
+    tags JSON,
+    likesFrom JSON,
+    author VARCHAR(100),
+    authorId INT,
+    likeCount INT DEFAULT 0,
+    comments INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+
+$json = file_get_contents('php://input');
+$data = json_decode($json, true);
+
+if ($data === null) {
+    echo json_encode(["success" => false, "message" => "Data was null!"]);
     exit;
 }
 
-// Read JSON input
-$input = json_decode(file_get_contents('php://input'), true);
-if (!$input) {
-    echo json_encode(["success" => false, "message" => "Invalid input"]);
+$title = $data['title'] ?? '';
+$content = $data['content'] ?? '';
+$tags = json_encode($data['tags'] ?? []);
+$likesFrom = json_encode($data['likesFrom'] ?? []);;
+$author = $data['author'] ?? '';
+$authorId = $data['authorId'] ?? 0;
+$likeCount = $data['likes'] ?? 0;
+$comments = $data['comments'] ?? 0;
+
+$stmt = $conn->prepare("INSERT INTO forumPosts 
+    (title, content, tags, likesFrom, author, authorId, likeCount, comments) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+);
+
+if (!$stmt) {
+    echo json_encode(["success" => false, "message" => "Prepare failed: " . $conn->error]);
     exit;
 }
 
-// Sanitize inputs
-$title = $input['title'] ?? '';
-$content = $input['content'] ?? '';
-$author = $input['author'] ?? '';
-$authorId = intval($input['authorId'] ?? 0);
-$recordingId = isset($input['recordingId']) && $input['recordingId'] !== null ? intval($input['recordingId']) : null;
-$tags = json_encode($input['tags'] ?? []);
-$likesFrom = json_encode($input['likesFrom'] ?? []);
-$likeCount = count($input['likesFrom'] ?? []);
-
-// Use prepared statement
-$stmt = $conn->prepare("INSERT INTO forumPosts (title, content, tags, likesFrom, author, authorId, recording_id, likeCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("sssssiis", $title, $content, $tags, $likesFrom, $author, $authorId, $recordingId, $likeCount);
+$stmt->bind_param("sssssiii", $title, $content, $tags, $likesFrom, $author, $authorId, $likeCount, $comments);
 
 if ($stmt->execute()) {
-    echo json_encode(["success" => true, "postId" => $stmt->insert_id]);
+    echo json_encode(["success" => true, 'message' => 'Post inserted successfully.']);
 } else {
-    echo json_encode(["success" => false, "message" => "Insert failed: ".$stmt->error]);
+    echo json_encode(["success" => false, 'message' => 'Error: ' . $stmt->error]);
 }
 
 $stmt->close();
-$conn->close();
 ?>
