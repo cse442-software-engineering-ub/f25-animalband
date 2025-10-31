@@ -66,7 +66,7 @@ export default function DesktopStage() {
     const checkUser = async () => {
       try {
         const res = await fetch(
-          "..../php/getUser.php",
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
           { credentials: "include" }
         );
         const data = await res.json();
@@ -557,7 +557,7 @@ export default function DesktopStage() {
               </>
             ) : (
               <img
-                src={`..../php/${user.profilePic}`}
+                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
                 alt="Profile"
                 className="profile-pic"
                 onClick={() => navigate("/account")}

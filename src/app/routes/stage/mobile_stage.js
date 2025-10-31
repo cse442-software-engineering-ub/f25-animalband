@@ -27,11 +27,14 @@ export default function MobileStage() {
   const [recordedTracks, setRecordedTracks] = useState([]); // multiple tracks
   const [currentTrack, setCurrentTrack] = useState([]);
   const [recordStartTime, setRecordStartTime] = useState(null);
+  const [importedAudioBuffers, setImportedAudioBuffers] = useState([]); // Store imported audio buffers
+  const [trackCounter, setTrackCounter] = useState(1); // Track numbering counter
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
+  const [activeAudioSources, setActiveAudioSources] = useState([]); // Track active audio sources
 
-  // Track settings: name, mute, solo
+  // Track settings: name, mute, solo, volume
   const [trackSettings, setTrackSettings] = useState([]);
   const [editingTrack, setEditingTrack] = useState(null);
   const [editingName, setEditingName] = useState("");
@@ -67,7 +70,7 @@ export default function MobileStage() {
     const checkUser = async () => {
       try {
         const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/getUser.php",
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
           { credentials: "include" }
         );
         const data = await res.json();
@@ -135,15 +138,17 @@ export default function MobileStage() {
       // Play existing tracks while recording
       if (recordedTracks.length > 0) playTracksDuringRecording();
     } else {
-      setRecordedTracks(prev => {
-        const newTracks = [...prev, currentTrack];
-        setTrackSettings(prevSettings => [
-          ...prevSettings,
-          { name: `Track ${newTracks.length}`, muted: false, solo: false }
-        ]);
-        return newTracks;
-      });
+      const trackName = `Track ${trackCounter}`;
+      setRecordedTracks(prev => [...prev, currentTrack]);
+      setTrackSettings(prev => [
+        ...prev,
+        { name: trackName, muted: false, solo: false, volume: 1 }
+      ]);
+      setTrackCounter(c => c + 1); // Increment counter after creating track
       setIsRecording(false);
+      
+      // Stop any playing tracks when stopping recording
+      stopPlayback();
     }
   };
 
@@ -152,61 +157,143 @@ export default function MobileStage() {
     if (!audioContextRef.current) return;
     const audioContext = audioContextRef.current;
 
-    recordedTracks.forEach(track => {
-      track.forEach(({ key, time }) => {
-        if (!sounds[key]) return;
-        const animal = animalKeyMap[key];
-        const source = audioContext.createBufferSource();
-        source.buffer = sounds[key];
+    const sources = []; // Collect all audio sources
+    const timeouts = []; // Collect all timeouts
 
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = masterVolume;
+    recordedTracks.forEach((track, trackIndex) => {
+      const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
+      track.forEach(({ key, time, isImported, audioBuffer }) => {
+        if (isImported && audioBuffer) {
+          // Play imported audio
+          const source = audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          const gainNode = audioContext.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
+          source.connect(gainNode).connect(audioContext.destination);
+          source.start(audioContext.currentTime + time / 1000);
+          sources.push(source);
+        } else if (!sounds[key]) {
+          return;
+        } else {
+          const animal = animalKeyMap[key];
+          const source = audioContext.createBufferSource();
+          source.buffer = sounds[key];
 
-        source.connect(gainNode).connect(audioContext.destination);
-        source.start(audioContext.currentTime + time / 1000);
+          const gainNode = audioContext.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
 
-        setTimeout(() => {
-          setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-          setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
-        }, time);
+          source.connect(gainNode).connect(audioContext.destination);
+          source.start(audioContext.currentTime + time / 1000);
+          sources.push(source);
+
+          const timeout1 = setTimeout(() => {
+            setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+            const timeout2 = setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+            timeouts.push(timeout2);
+          }, time);
+          timeouts.push(timeout1);
+        }
       });
     });
+
+    // Store sources and timeouts for stopping
+    setActiveAudioSources({ sources, timeouts });
   };
 
-  // Play all tracks simultaneously with mute/solo logic
+  // Play all tracks simultaneously with mute/solo logic and volume
   const playAllTracks = () => {
     if (!audioContextRef.current || recordedTracks.length === 0) return;
     setIsPlaying(true);
     const audioContext = audioContextRef.current;
 
-    // Determine which tracks to play based on mute/solo
+    const sources = []; // Collect all audio sources
+    const timeouts = []; // Collect all timeouts
+
     const anySolo = trackSettings.some(t => t.solo);
-    const activeTracks = recordedTracks
-      .map((track, i) => ({ track, settings: trackSettings[i] }))
-      .filter(({ settings }) => anySolo ? settings.solo : !settings.muted);
+    
+    recordedTracks.forEach((track, trackIndex) => {
+      const settings = trackSettings[trackIndex];
+      
+      // Skip muted tracks or non-soloed tracks when solo is active
+      if (settings?.muted || (anySolo && !settings?.solo)) return;
+      
+      const trackVolume = settings?.volume ?? 1;
+      const finalGain = masterVolume * trackVolume;
+      
+      track.forEach(({ key, time, isImported, audioBuffer }) => {
+        if (isImported && audioBuffer) {
+          // Play imported audio
+          const source = audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          const gainNode = audioContext.createGain();
+          gainNode.gain.value = finalGain;
+          source.connect(gainNode).connect(audioContext.destination);
+          source.start(audioContext.currentTime + time / 1000);
+          sources.push(source);
+        } else if (!sounds[key]) {
+          return;
+        } else {
+          const animal = animalKeyMap[key];
+          const source = audioContext.createBufferSource();
+          source.buffer = sounds[key];
 
-    activeTracks.forEach(({ track }) => {
-      track.forEach(({ key, time }) => {
-        if (!sounds[key]) return;
-        const animal = animalKeyMap[key];
-        const source = audioContext.createBufferSource();
-        source.buffer = sounds[key];
+          const gainNode = audioContext.createGain();
+          gainNode.gain.value = finalGain;
 
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = masterVolume;
+          source.connect(gainNode).connect(audioContext.destination);
+          source.start(audioContext.currentTime + time / 1000);
+          sources.push(source);
 
-        source.connect(gainNode).connect(audioContext.destination);
-        source.start(audioContext.currentTime + time / 1000);
-
-        setTimeout(() => {
-          setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-          setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
-        }, time);
+          const timeout1 = setTimeout(() => {
+            setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+            const timeout2 = setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+            timeouts.push(timeout2);
+          }, time);
+          timeouts.push(timeout1);
+        }
       });
     });
 
-    const longestTrack = Math.max(...recordedTracks.map(track => track.length ? track[track.length - 1].time : 0));
-    setTimeout(() => setIsPlaying(false), longestTrack + 400);
+    // Store sources and timeouts for stopping
+    setActiveAudioSources({ sources, timeouts });
+
+    const longestTrack = Math.max(...recordedTracks.map(track => {
+      if (track.length === 0) return 0;
+      const lastNote = track[track.length - 1];
+      if (lastNote.isImported && lastNote.audioBuffer) {
+        return lastNote.time + (lastNote.audioBuffer.duration * 1000);
+      }
+      return lastNote.time;
+    }));
+    
+    const endTimeout = setTimeout(() => {
+      setIsPlaying(false);
+      setActiveAudioSources([]);
+    }, longestTrack + 400);
+    timeouts.push(endTimeout);
+  };
+
+  // Stop playback
+  const stopPlayback = () => {
+    if (activeAudioSources.sources) {
+      // Stop all audio sources
+      activeAudioSources.sources.forEach(source => {
+        try {
+          source.stop();
+        } catch (e) {
+          // Source may have already stopped
+        }
+      });
+      
+      // Clear all timeouts
+      activeAudioSources.timeouts.forEach(timeout => {
+        clearTimeout(timeout);
+      });
+      
+      setActiveAudioSources([]);
+      setIsPlaying(false);
+      setPlayingAnimals({});
+    }
   };
 
   // Delete a track
@@ -228,6 +315,13 @@ export default function MobileStage() {
     ));
   };
 
+  const setTrackVolume = (index, volume) => {
+    const newVolume = parseFloat(volume);
+    setTrackSettings(prev => prev.map((t, i) =>
+      i === index ? { ...t, volume: newVolume } : t
+    ));
+  };
+
   const startRename = (index) => {
     setEditingTrack(index);
     setEditingName(trackSettings[index]?.name || `Track ${index + 1}`);
@@ -242,28 +336,97 @@ export default function MobileStage() {
     setEditingTrack(null);
   };
 
-  // Export combined tracks
+  // Import custom audio track
+  const importAudioTrack = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "audio/*";
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+        
+        // Extract filename without extension
+        const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+        
+        // Create a track entry representing the imported audio
+        const importedTrack = [{ 
+          key: `imported_${Date.now()}`, 
+          time: 0,
+          isImported: true,
+          audioBuffer: audioBuffer,
+          fileName: file.name
+        }];
+
+        setRecordedTracks(prev => [...prev, importedTrack]);
+        setTrackSettings(prev => [
+          ...prev,
+          { name: fileNameWithoutExt, muted: false, solo: false, volume: 1 }
+        ]);
+        setTrackCounter(c => c + 1); // Increment counter for imported tracks too
+
+        // Store the audio buffer separately for playback
+        setImportedAudioBuffers(prev => [...prev, audioBuffer]);
+        
+        alert(`Imported: ${file.name}`);
+      } catch (err) {
+        console.error("Error importing audio:", err);
+        alert("Failed to import audio file. Make sure it's a valid audio format.");
+      }
+    };
+    input.click();
+  };
+
+  // Export combined tracks with individual track volumes
   const exportRecording = async () => {
     if (!audioContextRef.current || recordedTracks.length === 0) return;
 
     const fileName = prompt("Enter a name for your recording:", "animalband_recording");
     if (!fileName) return;
 
-    const allNotes = recordedTracks.flat();
-    const duration = (allNotes.length ? allNotes[allNotes.length - 1].time + 1000 : 0) / 1000;
+    // Calculate the total duration needed
+    let maxDuration = 0;
+    recordedTracks.forEach(track => {
+      if (track.length === 0) return;
+      const lastNote = track[track.length - 1];
+      if (lastNote.isImported && lastNote.audioBuffer) {
+        const trackEnd = lastNote.time + (lastNote.audioBuffer.duration * 1000);
+        maxDuration = Math.max(maxDuration, trackEnd);
+      } else {
+        maxDuration = Math.max(maxDuration, lastNote.time + 1000);
+      }
+    });
+
+    const duration = maxDuration / 1000;
     const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
 
-    allNotes.forEach(({ key, time }) => {
-      const buffer = sounds[key];
-      if (!buffer) return;
-      const source = offlineCtx.createBufferSource();
-      source.buffer = buffer;
-
-      const gainNode = offlineCtx.createGain();
-      gainNode.gain.value = masterVolume;
-
-      source.connect(gainNode).connect(offlineCtx.destination);
-      source.start(time / 1000);
+    // Render all tracks with individual volumes
+    recordedTracks.forEach((track, trackIndex) => {
+      const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
+      track.forEach(({ key, time, isImported, audioBuffer }) => {
+        if (isImported && audioBuffer) {
+          // Render imported audio
+          const source = offlineCtx.createBufferSource();
+          source.buffer = audioBuffer;
+          const gainNode = offlineCtx.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
+          source.connect(gainNode).connect(offlineCtx.destination);
+          source.start(time / 1000);
+        } else {
+          // Render keyboard sounds
+          const buffer = sounds[key];
+          if (!buffer) return;
+          const source = offlineCtx.createBufferSource();
+          source.buffer = buffer;
+          const gainNode = offlineCtx.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
+          source.connect(gainNode).connect(offlineCtx.destination);
+          source.start(time / 1000);
+        }
+      });
     });
 
     const renderedBuffer = await offlineCtx.startRendering();
@@ -327,10 +490,10 @@ export default function MobileStage() {
   return (
     <div className="m-landing-page">
       <header className="m-header">
-        <div className="m-site-title">
+        <Link to="/" className="m-site-title">
           <span className="material-symbols-outlined m-paw">pets</span>
           <h1 className="m-name">ANIMALBAND</h1>
-        </div>
+        </Link>
 
         <div className="header-buttons">
           {!user ? (
@@ -340,10 +503,11 @@ export default function MobileStage() {
             </>
           ) : (
             <img
-              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/${user.profilePic}`}
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
               alt="Profile"
               className="profile-pic"
               onClick={() => navigate("/account")}
+              style={{ width: "75px", height: "75px", borderRadius: "50%", cursor: "pointer", objectFit: "cover" }}
             />
           )}
         </div>
@@ -374,7 +538,34 @@ export default function MobileStage() {
 
         {/* Bottom controls */}
         <div className="master-volume">
-          <label>Master Volume: {(masterVolume * 100).toFixed(0)}%</label>
+          <label style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "14px", fontWeight: "600" }}>
+            <span>Master Volume</span>
+            <span>{(masterVolume * 100).toFixed(0)}%</span>
+          </label>
+          <style>
+            {`
+              input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: #4CAF50;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+              }
+              input[type="range"]::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: #4CAF50;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+              }
+            `}
+          </style>
           <input
             type="range"
             min="0"
@@ -386,78 +577,250 @@ export default function MobileStage() {
               setMasterVol(newVol);
               setMasterVolume(newVol);
             }}
-            className="volume-slider"
+            style={{
+              width: "100%",
+              height: "8px",
+              borderRadius: "4px",
+              outline: "none",
+              background: `linear-gradient(to right, #4CAF50 0%, #4CAF50 ${masterVolume * 100}%, #ddd ${masterVolume * 100}%, #ddd 100%)`,
+              WebkitAppearance: "none",
+              appearance: "none"
+            }}
           />
         </div>
 
         <div className="record-controls">
           <button
             onClick={toggleRecording}
-            className={`record-btn ${isRecording ? "stop" : "start"}`}
+            style={{
+              width: "100%",
+              padding: "12px",
+              marginBottom: "10px",
+              fontSize: "16px",
+              fontWeight: "600",
+              border: "2px solid #333",
+              borderRadius: "8px",
+              backgroundColor: isRecording ? "#ff4444" : "white",
+              color: isRecording ? "white" : "#333",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
           >
-            <span className="record-symbol">{isRecording ? "■" : "●"}</span>
+            <span style={{ fontSize: "20px" }}>{isRecording ? "■" : "●"}</span>
             {isRecording ? "Stop Recording" : "Start Recording"}
           </button>
 
           <button
-            onClick={playAllTracks}
+            onClick={isPlaying ? stopPlayback : playAllTracks}
             disabled={isRecording || recordedTracks.length === 0}
-            className={`record-btn play ${isPlaying ? "playing" : ""}`}
+            style={{
+              width: "100%",
+              padding: "12px",
+              marginBottom: "10px",
+              fontSize: "16px",
+              fontWeight: "600",
+              border: "2px solid #333",
+              borderRadius: "8px",
+              backgroundColor: "white",
+              color: "#333",
+              cursor: isRecording || recordedTracks.length === 0 ? "not-allowed" : "pointer",
+              opacity: isRecording || recordedTracks.length === 0 ? 0.5 : 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
           >
-            <span className="record-symbol">►</span>
-            {isPlaying ? "Playing..." : "Play Recording"}
+            <span style={{ fontSize: "20px" }}>{isPlaying ? "■" : "►"}</span>
+            {isPlaying ? "Stop" : "Play Recording"}
           </button>
 
           <button
             onClick={exportRecording}
             disabled={recordedTracks.length === 0}
-            className="record-btn export"
+            style={{
+              width: "100%",
+              padding: "12px",
+              marginBottom: "10px",
+              fontSize: "16px",
+              fontWeight: "600",
+              border: "none",
+              borderRadius: "8px",
+              backgroundColor: recordedTracks.length === 0 ? "#ccc" : "#4CAF50",
+              color: "white",
+              cursor: recordedTracks.length === 0 ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
           >
             <span className="material-symbols-outlined">file_download</span>
             Export
           </button>
+
+          <button
+            onClick={importAudioTrack}
+            style={{
+              width: "100%",
+              padding: "12px",
+              fontSize: "16px",
+              fontWeight: "600",
+              border: "2px solid #333",
+              borderRadius: "8px",
+              backgroundColor: "white",
+              color: "#333",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+          >
+            <span className="material-symbols-outlined">upload</span>
+            Import
+          </button>
         </div>
 
         {/* Track list */}
-        <div className="tracks-list">
-          <h3>Recorded Tracks</h3>
-          {recordedTracks.length === 0 && <p>No tracks yet.</p>}
+        <div className="tracks-list" style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f9f9f9", borderRadius: "8px" }}>
+          <h3 style={{ marginBottom: "15px", fontSize: "18px", fontWeight: "700" }}>Recorded Tracks</h3>
+          {recordedTracks.length === 0 && <p style={{ textAlign: "center", color: "#666" }}>No tracks yet.</p>}
           {recordedTracks.map((track, index) => (
-            <div key={index} className="track-item">
-              {editingTrack === index ? (
-                <input
-                  type="text"
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  onBlur={() => finishRename(index)}
-                  onKeyDown={(e) => e.key === "Enter" && finishRename(index)}
-                  autoFocus
-                  style={{ marginRight: "10px", padding: "4px", fontSize: "14px" }}
-                />
-              ) : (
-                <span onDoubleClick={() => startRename(index)} style={{ flexGrow: 1 }}>
-                  {trackSettings[index]?.name || `Track ${index + 1}`}
-                </span>
-              )}
-              <div className="track-buttons">
-                <button onClick={() => toggleMute(index)} style={{ 
-                  backgroundColor: trackSettings[index]?.muted ? "#ff6b6b" : "#e0e0e0",
-                  padding: "4px 8px",
-                  fontSize: "12px"
-                }}>
+            <div key={index} style={{
+              backgroundColor: "white",
+              padding: "12px",
+              marginBottom: "10px",
+              borderRadius: "8px",
+              border: "1px solid #ddd"
+            }}>
+              {/* Track name and volume */}
+              <div style={{ marginBottom: "10px" }}>
+                {editingTrack === index ? (
+                  <input
+                    type="text"
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onBlur={() => finishRename(index)}
+                    onKeyDown={(e) => e.key === "Enter" && finishRename(index)}
+                    autoFocus
+                    style={{
+                      width: "100%",
+                      padding: "6px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      border: "2px solid #4CAF50",
+                      borderRadius: "4px",
+                      outline: "none"
+                    }}
+                  />
+                ) : (
+                  <div 
+                    onDoubleClick={() => startRename(index)} 
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      marginBottom: "8px",
+                      wordBreak: "break-word",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {trackSettings[index]?.name || `Track ${index + 1}`}
+                  </div>
+                )}
+                
+                {/* Volume slider */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={trackSettings[index]?.volume ?? 1}
+                    onChange={(e) => setTrackVolume(index, e.target.value)}
+                    style={{
+                      flexGrow: 1,
+                      height: "6px",
+                      borderRadius: "3px",
+                      outline: "none",
+                      background: `linear-gradient(to right, #4CAF50 0%, #4CAF50 ${(trackSettings[index]?.volume ?? 1) * 100}%, #ddd ${(trackSettings[index]?.volume ?? 1) * 100}%, #ddd 100%)`,
+                      WebkitAppearance: "none",
+                      appearance: "none"
+                    }}
+                  />
+                  <span style={{ fontSize: "12px", fontWeight: "600", minWidth: "40px", textAlign: "right" }}>
+                    {Math.round((trackSettings[index]?.volume ?? 1) * 100)}%
+                  </span>
+                </div>
+              </div>
+              
+              {/* Track buttons */}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "8px"
+              }}>
+                <button 
+                  onClick={() => toggleMute(index)} 
+                  style={{
+                    padding: "8px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    border: "none",
+                    borderRadius: "6px",
+                    backgroundColor: trackSettings[index]?.muted ? "#ff6b6b" : "#e0e0e0",
+                    color: trackSettings[index]?.muted ? "white" : "#333",
+                    cursor: "pointer"
+                  }}
+                >
                   {trackSettings[index]?.muted ? "Unmute" : "Mute"}
                 </button>
-                <button onClick={() => toggleSolo(index)} style={{ 
-                  backgroundColor: trackSettings[index]?.solo ? "#51cf66" : "#e0e0e0",
-                  padding: "4px 8px",
-                  fontSize: "12px"
-                }}>
+                <button 
+                  onClick={() => toggleSolo(index)} 
+                  style={{
+                    padding: "8px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    border: "none",
+                    borderRadius: "6px",
+                    backgroundColor: trackSettings[index]?.solo ? "#4CAF50" : "#e0e0e0",
+                    color: trackSettings[index]?.solo ? "white" : "#333",
+                    cursor: "pointer"
+                  }}
+                >
                   {trackSettings[index]?.solo ? "Unsolo" : "Solo"}
                 </button>
-                <button onClick={() => startRename(index)} style={{ padding: "4px 8px", fontSize: "12px" }}>
+                <button 
+                  onClick={() => startRename(index)} 
+                  style={{
+                    padding: "8px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    border: "none",
+                    borderRadius: "6px",
+                    backgroundColor: "#e0e0e0",
+                    color: "#333",
+                    cursor: "pointer"
+                  }}
+                >
                   Rename
                 </button>
-                <button onClick={() => deleteTrack(index)} style={{ padding: "4px 8px", fontSize: "12px" }}>
+                <button 
+                  onClick={() => deleteTrack(index)} 
+                  style={{
+                    padding: "8px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    border: "none",
+                    borderRadius: "6px",
+                    backgroundColor: "#ff6b6b",
+                    color: "white",
+                    cursor: "pointer"
+                  }}
+                >
                   Delete
                 </button>
               </div>
