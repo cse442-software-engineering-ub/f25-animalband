@@ -27,6 +27,8 @@ import ResetEmail from "./routes/login/desktop_reset_email.js";
 
 import MyRecordings from "./routes/account/recordings.js";
 
+import RhythmGame from "./routes/rhythm-game/rhythm_game.js";
+
 import "../App.css";
 
 function NotFound() {
@@ -72,6 +74,7 @@ export default function App() {
           <Route path="/account-email" element={<ResetEmail />} />
           <Route path="/account/edit" element={<EditAccount />} />
           <Route path="/my-recordings" element={<MyRecordings />} />
+          <Route path="/rhythm-game" element={<RhythmGame />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
