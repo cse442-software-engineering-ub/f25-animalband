@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
+import MobileAddToPlaylistButton from "../../../components/mobile_add_to_playlist_button.js";
+
 
 import "./mobile_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
@@ -232,18 +234,31 @@ export default function MobileLanding() {
                   <div className="m-song-author">by {song.author}</div>
                 </div>
 
-                <button
-                  className="m-play-btn"
-                  disabled={!buffers}
-                  onClick={() => togglePlay(index)}
-                  title={!buffers ? "Loading sounds..." : (playingIndex === index ? "Stop" : "Play")}
-                >
-                  <span className="material-symbols-outlined">
-                    {playingIndex === index ? "stop" : "play_arrow"}
-                  </span>
-                </button>
+                <div className="m-song-actions" style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                  <button
+                    className="m-play-btn"
+                    disabled={!buffers}
+                    onClick={() => togglePlay(index)}
+                    title={!buffers ? "Loading sounds..." : (playingIndex === index ? "Stop" : "Play")}
+                  >
+                    <span className="material-symbols-outlined">
+                      {playingIndex === index ? "stop" : "play_arrow"}
+                    </span>
+                  </button>
+
+                  <MobileAddToPlaylistButton
+                    songId={song.id}
+                    compact
+                    user={user}
+                    onAdded={() => {
+                      // optional toast or haptic feedback
+                      console.log("Added to playlist!");
+                    }}
+                  />
+                </div>
               </div>
             ))}
+
           </div>
         </section>
 

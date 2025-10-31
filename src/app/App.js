@@ -27,8 +27,10 @@ import ResetEmail from "./routes/login/desktop_reset_email.js";
 
 import MyRecordings from "./routes/account/recordings.js";
 
-import MyPlaylists from "./routes/playlists/my_playlists.js";
-import PlaylistDetail from "./routes/playlists/playlist_detail.js";
+import DesktopMyPlaylists from "./routes/playlists/desktop_my_playlists.js";
+import DesktopPlaylistDetail from "./routes/playlists/desktop_playlist_detail.js";
+import MobileMyPlaylists from "./routes/playlists/mobile_my_playlists.js";
+import MobilePlaylistDetails from "./routes/playlists/mobile_playlist_details.js";
 
 import "../App.css";
 
@@ -56,7 +58,15 @@ function Stage() {
   const isMobile = useIsMobile(852);
   return isMobile ? <MobileStage /> : <DesktopStage />;
 }
+function MyPlaylists() {
+  const isMobile = useIsMobile(852);
+  return isMobile ? <MobileMyPlaylists /> : <DesktopMyPlaylists />;
+}
+function PlaylistDetail() {
+  const isMobile = useIsMobile(852);
+  return isMobile ? <MobilePlaylistDetails /> : <DesktopPlaylistDetail />;
 
+}
 export default function App() {
   return (
     <HashRouter>

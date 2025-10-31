@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
-import AddToPlaylistButton from "../../../components/add_to_playlist_button.js";
+import AddToPlaylistButton from "../../../components/desktop_add_to_playlist_button.js";
 import "./desktop_landing.css";
 
 import Ostrich from "../../../assets/ostrich.jpeg";

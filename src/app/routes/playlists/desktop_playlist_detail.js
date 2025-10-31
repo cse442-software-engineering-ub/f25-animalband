@@ -7,13 +7,13 @@ import {
 } from "../../../api/playlists.js";
 import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player.js";
 import "../forum/desktop_forum.css";
-import "./playlist_details.css";
-import "./playlists.css";
+import "./desktop_playlist_details.css";
+import "./desktop_playlists.css";
 
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
-export default function PlaylistDetail() {
+export default function DesktopPlaylistDetail() {
     const navigate = useNavigate();
     const { id } = useParams();
     const pid = Number(id);

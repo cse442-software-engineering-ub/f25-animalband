@@ -7,11 +7,11 @@ import {
     deletePlaylist,
 } from "../../../api/playlists.js";
 import "../forum/desktop_forum.css";
-import "./playlists.css";
+import "./desktop_playlists.css";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
-export default function MyPlaylists() {
+export default function DesktopMyPlaylists() {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
 

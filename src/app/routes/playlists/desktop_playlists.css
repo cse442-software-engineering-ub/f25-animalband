@@ -4,9 +4,12 @@
 /* ===== Cards grid (use forum white cards look) ===== */
 .plf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); /* wider cards */
-  gap: 1.5rem; /* more space between cards */
-  justify-content: center; /* keeps them centered in wide screens */
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  /* wider cards */
+  gap: 1.5rem;
+  /* more space between cards */
+  justify-content: center;
+  /* keeps them centered in wide screens */
 }
 
 
@@ -14,7 +17,8 @@
   border-left-color: #178c3a;
   display: grid;
   gap: .75rem;
-  min-height: 180px; /* taller card */
+  min-height: 180px;
+  /* taller card */
 }
 
 
@@ -34,7 +38,10 @@
   cursor: pointer;
   padding: 0;
 }
-.plf-title-link:hover { color: #178c3a; }
+
+.plf-title-link:hover {
+  color: #178c3a;
+}
 
 .plf-badge {
   margin-left: .5rem;
@@ -46,7 +53,12 @@
   color: #666;
   background: #f7f7f7;
 }
-.plf-badge.pub { color: #1e7f3b; background: #e8f5e8; border-color: #cfead0; }
+
+.plf-badge.pub {
+  color: #1e7f3b;
+  background: #e8f5e8;
+  border-color: #cfead0;
+}
 
 /* action row matches forum button feel (nav-btn) */
 .plf-actions-row {
@@ -61,6 +73,7 @@
   align-items: center;
   gap: .5rem;
 }
+
 .plf-input {
   width: 240px;
   max-width: 46vw;
@@ -70,10 +83,11 @@
   background: white;
   font-size: .95rem;
 }
+
 .plf-input:focus {
   outline: none;
   border-color: #178c3a;
-  box-shadow: 0 0 0 3px rgba(23,140,58,.1);
+  box-shadow: 0 0 0 3px rgba(23, 140, 58, .1);
 }
 
 /* ===== Tracks list (look like forum post cards) ===== */
@@ -84,27 +98,45 @@
   display: grid;
   gap: 1rem;
 }
+
 .plf-track.post-card {
   display: flex;
   align-items: center;
   gap: .75rem;
   border-left-color: #178c3a;
 }
+
 .plf-drag {
   cursor: grab;
   font-weight: 700;
   user-select: none;
   color: #666;
 }
-.plf-track-meta { display: grid; gap: .2rem; }
-.plf-track-title { font-weight: 800; color: #333; }
-.plf-track-desc { color: #555; font-size: .95rem; }
-.plf-spacer { flex: 1; }
+
+.plf-track-meta {
+  display: grid;
+  gap: .2rem;
+}
+
+.plf-track-title {
+  font-weight: 800;
+  color: #333;
+}
+
+.plf-track-desc {
+  color: #555;
+  font-size: .95rem;
+}
+
+.plf-spacer {
+  flex: 1;
+}
 
 .plf-danger {
   color: #d32f2f !important;
   border: 2px solid transparent;
 }
+
 .plf-danger:hover {
   background: #d32f2f !important;
   color: #fff !important;
@@ -112,22 +144,38 @@
 
 /* ===== Skeletons ===== */
 .plf-skel {
-  position: relative; overflow: hidden; min-height: 98px;
+  position: relative;
+  overflow: hidden;
+  min-height: 98px;
 }
+
 .plf-skel::after {
-  content:""; position:absolute; inset:0;
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,.05), transparent);
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, .05), transparent);
   animation: plf-shimmer 1.2s infinite;
 }
+
 @keyframes plf-shimmer {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(100%); }
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
 }
 
 /* ===== Responsive tweaks ===== */
 @media (max-width: 768px) {
-  .plf-input { width: 100%; }
-  .plf-create { width: 100%; }
+  .plf-input {
+    width: 100%;
+  }
+
+  .plf-create {
+    width: 100%;
+  }
 }
 
 .plf-track-by {
