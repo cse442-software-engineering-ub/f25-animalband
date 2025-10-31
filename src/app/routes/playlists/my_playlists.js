@@ -18,22 +18,28 @@ export default function MyPlaylists() {
     const [playlists, setPlaylists] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // create form
     const [creating, setCreating] = useState(false);
     const [newName, setNewName] = useState("");
 
-    // ===== user (to show profile pic like forum) =====
+
     useEffect(() => {
         (async () => {
             try {
                 const res = await fetch(`${PHP_URL}/getUser.php`, { credentials: "include" });
                 const data = await res.json();
-                if (data?.loggedIn) setUser(data);
+
+                if (data?.loggedIn) {
+                    setUser(data);
+                } else {
+                    navigate("/login");
+                }
             } catch (e) {
                 console.warn("getUser failed", e);
+                navigate("/login");
             }
         })();
-    }, []);
+    }, [navigate]);
+
 
     // ===== data =====
     async function refresh() {
@@ -93,8 +99,8 @@ export default function MyPlaylists() {
 
 
     return (
-        <div className="forum-page">{/* same shell as forum */}
-            {/* ===== SIDEBAR (copied style) ===== */}
+        <div className="forum-page">
+            {/* ===== SIDEBAR ===== */}
             <aside className="forum-sidebar">
                 <div className="sidebar-header">
                     <Link to="/">
@@ -117,7 +123,7 @@ export default function MyPlaylists() {
 
             {/* ===== MAIN ===== */}
             <div className="forum-main">
-                {/* ===== HEADER (same visual as forum-header) ===== */}
+                {/* ===== HEADER ===== */}
                 <header className="forum-header">
                     <div className="header-left">
                         <h1 className="forum-title">My Playlists</h1>
@@ -154,7 +160,7 @@ export default function MyPlaylists() {
                     </div>
                 </header>
 
-                {/* ===== CONTENT (cards match forum post-card style) ===== */}
+                {/* ===== CONTENT ===== */}
                 <main className="forum-content">
                     {loading ? (
                         <div className="plf-grid">
@@ -203,7 +209,6 @@ export default function MyPlaylists() {
                 </main>
             </div>
 
-            {/* Material Icons for the paw icon if needed */}
             <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
         </div>
     );

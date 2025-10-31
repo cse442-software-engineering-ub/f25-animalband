@@ -1,12 +1,15 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     getPlaylistTracks,
     removeSongFromPlaylist,
     reorderPlaylist,
 } from "../../../api/playlists.js";
+import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player.js";
 import "../forum/desktop_forum.css";
+import "./playlist_details.css";
 import "./playlists.css";
+
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -21,6 +24,10 @@ export default function PlaylistDetail() {
     const [savingOrder, setSavingOrder] = useState(false);
     const [dragIdx, setDragIdx] = useState(null);
     const [dirty, setDirty] = useState(false);
+    const [buffers, setBuffers] = useState(null);
+    const [playingIndex, setPlayingIndex] = useState(-1);
+    const stopRef = useRef(null);
+
 
     useEffect(() => {
         (async () => {
@@ -39,15 +46,20 @@ export default function PlaylistDetail() {
             setLoading(true);
             const res = await getPlaylistTracks(pid);
             if (res?.ok) {
-                // Normalize to always have an array
                 setInfo({
                     playlist: res.playlist ?? null,
                     tracks: Array.isArray(res.tracks) ? res.tracks : [],
                 });
                 setDirty(false);
             } else {
-                alert(res?.error || "Load failed");
-                setInfo({ playlist: null, tracks: [] });
+                if (res?.error === "Private playlist") {
+                    setInfo(null);
+                    alert("This playlist is private.");
+                    navigate("/");
+                } else {
+                    alert(res?.error || "Load failed");
+                    setInfo({ playlist: null, tracks: [] });
+                }
             }
         } catch (e) {
             console.error(e);
@@ -57,14 +69,34 @@ export default function PlaylistDetail() {
             setLoading(false);
         }
     }
-    useEffect(() => { refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [pid]);
+    useEffect(() => {
+        (async () => {
+            try {
+                setBuffers(await preloadLandingSounds());
+            } catch (e) {
+                console.error("preloadLandingSounds failed", e);
+            }
+        })();
+        return () => {
+            if (stopRef.current) {
+                stopRef.current();
+                stopRef.current = null;
+            }
+            setPlayingIndex(-1);
+        };
+    }, []);
+
+    useEffect(() => { refresh(); }, [pid]);
 
     const tracks = info?.tracks ?? [];
+
+    const canEdit =
+        !!(info?.playlist?.can_edit ??
+            (user && info?.playlist && info.playlist.owner_id === user.ID));
 
     function onDragStart(e, index) {
         setDragIdx(index);
         e.dataTransfer.effectAllowed = "move";
-        // Some browsers need a payload for DnD to work
         e.dataTransfer.setData("text/plain", String(index));
     }
     function onDragOver(e) { e.preventDefault(); }
@@ -78,11 +110,116 @@ export default function PlaylistDetail() {
         setDragIdx(null);
         setDirty(true);
     }
+    function stopAll() {
+        if (stopRef.current) {
+            stopRef.current();
+            stopRef.current = null;
+        }
+    }
+
+    function coerceRecording(rec) {
+        if (!rec) return [];
+        if (Array.isArray(rec)) return rec;
+        try {
+            const parsed = JSON.parse(rec);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function togglePlay(idx) {
+        if (!buffers) return;
+        if (playingIndex === idx) {
+            stopAll();
+            setPlayingIndex(-1);
+            return;
+        }
+        stopAll();
+        const song = tracks[idx];
+        if (!song) return;
+        const recording = coerceRecording(song.recording);
+        stopRef.current = schedulePlayback(buffers, recording, () => {
+            setPlayingIndex(-1);
+            stopRef.current = null;
+        });
+        setPlayingIndex(idx);
+    }
+
+    async function downloadWav(song) {
+        if (!buffers || !song?.recording) return;
+        const rec = coerceRecording(song.recording);
+        const durationMs = rec.length ? rec[rec.length - 1].time + 1000 : 0;
+        const duration = durationMs / 1000;
+        const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
+
+        rec.forEach(({ key, time }) => {
+            const buf = buffers[key];
+            if (!buf) return;
+            const node = offlineCtx.createBufferSource();
+            node.buffer = buf;
+            node.connect(offlineCtx.destination);
+            node.start(time / 1000);
+        });
+
+        const rendered = await offlineCtx.startRendering();
+        const wavBlob = bufferToWav(rendered);
+        const url = URL.createObjectURL(wavBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${song.title || `song_${song.id}`}.wav`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function bufferToWav(buffer) {
+        const numCh = buffer.numberOfChannels;
+        const length = buffer.length * numCh * 2 + 44;
+        const ab = new ArrayBuffer(length);
+        const view = new DataView(ab);
+        let offset = 0;
+
+        const write = (s) => {
+            for (let i = 0; i < s.length; i++) view.setUint8(offset++, s.charCodeAt(i));
+        };
+        const set16 = (v) => {
+            view.setUint16(offset, v, true);
+            offset += 2;
+        };
+        const set32 = (v) => {
+            view.setUint32(offset, v, true);
+            offset += 4;
+        };
+
+        write("RIFF");
+        set32(36 + buffer.length * numCh * 2);
+        write("WAVEfmt ");
+        set32(16);
+        set16(1);
+        set16(numCh);
+        set32(buffer.sampleRate);
+        set32(buffer.sampleRate * numCh * 2);
+        set16(numCh * 2);
+        set16(16);
+        write("data");
+        set32(buffer.length * numCh * 2);
+
+        const ch0 = buffer.getChannelData(0);
+        const ch1 = numCh > 1 ? buffer.getChannelData(1) : ch0;
+        for (let i = 0; i < buffer.length; i++) {
+            for (const s of [ch0[i], ch1[i]]) {
+                const clamped = Math.max(-1, Math.min(1, s));
+                view.setInt16(offset, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
+                offset += 2;
+            }
+        }
+
+        return new Blob([view], { type: "audio/wav" });
+    }
 
     async function saveOrder() {
         if (!info || !dirty) return;
         const order = tracks.map(t => t.id);
-
         setSavingOrder(true);
         const r = await reorderPlaylist(pid, order);
         setSavingOrder(false);
@@ -136,7 +273,7 @@ export default function PlaylistDetail() {
 
                     <div className="header-right">
                         <button className="nav-btn" onClick={() => navigate("/playlists")}>Back</button>
-                        <button className="new-post-btn" onClick={saveOrder} disabled={savingOrder || !dirty}>
+                        <button className="new-post-btn" onClick={saveOrder} disabled={savingOrder || !dirty || !canEdit}>
                             {savingOrder ? "Saving…" : "Save Order"}
                         </button>
                         {user ? (
@@ -170,31 +307,52 @@ export default function PlaylistDetail() {
                             {tracks.map((t, i) => (
                                 <li
                                     key={t.id}
-                                    className="post-card plf-track"
-                                    draggable
-                                    onDragStart={(e) => onDragStart(e, i)}
-                                    onDragOver={onDragOver}
-                                    onDrop={(e) => onDrop(e, i)}
+                                    className={`post-card plf-track ${!canEdit ? "readonly" : ""}`}
+                                    draggable={canEdit}
+                                    onDragStart={canEdit ? (e) => onDragStart(e, i) : undefined}
+                                    onDragOver={canEdit ? onDragOver : undefined}
+                                    onDrop={canEdit ? (e) => onDrop(e, i) : undefined}
                                 >
-                                    <span className="plf-drag">⋮⋮</span>
+                                    {canEdit && <span className="plf-drag" title="Drag to reorder">⋮⋮</span>}
+
                                     <div className="plf-track-meta">
                                         <div className="plf-track-title">{t.title || `Song #${t.id}`}</div>
-                                        {t.description ? <div className="plf-track-desc">{t.description}</div> : null}
+                                        {t.description && <div className="plf-track-desc">{t.description}</div>}
+                                        <div className="plf-track-by">
+                                            by {t.author_name || (t.email ? t.email.split("@")[0] : "Unknown")}
+                                        </div>
                                     </div>
 
-                                    <div className="plf-track-by">
-                                        by {t.author_name || (t.email ? t.email.split("@")[0] : "Unknown")}
+                                    <div className="plf-track-actions">
+                                        <button
+                                            className="song-play-btn"
+                                            title={playingIndex === i ? "Stop" : "Play"}
+                                            onClick={() => togglePlay(i)}
+                                        >
+                                            <span className="material-symbols-outlined">
+                                                {playingIndex === i ? "stop" : "play_arrow"}
+                                            </span>
+                                        </button>
+
+                                        <button
+                                            className="song-download-btn"
+                                            title="Download WAV"
+                                            onClick={() => downloadWav(t)}
+                                        >
+                                            <span className="material-symbols-outlined">download</span>
+                                        </button>
+
+                                        {canEdit && (
+                                            <button
+                                                className="nav-btn plf-danger"
+                                                onClick={() => handleRemove(t.id)}
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
                                     </div>
-
-
-                                    <div className="plf-spacer" />
-                                    <button
-                                        className="nav-btn plf-danger"
-                                        onClick={() => handleRemove(t.id)}
-                                    >
-                                        Remove
-                                    </button>
                                 </li>
+
                             ))}
                         </ul>
                     )}

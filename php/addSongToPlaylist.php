@@ -24,14 +24,13 @@ $user = require_user($conn);
 $body = get_json_body();
 
 $playlist_id = (int) ($body["playlist_id"] ?? 0);
-$song_id     = (int) ($body["song_id"] ?? 0);
+$song_id = (int) ($body["song_id"] ?? 0);
 if (!$playlist_id || !$song_id) {
     http_response_code(400);
     echo json_encode(["error" => "Missing fields"]);
     exit;
 }
 
-// ownership check (keep yours)
 $own = $conn->prepare("SELECT 1 FROM playlists WHERE id=? AND owner_id=?");
 $own->bind_param("ii", $playlist_id, $user["ID"]);
 $own->execute();
@@ -41,7 +40,6 @@ if (!$own->get_result()->fetch_row()) {
     exit;
 }
 
-// optional: validate song exists
 $exists = $conn->prepare("SELECT 1 FROM localRecordings WHERE id=?");
 $exists->bind_param("i", $song_id);
 $exists->execute();
@@ -51,7 +49,6 @@ if (!$exists->get_result()->fetch_row()) {
     exit;
 }
 
-// Already in playlist?
 $chk = $conn->prepare("SELECT 1 FROM playlist_songs WHERE playlist_id=? AND song_id=?");
 $chk->bind_param("ii", $playlist_id, $song_id);
 $chk->execute();
@@ -60,13 +57,11 @@ if ($chk->get_result()->fetch_row()) {
     exit;
 }
 
-// Next position
 $maxq = $conn->prepare("SELECT COALESCE(MAX(position),0)+1 AS nextpos FROM playlist_songs WHERE playlist_id=?");
 $maxq->bind_param("i", $playlist_id);
 $maxq->execute();
 $nextpos = (int) $maxq->get_result()->fetch_assoc()["nextpos"];
 
-// Insert (relies on UNIQUE (playlist_id, song_id) to prevent dupes)
 $ins = $conn->prepare("INSERT INTO playlist_songs (playlist_id, song_id, position) VALUES (?,?,?)");
 $ins->bind_param("iii", $playlist_id, $song_id, $nextpos);
 $ok = $ins->execute();

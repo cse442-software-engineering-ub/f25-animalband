@@ -25,8 +25,9 @@ require_once "_auth.php";
 
 $maybeUser = null;
 try {
-  $maybeUser = require_user($conn);
-} catch (Throwable $e) {}
+  $maybeUser = try_get_user($conn);
+} catch (Throwable $e) {
+}
 
 $playlist_id = isset($_GET["playlist_id"]) ? (int) $_GET["playlist_id"] : 0;
 if (!$playlist_id) {
@@ -77,13 +78,17 @@ $stmt->bind_param("i", $playlist_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $tracks = $result->fetch_all(MYSQLI_ASSOC);
+$viewer_id = $maybeUser["ID"] ?? -1;
+$can_edit = ($pl["owner_id"] == $viewer_id);
 
 echo json_encode([
   "ok" => true,
   "playlist" => [
     "id" => (int) $playlist_id,
     "name" => $pl["name"],
-    "is_public" => (int) $pl["is_public"]
+    "is_public" => (int) $pl["is_public"],
+    "owner_id" => (int) $pl["owner_id"],
+    "can_edit" => $can_edit
   ],
   "tracks" => $tracks
 ]);

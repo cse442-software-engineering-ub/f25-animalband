@@ -1,0 +1,65 @@
+/* ===== Playlist Details Styling ===== */
+.plf-track-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.song-play-btn,
+.song-download-btn {
+  background-color: #178c3a;       
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.song-play-btn:hover,
+.song-download-btn:hover {
+  background-color: #0f6a2d;       
+  transform: scale(1.05);
+}
+
+.song-play-btn:active,
+.song-download-btn:active {
+  transform: scale(0.95);
+}
+
+.song-play-btn .material-symbols-outlined,
+.song-download-btn .material-symbols-outlined {
+  font-size: 24px;
+}
+
+.plf-track.readonly {
+  opacity: 0.95;
+  background-color: #f9f9f9;
+}
+
+.plf-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.plf-drag {
+  font-size: 20px;
+  margin-right: 12px;
+  cursor: grab;
+  color: #888;
+}
+
+.plf-drag:active {
+  cursor: grabbing;
+  color: #555;
+}

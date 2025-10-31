@@ -1,4 +1,4 @@
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 export async function getMyPlaylists() {
   const r = await fetch(`${PHP_URL}/getPlaylists.php`, { credentials: "include" });

@@ -65,7 +65,6 @@ export default function AddToPlaylistButton({ songId, compact = false, onAdded }
             role="dialog"
             aria-modal="true"
             onMouseDown={(e) => {
-                // close if clicking the dimmed overlay (not the card)
                 if (e.target === e.currentTarget) setOpen(false);
             }}
         >
