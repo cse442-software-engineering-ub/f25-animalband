@@ -7,7 +7,7 @@ import Hamster from "../../../assets/hamster.png";
 import Kangaroo from "../../../assets/kangaroo.png";
 import Snake from "../../../assets/snake.png";
 
-// Use proper public URLs (these should match your /public/stage_sounds folder)
+// Use your original public URL sound paths
 const SOUND_PATHS = {
   ostrich: `${process.env.PUBLIC_URL}/stage_sounds/keys/temp_keys_CM.wav`,
   bird: `${process.env.PUBLIC_URL}/stage_sounds/vocal/double_chirp.wav`,
@@ -41,6 +41,7 @@ export default function RhythmGame() {
   const [time, setTime] = useState(0);
   const [notes, setNotes] = useState([]);
   const [running, setRunning] = useState(false);
+  const [soundsReady, setSoundsReady] = useState(false);
   const [sounds, setSounds] = useState({});
   const audioCtxRef = useRef(null);
 
@@ -51,20 +52,19 @@ export default function RhythmGame() {
   const notesRef = useRef(notes);
 
   const laneHeight = 400;
-  const noteSize = 50;
   const speed = 0.13;
 
-  // Keep refs in sync
   useEffect(() => {
     timeRef.current = time;
     notesRef.current = notes;
   }, [time, notes]);
 
-  // --- Initialize AudioContext + Load sounds ---
+  // Initialize AudioContext and preload sounds from public URLs
   useEffect(() => {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     audioCtxRef.current = ctx;
 
+    // Helper to fetch and decode sound buffer
     const loadSound = async (url) => {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Failed to load sound: ${url}`);
@@ -82,12 +82,25 @@ export default function RhythmGame() {
         }
       }
       setSounds(loaded);
+      setSoundsReady(true);
     };
 
     loadAll();
+
+    // Resume AudioContext on user interaction (click or keydown)
+    const resumeAudio = () => {
+      if (ctx.state === "suspended") ctx.resume();
+    };
+    window.addEventListener("click", resumeAudio);
+    window.addEventListener("keydown", resumeAudio);
+
+    return () => {
+      window.removeEventListener("click", resumeAudio);
+      window.removeEventListener("keydown", resumeAudio);
+    };
   }, []);
 
-  // --- Game loop ---
+  // Game loop
   const update = (t) => {
     if (!startTime.current) startTime.current = t;
     const elapsed = t - startTime.current;
@@ -96,7 +109,10 @@ export default function RhythmGame() {
   };
 
   const handleStart = () => {
-    if (!running) {
+    if (!running && soundsReady) {
+      const ctx = audioCtxRef.current;
+      if (ctx && ctx.state === "suspended") ctx.resume();
+
       setRunning(true);
       startTime.current = null;
       setTime(0);
@@ -112,17 +128,17 @@ export default function RhythmGame() {
     setNotes([]);
   };
 
-  // --- Handle key presses + play sounds ---
+  const HIT_ZONE = 5000; // pixels above/below the target
+
   const handleKeyDown = (e) => {
     const laneIndex = LANES.findIndex((l) => l.key === e.key);
     if (laneIndex === -1) return;
 
     const ctx = audioCtxRef.current;
     if (!ctx || !sounds[e.key]) return;
-
-    // Resume context if suspended (browser auto-play policy)
     if (ctx.state === "suspended") ctx.resume();
 
+    // Play sound
     const source = ctx.createBufferSource();
     source.buffer = sounds[e.key];
     source.connect(ctx.destination);
@@ -131,10 +147,12 @@ export default function RhythmGame() {
     const currentTime = timeRef.current;
     const currentNotes = notesRef.current;
 
-    const note = currentNotes.find(
-      (n) =>
-        n.lane === laneIndex && !n.hit && Math.abs(n.time - currentTime) < 300
-    );
+    const note = currentNotes.find((n) => {
+      if (n.lane !== laneIndex || n.hit) return false;
+      // Calculate distance from top target
+      const y = laneHeight - (currentTime - n.time) * speed;
+      return y >= -HIT_ZONE && y <= HIT_ZONE;
+    });
 
     if (note) {
       note.hit = true;
@@ -142,12 +160,13 @@ export default function RhythmGame() {
     }
   };
 
+
+
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [sounds]);
 
-  // --- Rendering ---
   return (
     <div className="game">
       <div className="lanes">
@@ -174,9 +193,14 @@ export default function RhythmGame() {
           </div>
         ))}
       </div>
+
       <div className="controls">
-        <button className="start-button" onClick={handleStart}>
-          Start
+        <button
+          className="start-button"
+          onClick={handleStart}
+          disabled={!soundsReady}
+        >
+          {soundsReady ? "Start" : "Loading..."}
         </button>
         <button className="reset-button" onClick={handleReset}>
           Reset
