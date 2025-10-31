@@ -732,3 +732,200 @@
         min-height: 44px;
     }
 }
+
+/* ===== AUDIO PLAY BUTTON INSIDE POST CARD ===== */
+.mobile-post-audio {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mobile-audio-btn {
+    background-color: #178c3a; /* primary forum color */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.mobile-audio-btn:hover {
+    background-color: #106e2b; /* slightly darker green on hover */
+}
+
+.mobile-audio-btn:active {
+    background-color: #0e5b21; /* even darker green on click */
+    transform: scale(0.97);
+}
+
+.mobile-audio-btn .material-symbols-outlined {
+    font-size: 1rem;
+    color: white;
+}
+
+/* Form Groups */
+.mobile-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.mobile-form-group select,
+.mobile-form-group input,
+.mobile-form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: #fafafa;
+    color: #333;
+}
+
+.mobile-form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Recording Dropdown Row */
+.recording-select-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.recording-select-row select {
+    flex: 1;
+    appearance: none;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.recording-select-row select:hover {
+    background: #e9ecef;
+}
+
+.recording-select-row button {
+    padding: 0.6rem 0.9rem;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    background: #178c3a;
+    color: white;
+}
+
+.recording-select-row button:hover:not(:disabled) {
+    background: #106e2b;
+}
+
+.recording-select-row button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Preview Section */
+.recording-preview {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    background: #f8f9fa;
+    font-size: 0.95rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.recording-preview audio {
+    flex: 1;
+}
+
+/* Tags inside modal */
+.mobile-tag-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.mobile-tag {
+    padding: 0.6rem 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.mobile-tag:hover {
+    background: #e9ecef;
+}
+
+.mobile-tag.active {
+    background: #178c3a;
+    color: white;
+    border-color: #178c3a;
+    font-weight: 600;
+}
+
+/* Modal Footer Buttons */
+.mobile-popup-footer {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.mobile-cancel-btn,
+.mobile-submit-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mobile-cancel-btn {
+    background: #f8f9fa;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.mobile-submit-btn {
+    background: #178c3a;
+    color: white;
+}
+
+.mobile-submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.mobile-submit-btn:not(:disabled):hover {
+    background: #106e2b;
+}

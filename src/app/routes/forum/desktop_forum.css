@@ -739,3 +739,75 @@ body.popup-open {
     gap: 1rem;
   }
 }
+
+.play-recording-btn {
+  background: #178c3a;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.play-recording-btn:hover {
+  background: #106e2b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(23, 140, 58, 0.3);
+}
+
+/* Green reload button */
+.refresh-recordings-btn {
+  background-color: #178c3a;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4em; /* Makes the icon bigger */
+}
+
+.refresh-recordings-btn:hover {
+  background-color: #106e2b;
+}
+
+/* Optional: make the icon itself larger */
+.refresh-recordings-btn::before {
+  font-size: 1.6em;
+}
+
+/* recording select row */
+.recording-select-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recording-select-row select {
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+  background: #fafafa;
+}
+
+/* Make reload button round */
+.refresh-recordings-btn {
+  border-radius: 50%; /* round shape */
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 1.2em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.refresh-recordings-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(23, 140, 58, 0.3);
+}

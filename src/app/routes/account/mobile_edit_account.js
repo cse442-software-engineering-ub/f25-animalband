@@ -117,7 +117,7 @@ export default function MobileEditAccount() {
                 <div className="mea-header-buttons">
                     {user && user.profilePic ? (
                         <img
-                            src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                            src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/${user.profilePic}`}
                             alt="Profile"
                             className="mea-profile-pic"
                             onClick={() => navigate("/account")}
