@@ -43,6 +43,7 @@ export default function RhythmGame() {
   const [running, setRunning] = useState(false);
   const [soundsReady, setSoundsReady] = useState(false);
   const [sounds, setSounds] = useState({});
+  const [points, setPoints] = useState(0);
   const audioCtxRef = useRef(null);
 
   const startTime = useRef(null);
@@ -53,18 +54,18 @@ export default function RhythmGame() {
 
   const laneHeight = 400;
   const speed = 0.13;
+  const HIT_ZONE = 5000; // basically anywhere in the lane
 
   useEffect(() => {
     timeRef.current = time;
     notesRef.current = notes;
   }, [time, notes]);
 
-  // Initialize AudioContext and preload sounds from public URLs
+  // Initialize AudioContext and preload sounds
   useEffect(() => {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     audioCtxRef.current = ctx;
 
-    // Helper to fetch and decode sound buffer
     const loadSound = async (url) => {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Failed to load sound: ${url}`);
@@ -87,13 +88,11 @@ export default function RhythmGame() {
 
     loadAll();
 
-    // Resume AudioContext on user interaction (click or keydown)
     const resumeAudio = () => {
       if (ctx.state === "suspended") ctx.resume();
     };
     window.addEventListener("click", resumeAudio);
     window.addEventListener("keydown", resumeAudio);
-
     return () => {
       window.removeEventListener("click", resumeAudio);
       window.removeEventListener("keydown", resumeAudio);
@@ -117,6 +116,7 @@ export default function RhythmGame() {
       startTime.current = null;
       setTime(0);
       setNotes(NOTES.map((n) => ({ ...n, hit: false })));
+      setPoints(0); // reset points
       raf.current = requestAnimationFrame(update);
     }
   };
@@ -126,9 +126,8 @@ export default function RhythmGame() {
     setRunning(false);
     setTime(0);
     setNotes([]);
+    setPoints(0);
   };
-
-  const HIT_ZONE = 5000; // pixels above/below the target
 
   const handleKeyDown = (e) => {
     const laneIndex = LANES.findIndex((l) => l.key === e.key);
@@ -136,9 +135,9 @@ export default function RhythmGame() {
 
     const ctx = audioCtxRef.current;
     if (!ctx || !sounds[e.key]) return;
+
     if (ctx.state === "suspended") ctx.resume();
 
-    // Play sound
     const source = ctx.createBufferSource();
     source.buffer = sounds[e.key];
     source.connect(ctx.destination);
@@ -147,16 +146,25 @@ export default function RhythmGame() {
     const currentTime = timeRef.current;
     const currentNotes = notesRef.current;
 
-    const note = currentNotes.find((n) => {
-      if (n.lane !== laneIndex || n.hit) return false;
-      // Calculate distance from top target
-      const y = laneHeight - (currentTime - n.time) * speed;
-      return y >= -HIT_ZONE && y <= HIT_ZONE;
-    });
+    // Find the first unhit note in the lane within HIT_ZONE
+    const note = currentNotes.find(
+      (n) =>
+        n.lane === laneIndex &&
+        !n.hit &&
+        Math.abs((currentTime - n.time) * speed) < HIT_ZONE
+    );
 
     if (note) {
       note.hit = true;
       setNotes([...currentNotes]);
+
+      // --- POINTS CALCULATION ---
+      const distanceFromTop = (currentTime - note.time) * speed;
+      const pointsEarned = Math.max(
+        0,
+        Math.round(((laneHeight - distanceFromTop) / laneHeight) * 100)
+      );
+      setPoints((prev) => prev + pointsEarned);
     }
   };
 
@@ -169,6 +177,7 @@ export default function RhythmGame() {
 
   return (
     <div className="game">
+      <div className="points">Points: {points}</div>
       <div className="lanes">
         {LANES.map((lane, i) => (
           <div className="lane" key={i}>
