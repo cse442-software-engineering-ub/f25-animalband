@@ -49,7 +49,7 @@ export const playSound = (buffer, gainValue = 1) => {
 export const loadSound = async (filename) => {
   const ctx = getAudioCtx();
   const url = `${process.env.PUBLIC_URL}/stage_sounds/${filename}`;
-  console.log("[DEBUG] Fetching:", url);
+  //console.log("[DEBUG] Fetching:", url);
 
   const response = await fetch(url);
   if (!response.ok) {

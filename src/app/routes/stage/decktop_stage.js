@@ -27,9 +27,12 @@ export default function DesktopStage() {
   const [recordedTracks, setRecordedTracks] = useState([]); // multiple tracks
   const [currentTrack, setCurrentTrack] = useState([]);
   const [recordStartTime, setRecordStartTime] = useState(null);
+  const [importedAudioBuffers, setImportedAudioBuffers] = useState([]); // Store imported audio buffers
+  const [trackCounter, setTrackCounter] = useState(1); // Track numbering counter
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
+  const [activeAudioSources, setActiveAudioSources] = useState([]); // Track active audio sources
 
   // Track settings: name, mute, solo
   const [trackSettings, setTrackSettings] = useState([]);
@@ -108,19 +111,19 @@ export default function DesktopStage() {
     }
       if (showSaveForm) return;
 
+      const key = e.key.toLowerCase();
+      const animal = animalKeyMap[key];
+      if (!animal) return;
 
-    const animal = animalKeyMap[key];
-    if (!animal) return;
+      if (isRecording) {
+        const timeSinceStart = performance.now() - recordStartTime;
+        setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
+      }
 
-    if (isRecording) {
-      const timeSinceStart = performance.now() - recordStartTime;
-      setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
-    }
-
-    playSound(sounds[key], masterVolume);
-    setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-    setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
-  };
+      playSound(sounds[key], masterVolume);
+      setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+      setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -146,15 +149,17 @@ export default function DesktopStage() {
       // Play existing tracks while recording
       if (recordedTracks.length > 0) playTracksDuringRecording();
     } else {
-      setRecordedTracks(prev => {
-        const newTracks = [...prev, currentTrack];
-        setTrackSettings(prevSettings => [
-          ...prevSettings,
-          { name: `Track ${newTracks.length}`, muted: false, solo: false }
-        ]);
-        return newTracks;
-      });
+      const trackName = `Track ${trackCounter}`;
+      setRecordedTracks(prev => [...prev, currentTrack]);
+      setTrackSettings(prev => [
+        ...prev,
+        { name: trackName, muted: false, solo: false, volume: 1 }
+      ]);
+      setTrackCounter(c => c + 1); // Increment counter after creating track
       setIsRecording(false);
+      
+      // Stop any playing tracks when stopping recording
+      stopPlayback();
     }
   };
 
@@ -163,25 +168,47 @@ export default function DesktopStage() {
     if (!audioContextRef.current) return;
     const audioContext = audioContextRef.current;
 
-    recordedTracks.forEach(track => {
-      track.forEach(({ key, time }) => {
-        if (!sounds[key]) return;
-        const animal = animalKeyMap[key];
-        const source = audioContext.createBufferSource();
-        source.buffer = sounds[key];
+    const sources = []; // Collect all audio sources
+    const timeouts = []; // Collect all timeouts
 
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = masterVolume;
+    recordedTracks.forEach((track, trackIndex) => {
+      const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
+      track.forEach(({ key, time, isImported, audioBuffer }) => {
+        if (isImported && audioBuffer) {
+          // Play imported audio
+          const source = audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          const gainNode = audioContext.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
+          source.connect(gainNode).connect(audioContext.destination);
+          source.start(audioContext.currentTime + time / 1000);
+          sources.push(source);
+        } else if (!sounds[key]) {
+          return;
+        } else {
+          const animal = animalKeyMap[key];
+          const source = audioContext.createBufferSource();
+          source.buffer = sounds[key];
 
-        source.connect(gainNode).connect(audioContext.destination);
-        source.start(audioContext.currentTime + time / 1000);
+          const gainNode = audioContext.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
 
-        setTimeout(() => {
-          setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-          setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
-        }, time);
+          source.connect(gainNode).connect(audioContext.destination);
+          source.start(audioContext.currentTime + time / 1000);
+          sources.push(source);
+
+          const timeout1 = setTimeout(() => {
+            setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+            const timeout2 = setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+            timeouts.push(timeout2);
+          }, time);
+          timeouts.push(timeout1);
+        }
       });
     });
+
+    // Store sources and timeouts for stopping
+    setActiveAudioSources({ sources, timeouts });
   };
 
   // Play all tracks simultaneously
@@ -190,33 +217,94 @@ export default function DesktopStage() {
     setIsPlaying(true);
     const audioContext = audioContextRef.current;
 
+    const sources = []; // Collect all audio sources
+    const timeouts = []; // Collect all timeouts
+
     const anySolo = trackSettings.some(t => t.solo);
-    const activeTracks = recordedTracks
-      .map((track, i) => ({ track, settings: trackSettings[i] }))
-      .filter(({ settings }) => anySolo ? settings.solo : !settings.muted);
+    
+    recordedTracks.forEach((track, trackIndex) => {
+      const settings = trackSettings[trackIndex];
+      
+      // Skip muted tracks or non-soloed tracks when solo is active
+      if (settings?.muted || (anySolo && !settings?.solo)) return;
+      
+      const trackVolume = settings?.volume ?? 1;
+      const finalGain = masterVolume * trackVolume;
+      
+      track.forEach(({ key, time, isImported, audioBuffer }) => {
+        if (isImported && audioBuffer) {
+          // Play imported audio
+          const source = audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          const gainNode = audioContext.createGain();
+          gainNode.gain.value = finalGain;
+          source.connect(gainNode).connect(audioContext.destination);
+          source.start(audioContext.currentTime + time / 1000);
+          sources.push(source);
+        } else if (!sounds[key]) {
+          return;
+        } else {
+          const animal = animalKeyMap[key];
+          const source = audioContext.createBufferSource();
+          source.buffer = sounds[key];
 
-    activeTracks.forEach(({ track }) => {
-      track.forEach(({ key, time }) => {
-        if (!sounds[key]) return;
-        const animal = animalKeyMap[key];
-        const source = audioContext.createBufferSource();
-        source.buffer = sounds[key];
+          const gainNode = audioContext.createGain();
+          gainNode.gain.value = finalGain;
 
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = masterVolume;
+          source.connect(gainNode).connect(audioContext.destination);
+          source.start(audioContext.currentTime + time / 1000);
+          sources.push(source);
 
-        source.connect(gainNode).connect(audioContext.destination);
-        source.start(audioContext.currentTime + time / 1000);
-
-        setTimeout(() => {
-          setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-          setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
-        }, time);
+          const timeout1 = setTimeout(() => {
+            setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+            const timeout2 = setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+            timeouts.push(timeout2);
+          }, time);
+          timeouts.push(timeout1);
+        }
       });
     });
 
-    const longestTrack = Math.max(...recordedTracks.map(track => track.length ? track[track.length - 1].time : 0));
-    setTimeout(() => setIsPlaying(false), longestTrack + 400);
+    // Store sources and timeouts for stopping
+    setActiveAudioSources({ sources, timeouts });
+
+    const longestTrack = Math.max(...recordedTracks.map(track => {
+      if (track.length === 0) return 0;
+      const lastNote = track[track.length - 1];
+      if (lastNote.isImported && lastNote.audioBuffer) {
+        return lastNote.time + (lastNote.audioBuffer.duration * 1000);
+      }
+      return lastNote.time;
+    }));
+    
+    const endTimeout = setTimeout(() => {
+      setIsPlaying(false);
+      setActiveAudioSources([]);
+    }, longestTrack + 400);
+    timeouts.push(endTimeout);
+  };
+
+  // Stop playback
+  const stopPlayback = () => {
+    if (activeAudioSources.sources) {
+      // Stop all audio sources
+      activeAudioSources.sources.forEach(source => {
+        try {
+          source.stop();
+        } catch (e) {
+          // Source may have already stopped
+        }
+      });
+      
+      // Clear all timeouts
+      activeAudioSources.timeouts.forEach(timeout => {
+        clearTimeout(timeout);
+      });
+      
+      setActiveAudioSources([]);
+      setIsPlaying(false);
+      setPlayingAnimals({});
+    }
   };
 
   // Delete a track
@@ -235,21 +323,46 @@ export default function DesktopStage() {
     );
     if (!fileName) return;
 
-    const allNotes = recordedTracks.flat();
-    const duration = (allNotes.length ? allNotes[allNotes.length - 1].time + 1000 : 0) / 1000;
+    // Calculate the total duration needed
+    let maxDuration = 0;
+    recordedTracks.forEach(track => {
+      if (track.length === 0) return;
+      const lastNote = track[track.length - 1];
+      if (lastNote.isImported && lastNote.audioBuffer) {
+        const trackEnd = lastNote.time + (lastNote.audioBuffer.duration * 1000);
+        maxDuration = Math.max(maxDuration, trackEnd);
+      } else {
+        maxDuration = Math.max(maxDuration, lastNote.time + 1000);
+      }
+    });
+
+    const duration = maxDuration / 1000;
     const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
 
-    allNotes.forEach(({ key, time }) => {
-      const buffer = sounds[key];
-      if (!buffer) return;
-      const source = offlineCtx.createBufferSource();
-      source.buffer = buffer;
-
-      const gainNode = offlineCtx.createGain();
-      gainNode.gain.value = masterVolume;
-
-      source.connect(gainNode).connect(offlineCtx.destination);
-      source.start(time / 1000);
+    // Render all tracks with individual volumes
+    recordedTracks.forEach((track, trackIndex) => {
+      const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
+      track.forEach(({ key, time, isImported, audioBuffer }) => {
+        if (isImported && audioBuffer) {
+          // Render imported audio
+          const source = offlineCtx.createBufferSource();
+          source.buffer = audioBuffer;
+          const gainNode = offlineCtx.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
+          source.connect(gainNode).connect(offlineCtx.destination);
+          source.start(time / 1000);
+        } else {
+          // Render keyboard sounds
+          const buffer = sounds[key];
+          if (!buffer) return;
+          const source = offlineCtx.createBufferSource();
+          source.buffer = buffer;
+          const gainNode = offlineCtx.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
+          source.connect(gainNode).connect(offlineCtx.destination);
+          source.start(time / 1000);
+        }
+      });
     });
 
     const renderedBuffer = await offlineCtx.startRendering();
@@ -361,6 +474,13 @@ export default function DesktopStage() {
     ));
   };
 
+  const setTrackVolume = (index, volume) => {
+    const newVolume = parseFloat(volume);
+    setTrackSettings(prev => prev.map((t, i) =>
+      i === index ? { ...t, volume: newVolume } : t
+    ));
+  };
+
   const startRename = (index) => {
     setEditingTrack(index);
     setEditingName(trackSettings[index]?.name || `Track ${index + 1}`);
@@ -373,6 +493,51 @@ export default function DesktopStage() {
       ));
     }
     setEditingTrack(null);
+  };
+
+  // Import custom audio track
+  const importAudioTrack = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "audio/*";
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+        
+        // Extract filename without extension
+        const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+        
+        // Create a track entry representing the imported audio
+        const durationMs = audioBuffer.duration * 1000;
+        const importedTrack = [{ 
+          key: `imported_${Date.now()}`, 
+          time: 0,
+          isImported: true,
+          audioBuffer: audioBuffer,
+          fileName: file.name
+        }];
+
+        setRecordedTracks(prev => [...prev, importedTrack]);
+        setTrackSettings(prev => [
+          ...prev,
+          { name: fileNameWithoutExt, muted: false, solo: false, volume: 1 }
+        ]);
+        setTrackCounter(c => c + 1); // Increment counter for imported tracks too
+
+        // Store the audio buffer separately for playback
+        setImportedAudioBuffers(prev => [...prev, audioBuffer]);
+        
+        alert(`Imported: ${file.name}`);
+      } catch (err) {
+        console.error("Error importing audio:", err);
+        alert("Failed to import audio file. Make sure it's a valid audio format.");
+      }
+    };
+    input.click();
   };
 
   return (
@@ -456,11 +621,11 @@ export default function DesktopStage() {
             </button>
 
             <button
-              onClick={playAllTracks}
+              onClick={isPlaying ? stopPlayback : playAllTracks}
               disabled={isRecording || recordedTracks.length === 0}
               className={`circle-btn play ${isPlaying ? "playing" : ""}`}
             >
-              ►
+              {isPlaying ? "■" : "►"}
             </button>
 
             <button
@@ -478,6 +643,16 @@ export default function DesktopStage() {
             >
               <span className="material-symbols-outlined export-icon">
                 save
+              </span>
+            </button>
+
+            <button
+              onClick={importAudioTrack}
+              className="circle-btn import"
+              title="Import Audio Track"
+            >
+              <span className="material-symbols-outlined export-icon">
+                upload
               </span>
             </button>
           </div>
@@ -533,6 +708,20 @@ export default function DesktopStage() {
                 </span>
               )}
               <div className="track-buttons">
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={trackSettings[index]?.volume ?? 1}
+                  onChange={(e) => setTrackVolume(index, e.target.value)}
+                  className="track-volume-slider"
+                  title="Track Volume"
+                  style={{ width: "100px", marginRight: "5px" }}
+                />
+                <span style={{ fontSize: "12px", marginRight: "10px" }}>
+                  {Math.round((trackSettings[index]?.volume ?? 1) * 100)}%
+                </span>
                 <button onClick={() => toggleMute(index)}>
                   {trackSettings[index]?.muted ? "Unmute" : "Mute"}
                 </button>
