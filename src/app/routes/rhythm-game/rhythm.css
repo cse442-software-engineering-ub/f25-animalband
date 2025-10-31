@@ -1,0 +1,67 @@
+/* Overall game container */
+.game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 0;
+  min-height: 100vh;
+  background-color: #f0f0f0; /* light background */
+  font-family: sans-serif;
+}
+
+.lanes {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.lane {
+  position: relative;
+  width: 80px;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.note {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+}
+
+.target {
+  width: 50px;
+  height: 50px;
+  margin-top: 5px;
+}
+
+.lane-label {
+  position: absolute;
+  bottom: -30px;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  color: #178c3a;
+}
+
+.controls {
+  margin-top: 50px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.start-button,
+.reset-button {
+  padding: 8px 16px;
+  font-size: 16px;
+  border: none;
+  background-color: #178c3a;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
