@@ -25,6 +25,8 @@ import PwdCode from "./routes/login/desktop_pwd_code.js"
 import ResetPwd from "./routes/login/desktop_pwd_reset.js";
 import ResetEmail from "./routes/login/desktop_reset_email.js";
 
+import MyRecordings from "./routes/account/recordings.js";
+
 import "../App.css";
 
 function NotFound() {
@@ -69,6 +71,7 @@ export default function App() {
           <Route path="/forgot-password" element={<PwdCode />} />
           <Route path="/account-email" element={<ResetEmail />} />
           <Route path="/account/edit" element={<EditAccount />} />
+          <Route path="/my-recordings" element={<MyRecordings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

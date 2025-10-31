@@ -19,13 +19,23 @@ export default function MobileStage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [sounds, setSounds] = useState({});
-  const [volumes, setVolumes] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
   const [playingAnimals, setPlayingAnimals] = useState({});
+
+  // Recording state
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedNotes, setRecordedNotes] = useState([]);
+  const [recordedTracks, setRecordedTracks] = useState([]); // multiple tracks
+  const [currentTrack, setCurrentTrack] = useState([]);
   const [recordStartTime, setRecordStartTime] = useState(null);
+
+  // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
+
+  // Track settings: name, mute, solo
+  const [trackSettings, setTrackSettings] = useState([]);
+  const [editingTrack, setEditingTrack] = useState(null);
+  const [editingName, setEditingName] = useState("");
+
   const audioContextRef = useRef(null);
 
   const ANIMAL_IMAGES = {
@@ -44,7 +54,15 @@ export default function MobileStage() {
     snake: ["q", "w", "e", "r"],
   };
 
-  // Fetch user info
+  const animalKeyMap = {
+    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
+    c: "bird", v: "bird", b: "bird", n: "bird",
+    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
+    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
+    q: "snake", w: "snake", e: "snake", r: "snake",
+  };
+
+  // Fetch user
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -68,89 +86,36 @@ export default function MobileStage() {
     }
   }, []);
 
-  // Load all sounds
+  // Load sounds
   useEffect(() => {
     const loadAllSounds = async () => {
       const loadedSounds = {};
-      const initialVolumes = {};
       for (const sound of SOUND_CONFIG) {
         loadedSounds[sound.key] = await loadSound(sound.file);
-        initialVolumes[sound.key] = 1;
       }
       setSounds(loadedSounds);
-      setVolumes(initialVolumes);
     };
     loadAllSounds();
   }, []);
 
-  const handleVolumeChange = (key, value) => {
-    setVolumes((prev) => ({ ...prev, [key]: parseFloat(value) }));
-  };
-
+  // Handle tap
   const handleTap = (key) => {
     if (!sounds[key]) return;
 
-    const animalMap = {
-      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-      c: "bird", v: "bird", b: "bird", n: "bird",
-      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-      q: "snake", w: "snake", e: "snake", r: "snake",
-    };
-
-    const animal = animalMap[key];
+    const animal = animalKeyMap[key];
     if (!animal) return;
-
-    const volume = (volumes[animal] || 1) * masterVolume;
-    playSound(sounds[key], volume);
-
-    setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-    setTimeout(() => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })), 300);
 
     if (isRecording) {
       const timeSinceStart = performance.now() - recordStartTime;
-      setRecordedNotes((prev) => [...prev, { key, time: timeSinceStart }]);
+      setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
     }
+
+    playSound(sounds[key], masterVolume);
+    setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+    setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
   };
 
-  const playRecording = () => {
-    if (recordedNotes.length === 0 || !audioContextRef.current) return;
-
-    setIsPlaying(true);
-    const audioContext = audioContextRef.current;
-
-    recordedNotes.forEach(({ key, time }) => {
-      if (!sounds[key]) return;
-
-      const animalMap = {
-        a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-        c: "bird", v: "bird", b: "bird", n: "bird",
-        h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-        u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-        q: "snake", w: "snake", e: "snake", r: "snake",
-      };
-
-      const animal = animalMap[key];
-      if (!animal) return;
-
-      const volume = (volumes[animal] || 1) * masterVolume;
-      const source = audioContext.createBufferSource();
-      source.buffer = sounds[key];
-      const gainNode = audioContext.createGain();
-      gainNode.gain.value = volume;
-      source.connect(gainNode).connect(audioContext.destination);
-      source.start(audioContext.currentTime + time / 1000);
-
-      setTimeout(() => {
-        setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-        setTimeout(() => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })), 300);
-      }, time);
-    });
-
-    const totalTime = recordedNotes[recordedNotes.length - 1].time + 400;
-    setTimeout(() => setIsPlaying(false), totalTime);
-  };
-
+  // Load master volume
   useEffect(() => {
     const savedVol = parseFloat(localStorage.getItem("masterVolume") || "1");
     setMasterVol(savedVol);
@@ -161,78 +126,145 @@ export default function MobileStage() {
     localStorage.setItem("masterVolume", masterVolume);
   }, [masterVolume]);
 
-  // Convert AudioBuffer to WAV
-  function bufferToWav(abuffer) {
-    const numOfChan = abuffer.numberOfChannels;
-    const length = abuffer.length * numOfChan * 2 + 44;
-    const buffer = new ArrayBuffer(length);
-    const view = new DataView(buffer);
-    const channels = [];
-    let pos = 0;
-
-    function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
-    function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
-
-    setUint32(0x46464952); // "RIFF"
-    setUint32(length - 8);
-    setUint32(0x45564157); // "WAVE"
-    setUint32(0x20746d66); // "fmt "
-    setUint32(16);
-    setUint16(1);
-    setUint16(numOfChan);
-    setUint32(abuffer.sampleRate);
-    setUint32(abuffer.sampleRate * 2 * numOfChan);
-    setUint16(numOfChan * 2);
-    setUint16(16);
-    setUint32(0x61746164); // "data"
-    setUint32(length - pos - 4);
-
-    for (let i = 0; i < numOfChan; i++) channels.push(abuffer.getChannelData(i));
-
-    let offset = 0;
-    while (pos < length) {
-      for (let i = 0; i < numOfChan; i++) {
-        let sample = Math.max(-1, Math.min(1, channels[i][offset]));
-        view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-        pos += 2;
-      }
-      offset++;
+  // Start/stop recording with overdub playback
+  const toggleRecording = () => {
+    if (!isRecording) {
+      setCurrentTrack([]);
+      setRecordStartTime(performance.now());
+      setIsRecording(true);
+      // Play existing tracks while recording
+      if (recordedTracks.length > 0) playTracksDuringRecording();
+    } else {
+      setRecordedTracks(prev => {
+        const newTracks = [...prev, currentTrack];
+        setTrackSettings(prevSettings => [
+          ...prevSettings,
+          { name: `Track ${newTracks.length}`, muted: false, solo: false }
+        ]);
+        return newTracks;
+      });
+      setIsRecording(false);
     }
+  };
 
-    return new Blob([buffer], { type: "audio/wav" });
-  }
+  // Play existing tracks during recording
+  const playTracksDuringRecording = () => {
+    if (!audioContextRef.current) return;
+    const audioContext = audioContextRef.current;
 
+    recordedTracks.forEach(track => {
+      track.forEach(({ key, time }) => {
+        if (!sounds[key]) return;
+        const animal = animalKeyMap[key];
+        const source = audioContext.createBufferSource();
+        source.buffer = sounds[key];
+
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = masterVolume;
+
+        source.connect(gainNode).connect(audioContext.destination);
+        source.start(audioContext.currentTime + time / 1000);
+
+        setTimeout(() => {
+          setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+          setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+        }, time);
+      });
+    });
+  };
+
+  // Play all tracks simultaneously with mute/solo logic
+  const playAllTracks = () => {
+    if (!audioContextRef.current || recordedTracks.length === 0) return;
+    setIsPlaying(true);
+    const audioContext = audioContextRef.current;
+
+    // Determine which tracks to play based on mute/solo
+    const anySolo = trackSettings.some(t => t.solo);
+    const activeTracks = recordedTracks
+      .map((track, i) => ({ track, settings: trackSettings[i] }))
+      .filter(({ settings }) => anySolo ? settings.solo : !settings.muted);
+
+    activeTracks.forEach(({ track }) => {
+      track.forEach(({ key, time }) => {
+        if (!sounds[key]) return;
+        const animal = animalKeyMap[key];
+        const source = audioContext.createBufferSource();
+        source.buffer = sounds[key];
+
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = masterVolume;
+
+        source.connect(gainNode).connect(audioContext.destination);
+        source.start(audioContext.currentTime + time / 1000);
+
+        setTimeout(() => {
+          setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
+          setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+        }, time);
+      });
+    });
+
+    const longestTrack = Math.max(...recordedTracks.map(track => track.length ? track[track.length - 1].time : 0));
+    setTimeout(() => setIsPlaying(false), longestTrack + 400);
+  };
+
+  // Delete a track
+  const deleteTrack = (index) => {
+    setRecordedTracks(prev => prev.filter((_, i) => i !== index));
+    setTrackSettings(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Track control functions
+  const toggleMute = (index) => {
+    setTrackSettings(prev => prev.map((t, i) =>
+      i === index ? { ...t, muted: !t.muted, solo: false } : t
+    ));
+  };
+
+  const toggleSolo = (index) => {
+    setTrackSettings(prev => prev.map((t, i) =>
+      i === index ? { ...t, solo: !t.solo } : t
+    ));
+  };
+
+  const startRename = (index) => {
+    setEditingTrack(index);
+    setEditingName(trackSettings[index]?.name || `Track ${index + 1}`);
+  };
+
+  const finishRename = (index) => {
+    if (editingName.trim()) {
+      setTrackSettings(prev => prev.map((t, i) =>
+        i === index ? { ...t, name: editingName.trim() } : t
+      ));
+    }
+    setEditingTrack(null);
+  };
+
+  // Export combined tracks
   const exportRecording = async () => {
-    if (recordedNotes.length === 0 || !audioContextRef.current) return;
+    if (!audioContextRef.current || recordedTracks.length === 0) return;
 
     const fileName = prompt("Enter a name for your recording:", "animalband_recording");
     if (!fileName) return;
 
-    const duration = (recordedNotes[recordedNotes.length - 1].time + 1000) / 1000;
+    const allNotes = recordedTracks.flat();
+    const duration = (allNotes.length ? allNotes[allNotes.length - 1].time + 1000 : 0) / 1000;
     const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
 
-    const animalMap = {
-      a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-      c: "bird", v: "bird", b: "bird", n: "bird",
-      h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-      u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-      q: "snake", w: "snake", e: "snake", r: "snake",
-    };
-
-    for (const { key, time } of recordedNotes) {
+    allNotes.forEach(({ key, time }) => {
       const buffer = sounds[key];
-      if (!buffer) continue;
-
+      if (!buffer) return;
       const source = offlineCtx.createBufferSource();
       source.buffer = buffer;
+
       const gainNode = offlineCtx.createGain();
-      const animal = animalMap[key];
-      const volume = (volumes[animal] || 1) * masterVolume;
-      gainNode.gain.value = volume;
+      gainNode.gain.value = masterVolume;
 
       source.connect(gainNode).connect(offlineCtx.destination);
       source.start(time / 1000);
-    }
+    });
 
     const renderedBuffer = await offlineCtx.startRendering();
     const wavBlob = bufferToWav(renderedBuffer);
@@ -245,13 +277,61 @@ export default function MobileStage() {
     URL.revokeObjectURL(url);
   };
 
+  // WAV conversion helpers
+  function bufferToWav(buffer) {
+    const numOfChan = buffer.numberOfChannels;
+    const length = buffer.length * numOfChan * 2 + 44;
+    const bufferArray = new ArrayBuffer(length);
+    const view = new DataView(bufferArray);
+
+    const writeString = (view, offset, string) => {
+      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+    };
+
+    let offset = 0;
+    writeString(view, offset, "RIFF"); offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "WAVE"); offset += 4;
+    writeString(view, offset, "fmt "); offset += 4;
+    view.setUint32(offset, 16, true); offset += 4;
+    view.setUint16(offset, 1, true); offset += 2;
+    view.setUint16(offset, numOfChan, true); offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
+    view.setUint16(offset, numOfChan * 2, true); offset += 2;
+    view.setUint16(offset, 16, true); offset += 2;
+    writeString(view, offset, "data"); offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
+
+    const interleaved = interleave(buffer);
+    let index = 44;
+    for (let i = 0; i < interleaved.length; i++, index += 2) {
+      const sample = Math.max(-1, Math.min(1, interleaved[i]));
+      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+    }
+
+    return new Blob([view], { type: "audio/wav" });
+  }
+
+  function interleave(buffer) {
+    const inputL = buffer.getChannelData(0);
+    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const interleaved = new Float32Array(buffer.length * 2);
+    for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
+      interleaved[j] = inputL[i];
+      interleaved[j + 1] = inputR[i];
+    }
+    return interleaved;
+  }
+
   return (
     <div className="m-landing-page">
       <header className="m-header">
-        <Link to="/" className="m-site-title">
+        <div className="m-site-title">
           <span className="material-symbols-outlined m-paw">pets</span>
           <h1 className="m-name">ANIMALBAND</h1>
-        </Link>
+        </div>
+
         <div className="header-buttons">
           {!user ? (
             <>
@@ -264,13 +344,6 @@ export default function MobileStage() {
               alt="Profile"
               className="profile-pic"
               onClick={() => navigate("/account")}
-              style={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "50%",
-                cursor: "pointer",
-                objectFit: "cover",
-              }}
             />
           )}
         </div>
@@ -286,6 +359,7 @@ export default function MobileStage() {
               <img
                 src={playingAnimals[animal] ? ANIMAL_IMAGES[animal][1] : ANIMAL_IMAGES[animal][0]}
                 alt={animal}
+                className={playingAnimals[animal] ? "playing" : ""}
               />
               {ANIMAL_KEYS[animal].map((key, i) => (
                 <div
@@ -298,29 +372,27 @@ export default function MobileStage() {
           ))}
         </div>
 
+        {/* Bottom controls */}
         <div className="master-volume">
-          <label>Master Volume: {(masterVolume*100).toFixed(0)}%</label>
+          <label>Master Volume: {(masterVolume * 100).toFixed(0)}%</label>
           <input
             type="range"
-            min="0" max="1" step="0.01"
+            min="0"
+            max="1"
+            step="0.01"
             value={masterVolume}
-            onChange={(e) => {
+            onChange={e => {
               const newVol = parseFloat(e.target.value);
               setMasterVol(newVol);
               setMasterVolume(newVol);
             }}
+            className="volume-slider"
           />
         </div>
 
         <div className="record-controls">
           <button
-            onClick={() => {
-              if (!isRecording) {
-                setRecordedNotes([]);
-                setRecordStartTime(performance.now());
-                setIsRecording(true);
-              } else setIsRecording(false);
-            }}
+            onClick={toggleRecording}
             className={`record-btn ${isRecording ? "stop" : "start"}`}
           >
             <span className="record-symbol">{isRecording ? "■" : "●"}</span>
@@ -328,8 +400,8 @@ export default function MobileStage() {
           </button>
 
           <button
-            onClick={playRecording}
-            disabled={isRecording || recordedNotes.length === 0}
+            onClick={playAllTracks}
+            disabled={isRecording || recordedTracks.length === 0}
             className={`record-btn play ${isPlaying ? "playing" : ""}`}
           >
             <span className="record-symbol">►</span>
@@ -338,16 +410,66 @@ export default function MobileStage() {
 
           <button
             onClick={exportRecording}
-            disabled={isRecording || recordedNotes.length === 0}
+            disabled={recordedTracks.length === 0}
             className="record-btn export"
           >
-            <span className="material-symbols-outlined export-icon">file_download</span>
-            Export Recording
+            <span className="material-symbols-outlined">file_download</span>
+            Export
           </button>
+        </div>
+
+        {/* Track list */}
+        <div className="tracks-list">
+          <h3>Recorded Tracks</h3>
+          {recordedTracks.length === 0 && <p>No tracks yet.</p>}
+          {recordedTracks.map((track, index) => (
+            <div key={index} className="track-item">
+              {editingTrack === index ? (
+                <input
+                  type="text"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onBlur={() => finishRename(index)}
+                  onKeyDown={(e) => e.key === "Enter" && finishRename(index)}
+                  autoFocus
+                  style={{ marginRight: "10px", padding: "4px", fontSize: "14px" }}
+                />
+              ) : (
+                <span onDoubleClick={() => startRename(index)} style={{ flexGrow: 1 }}>
+                  {trackSettings[index]?.name || `Track ${index + 1}`}
+                </span>
+              )}
+              <div className="track-buttons">
+                <button onClick={() => toggleMute(index)} style={{ 
+                  backgroundColor: trackSettings[index]?.muted ? "#ff6b6b" : "#e0e0e0",
+                  padding: "4px 8px",
+                  fontSize: "12px"
+                }}>
+                  {trackSettings[index]?.muted ? "Unmute" : "Mute"}
+                </button>
+                <button onClick={() => toggleSolo(index)} style={{ 
+                  backgroundColor: trackSettings[index]?.solo ? "#51cf66" : "#e0e0e0",
+                  padding: "4px 8px",
+                  fontSize: "12px"
+                }}>
+                  {trackSettings[index]?.solo ? "Unsolo" : "Solo"}
+                </button>
+                <button onClick={() => startRename(index)} style={{ padding: "4px 8px", fontSize: "12px" }}>
+                  Rename
+                </button>
+                <button onClick={() => deleteTrack(index)} style={{ padding: "4px 8px", fontSize: "12px" }}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
     </div>
   );
 }

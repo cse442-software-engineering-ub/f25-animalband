@@ -490,3 +490,121 @@ html, body {
   .animals-container { flex-wrap: wrap; }
   .band-stage { padding: 2rem 1rem; }
 }
+
+/* =================== Modal Overlay (Save Recordings) =================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  padding: 2rem 2.5rem;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.modal-box h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #000;
+  text-align: center;
+}
+
+.modal-box label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 1rem;
+  gap: 0.5rem;
+}
+
+.modal-box input[type="text"],
+.modal-box textarea {
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  resize: none;
+}
+
+.modal-box textarea {
+  min-height: 100px;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.form-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.form-buttons button:first-child {
+  background-color: #d9d9d9;
+  color: #000;
+}
+
+.form-buttons button:first-child:hover {
+  background-color: #bfbfbf;
+}
+
+.form-buttons button:last-child {
+  background-color: #178C3A;
+  color: white;
+}
+
+.form-buttons button:last-child:hover {
+  background-color: #15803d;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .modal-box {
+    padding: 1.5rem;
+  }
+
+  .form-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-buttons button {
+    width: 100%;
+  }
+}
+.track-list {
+  margin: 20px;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+}
+
+.track-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px 0;
+}
+
+.track-buttons button {
+  margin-left: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}

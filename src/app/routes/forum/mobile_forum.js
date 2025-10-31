@@ -1,7 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
+import MobilePostModal from "./mobile_post_modal";
 import "./mobile_forum.css";
+
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -17,6 +19,7 @@ export default function MobileForum() {
     const [activeView, setActiveView] = useState("community");
     const [showFilters, setShowFilters] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [openPost, setOpenPost] = useState(null);
     const location = useLocation();
     const [userRecordings, setUserRecordings] = useState([]);
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
@@ -642,7 +645,13 @@ const playRecordingFromPost = (recObj) => {
                         </div>
                     ) : (
                         sortedPosts.map((post) => (
-                            <div key={post.id} className="mobile-post-card">
+                            <div
+                                key={post.id}
+                                className="mobile-post-card"
+                                onClick={() => setOpenPost(post)}
+                                role="button"
+                                tabIndex={0}
+                            >
                                 <div className="mobile-post-header">
                                     <div className="mobile-post-author">
                                         <h3 className="mobile-post-title">{post.title}</h3>
@@ -653,7 +662,9 @@ const playRecordingFromPost = (recObj) => {
                                     </div>
                                     <button
                                         className={`mobile-like-btn ${post.liked ? "liked" : ""}`}
-                                        onClick={() => toggleLike(post.id)}
+                                        onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        onKeyDown={(e) => e.stopPropagation()}
                                     >
                                         {post.liked ? "❤️" : "🤍"}
                                         <span>{post.likes}</span>
@@ -824,7 +835,14 @@ const playRecordingFromPost = (recObj) => {
                     </div>
                 </div>
             )}
-
+            {openPost && (
+                <MobilePostModal
+                    post={openPost}
+                    user={user}
+                    onClose={() => setOpenPost(null)}
+                    onBumpPostComments={() => refreshNoJump()}
+                />
+            )}
             {/* Material Icons */}
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

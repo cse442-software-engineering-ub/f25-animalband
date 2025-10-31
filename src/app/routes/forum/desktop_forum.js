@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
 import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
+import ForumPostModal from "./desktop_post_modal";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -43,6 +44,16 @@ export default function DesktopForum() {
         console.error("getUser failed:", err);
         // fallback: navigate to login only if response indicates logged out
       }
+    const [refreshing, setRefreshing] = useState(false);
+    const [openPost, setOpenPost] = useState(null);
+      
+    // ========== Date and Time whatnot ==========
+    const [nowTick, setNowTick] = useState(Date.now());
+    function parseDbTimestamp(s) {
+        if (!s) return null;
+        const iso = s.replace(' ', 'T');
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? null : d;
     }
     checkUser();
   }, [navigate]);
@@ -246,6 +257,42 @@ const playRecordingFromPost = (recordingJson) => {
     }, event.time);
   });
 };
+        const tempId = Date.now();
+        const optimistic = {
+            id: tempId,
+            title: newPostTitle.trim(),
+            content: newPostContent.trim(),
+            tags: newPostTags,
+            author: user.username,
+            authorId: user.id,
+            likes: 1,
+            comments: 0,
+            created_at: new Date().toISOString(),
+            likesFrom: [user.username],
+            liked: true,
+        };
+        setPosts(prev => [optimistic, ...prev]);
+        try {
+            const url = `${PHP_URL}/makeForumPost.php`;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(payload),
+            });
+            const text = await response.text();
+            if (!response.ok) {
+                throw new Error(`Request failed. Status ${response.status}`);
+            }
+            await refreshNoJump();
+        } catch (err) {
+            setPosts(prev => prev.filter(p => p.id !== tempId));
+            console.error(err);
+            alert("Post failed");
+        }
+
+        handleClosePopup();
+    };
 
 
 
@@ -335,20 +382,63 @@ const playRecordingFromPost = (recordingJson) => {
               <button className="new-post-btn" onClick={handleNewPost}>+ Create New Post</button>
             </div>
 
-            {loading ? <div className="no-posts"><p>Loading...</p></div> : (
-              sortedPosts.length === 0 ? <div className="no-posts"><p>No posts found.</p></div> :
-              sortedPosts.map(post => (
-                <div key={post.id} className="post-card">
-                  <div className="post-header">
-                    <h3 className="post-title">{post.title}</h3>
-                    {post.created_at && <span className="post-time">{new Date(post.created_at).toLocaleString()}</span>}
-                  </div>
-                  <p className="post-content">{post.content}</p>
-                  <div className="post-tags">{post.tags && post.tags.map(tag => <span className="post-tag" key={tag}>{tag}</span>)}</div>
-                  <div className="post-footer">
-                    <div className="post-meta">
-                      <span className="post-likes">{post.likes} likes</span>
-                      <span className="post-comments">{post.comments} comments</span>
+                    {/* Posts */}
+                    <div className="posts-container">
+                        <div className="posts-header">
+                            <button className="new-post-btn" onClick={handleNewPost}>
+                                + Create New Post
+                            </button>
+                        </div>
+
+                        {!Array.isArray(sortedPosts) || sortedPosts.length === 0 ? (
+                            <div className="no-posts">
+                                <p>No posts found.</p>
+                            </div>
+                        ) : (
+                            sortedPosts.map((post) => (
+                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
+                                    <div className="post-author">
+                                        <div>
+                                            <h3 className="post-title">{post.title}</h3>
+                                            <span className="author-name">by {post.author}</span>
+                                        </div>
+                                    </div>
+                                    {/* Time since posted */}
+                                    {post.created_at && (
+                                        (() => {
+                                            const ta = timeAgo(post.created_at, nowTick);
+                                            return (
+                                                <span className="post-time">
+                                                    Created {ta === "just now" ? ta : `${ta} ago`}
+                                                </span>
+                                            );
+                                        })()
+                                    )}
+                                </div>
+                                    <p className="post-content">{post.content}</p>
+                                    <div className="post-tags">
+                                        {post.tags && post.tags.map(tag => (
+                                            <span key={tag} className="post-tag">{tag}</span>
+                                        ))}
+                                    </div>
+                                    <div className="post-footer">
+                                        <div className="post-meta">
+                                            <span className="post-likes">{post.likes} likes</span>
+                                            <span className="post-comments">{post.comments} comments</span>
+                                        </div>
+                                        <button
+                                            className={`like-btn ${post.liked ? "liked" : ""}`}
+                                            onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            aria-label={post.liked ? "Unlike post" : "Like post"}
+                                        >
+                                            {post.liked ? "❤️" : "🤍"}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                     <div className="post-actions">
                     {post.recording_id && (
@@ -457,6 +547,21 @@ const playRecordingFromPost = (recordingJson) => {
               <button className="submit-btn" onClick={handleSubmitPost} disabled={!newPostTitle.trim() || !newPostContent.trim()}>Create Post</button>
             </div>
           </div>
+            {openPost && (
+                <ForumPostModal
+                    post={openPost}
+                    user={user}
+                    onClose={() => setOpenPost(null)}
+                    onBumpPostComments={(postId) => {
+                        refreshNoJump();
+                    }}
+                />
+            )}
+            {/* Material Icons */}
+            <link
+                href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+                rel="stylesheet"
+            />
         </div>
       )}
 
