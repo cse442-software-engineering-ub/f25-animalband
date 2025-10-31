@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
+import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
 import MobilePostModal from "./mobile_post_modal";
 import "./mobile_forum.css";
 
@@ -20,6 +21,9 @@ export default function MobileForum() {
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [openPost, setOpenPost] = useState(null);
     const location = useLocation();
+    const [userRecordings, setUserRecordings] = useState([]);
+    const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -85,24 +89,33 @@ export default function MobileForum() {
 
                 return rows.map(p => {
                     const likesFrom = Array.isArray(p.likesFrom) ? p.likesFrom : [];
+                    // normalize tags: server might send as string or array
+                    const tags = Array.isArray(p.tags)
+                        ? p.tags
+                        : (typeof p.tags === "string" ? (() => {
+                            try { return JSON.parse(p.tags || "[]"); } catch { return []; }
+                          })() : []);
+                
                     const base = {
                         id: Number(p.id),
                         title: p.title || "",
                         content: p.content || "",
-                        tags: Array.isArray(p.tags) ? p.tags : [],
+                        tags,
                         author: p.author || "",
                         authorId: Number(p.authorId ?? 0),
                         likes: Number(p.likeCount ?? 0),
                         comments: Number(p.comments ?? 0),
                         created_at: p.created_at || null,
                         likesFrom,
+                        // try both possible field names returned by backend
+                        recording_id: p.recording_id ?? p.recording_id ?? null,
                     };
-
+                
                     const prevLiked = prevById.get(base.id)?.liked ?? false;
                     const liked = user ? likesFrom.includes(user.username) : prevLiked;
                     return { ...base, liked };
                 });
-            });
+          });
         } catch (e) {
             console.error("Failed to fetch posts:", e);
             if (!refresh) setPosts([]);
@@ -111,6 +124,49 @@ export default function MobileForum() {
         }
     }, [user?.username]);
 
+    // Fetch user's recordings (same idea as desktop)
+    const fetchUserRecordings = async () => {
+        if (!user) return;
+        try {
+          const res = await fetch(`${PHP_URL}/getUserRecordings.php`, {
+            credentials: "include",
+            cache: "no-store"
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          setUserRecordings(Array.isArray(data.recordings) ? data.recordings : []);
+        } catch (err) {
+          console.error("Failed to fetch user recordings:", err);
+          setUserRecordings([]);
+        }
+      };
+      
+useEffect(() => {
+    if (!user || !user.id) return;
+    fetchUserRecordings();
+  }, [user]);
+  
+
+// Play recording events (copied/adapted from desktop)
+const playRecordingFromPost = (recObj) => {
+    if (!recObj?.recording) return;
+    let events;
+    try {
+      events = Array.isArray(recObj.recording) ? recObj.recording : JSON.parse(recObj.recording);
+    } catch {
+      alert("Recording data corrupted");
+      return;
+    }
+  
+    events.forEach(event => {
+      if (!event.key || typeof event.time !== "number") return;
+      const sound = SOUND_CONFIG.find(s => s.key === event.key);
+      if (!sound) return;
+      const audio = new Audio(`${process.env.PUBLIC_URL}/stage_sounds/${sound.file}`);
+      setTimeout(() => audio.play().catch(() => {}), event.time);
+    });
+  };
+  
     // ========== Don't jump pls when refresh ty ==========
     const refreshNoJump = useCallback(async () => {
         const y = window.scrollY;
@@ -258,6 +314,7 @@ export default function MobileForum() {
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostTags([]);
+        setSelectedRecordingId(null);
     };
 
     const handleTagSelect = (tag) => {
@@ -281,11 +338,13 @@ export default function MobileForum() {
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
             tags: newPostTags,
+            recordingId: selectedRecordingId ? Number(selectedRecordingId) : null,
             likesFrom: [user.username],
             author: user.username,
             authorId: user.id,
             likes: 1,
         };
+        
 
         const tempId = Date.now();
         const optimistic = {
@@ -300,7 +359,12 @@ export default function MobileForum() {
             created_at: new Date().toISOString(),
             likesFrom: [user.username],
             liked: true,
+            recording_id: selectedRecordingId || null,
+            recording: selectedRecordingId
+                ? userRecordings.find(r => r.id === selectedRecordingId) || null
+                : null,  // store recording object directly
         };
+        
         setPosts(prev => [optimistic, ...prev]);
         try {
             const url = `${PHP_URL}/makeForumPost.php`;
@@ -315,6 +379,7 @@ export default function MobileForum() {
                 throw new Error(`Request failed. Status ${response.status}`);
             }
             await refreshNoJump();
+            fetchUserRecordings();
         } catch (err) {
             setPosts(prev => prev.filter(p => p.id !== tempId));
             console.error(err);
@@ -606,7 +671,26 @@ export default function MobileForum() {
                                     </button>
                                 </div>
 
-                                <p className="mobile-post-content">{post.content}</p>
+                                <p className="mobile-post-content">{/* Audio Playback Button */}
+{/* Play recording if post has a recording_id */}
+{(post.recording || post.recording_id) && (
+  <div className="mobile-post-audio">
+    <button
+      className="play-recording-btn"
+      onClick={() => {
+        const recObj = post.recording || userRecordings.find(r => r.id === Number(post.recording_id));
+        if (!recObj) return;
+        playRecordingFromPost(recObj);
+      }}
+    >
+      ▶ Play Recording
+    </button>
+  </div>
+)}
+
+
+
+{post.content}</p>
 
                                 <div className="mobile-post-tags">
                                     {post.tags && post.tags.map(tag => (
@@ -635,6 +719,7 @@ export default function MobileForum() {
                                         )}
                                     </div>
                                 </div>
+
                             </div>
                         ))
                     )}
@@ -688,6 +773,30 @@ export default function MobileForum() {
                                     rows="4"
                                 />
                             </div>
+                            <div className="form-group">
+  <label>Attach Recording (optional):</label>
+  <div className="recording-select-row">
+  <select
+  value={selectedRecordingId ?? ""}
+  onChange={e => setSelectedRecordingId(e.target.value ? Number(e.target.value) : null)}
+>
+  <option value="">No recording</option>
+  {userRecordings.map(r => (
+    <option key={r.id} value={r.id}>{r.title || `Recording #${r.id}`}</option>
+  ))}
+</select>
+
+    <button disabled={!selectedRecordingId} onClick={() => {
+      const recObj = userRecordings.find(r => r.id === Number(selectedRecordingId));
+      if (!recObj) return;
+      playRecordingFromPost(recObj);
+    }}>▶ Preview</button>
+    <button onClick={async () => { await fetchUserRecordings(); setSelectedRecordingId(null); }}>⟳</button>
+
+  </div>
+</div>
+
+
                             <div className="mobile-form-group">
                                 <label>Tags:</label>
                                 <div className="mobile-tag-selection">

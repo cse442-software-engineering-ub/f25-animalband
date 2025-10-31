@@ -12,7 +12,7 @@ export default function MobileProfile() {
     const fetchUser = async () => {
       try {
         const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/getUser.php",
           { credentials: "include" }
         );
         const data = await res.json();

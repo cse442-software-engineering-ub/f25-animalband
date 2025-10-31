@@ -64,7 +64,9 @@ export default function Landing() {
 
     const fetchCount = async (url, setter) => {
       try {
-        const res = await fetch(url);
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getMemberCount.php"
+        );
         const data = await res.json();
         setter(data[Object.keys(data)[0]]);
       } catch (err) { console.error(err); }
@@ -86,6 +88,22 @@ export default function Landing() {
   }, []);
 
   useEffect(() => {
+    const fetchPostCount = async () => {
+      try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getPostCount.php"
+        );
+        const data = await res.json();
+        if (data.postCount !== undefined) {
+          setPostCount(data.postCount);
+        } else {
+          console.error("Invalid response format for post count", data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch post count", err);
+      }
+    };
+    fetchPostCount();
     (async () => {
       try { setBuffers(await preloadLandingSounds()); }
       catch (e) { console.error(e); }
@@ -95,6 +113,9 @@ export default function Landing() {
   useEffect(() => {
     (async () => {
       try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/getLoopCount.php"
+        );
         const r = await fetch(
           "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php"
         );
@@ -191,7 +212,7 @@ export default function Landing() {
             </>
           ) : (
             <img
-              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php/${user.profilePic}`}
               alt="Profile"
               className="profile-pic"
               onClick={handleAccountClick}
