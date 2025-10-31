@@ -29,16 +29,19 @@ export default function AddToPlaylistButton({ songId, compact = false, onAdded }
     }, [open]);
 
     async function handleAdd(pid) {
+        console.log("Adding", { playlist_id: pid, song_id: songId });
+
         setLoading(true);
         const res = await addSongToPlaylist(pid, songId);
         setLoading(false);
         if (res.ok) {
-            onAdded?.(pid);
+            if (onAdded) onAdded(pid);
             setOpen(false);
         } else {
             alert(res.error || "Failed to add");
         }
     }
+
 
     async function handleCreateAndAdd() {
         const name = newName.trim();

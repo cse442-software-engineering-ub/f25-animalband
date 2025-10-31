@@ -26,8 +26,7 @@ require_once "_auth.php";
 $maybeUser = null;
 try {
   $maybeUser = require_user($conn);
-} catch (Throwable $e) {
-}
+} catch (Throwable $e) {}
 
 $playlist_id = isset($_GET["playlist_id"]) ? (int) $_GET["playlist_id"] : 0;
 if (!$playlist_id) {
@@ -52,7 +51,6 @@ if (!$pl["is_public"] && $pl["owner_id"] != $viewer_id) {
   echo json_encode(["error" => "Private playlist"]);
   exit;
 }
-
 $sql = "
     SELECT 
         ps.song_id AS id,
@@ -60,12 +58,19 @@ $sql = "
         lr.title,
         lr.description,
         lr.recording,
-        lr.email
+        lr.email,
+        ac.Name AS author_name
     FROM playlist_songs ps
     JOIN localRecordings lr ON lr.id = ps.song_id
+    LEFT JOIN (
+        SELECT Email, MIN(Name) AS Name
+        FROM accountCredentials
+        GROUP BY Email
+    ) ac ON ac.Email = lr.email
     WHERE ps.playlist_id = ?
     ORDER BY ps.position ASC
 ";
+
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $playlist_id);

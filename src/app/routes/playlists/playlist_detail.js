@@ -183,8 +183,10 @@ export default function PlaylistDetail() {
                                     </div>
 
                                     <div className="plf-track-by">
-                                        by {t.author || t.username || t.user_name || t.owner_name || "Unknown"}
+                                        by {t.author_name || (t.email ? t.email.split("@")[0] : "Unknown")}
                                     </div>
+
+
                                     <div className="plf-spacer" />
                                     <button
                                         className="nav-btn plf-danger"

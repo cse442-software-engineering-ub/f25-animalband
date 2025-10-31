@@ -3,6 +3,7 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Content-Type: application/json");
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
@@ -12,6 +13,7 @@ $servername = "localhost";
 $username = "ikimos";
 $password = "50445468";
 $dbname = "cse442_2025_fall_team_h_db";
+
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     http_response_code(500);
@@ -39,8 +41,21 @@ if (!$own->get_result()->fetch_row()) {
     exit;
 }
 
-$del = $conn->prepare("DELETE FROM playlists WHERE id=?");
-$del->bind_param("i", $playlist_id);
-$ok = $del->execute();
+$conn->begin_transaction();
 
-echo json_encode(["ok" => $ok]);
+try {
+    $delSongs = $conn->prepare("DELETE FROM playlist_songs WHERE playlist_id=?");
+    $delSongs->bind_param("i", $playlist_id);
+    $delSongs->execute();
+
+    $delPlaylist = $conn->prepare("DELETE FROM playlists WHERE id=?");
+    $delPlaylist->bind_param("i", $playlist_id);
+    $delPlaylist->execute();
+
+    $conn->commit();
+    echo json_encode(["ok" => true]);
+} catch (Throwable $e) {
+    $conn->rollback();
+    http_response_code(500);
+    echo json_encode(["error" => "Failed to delete playlist and its songs", "details" => $e->getMessage()]);
+}
