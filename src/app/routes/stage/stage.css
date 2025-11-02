@@ -441,7 +441,10 @@ html, body {
   z-index: 100;
 }
 
-.stagestuff .volume-slider { width: 150px; accent-color: #178C3A; }
+.stagestuff .volume-slider { 
+  width: 150px; 
+  accent-color: #178C3A; 
+}
 
 .stagestuff .circle-buttons { display: flex; gap: 0.5rem; }
 
@@ -473,6 +476,9 @@ html, body {
 .stagestuff .circle-btn.export { background-color: #178C3A; }
 .stagestuff .circle-btn.export:hover { background-color: #15803d; transform: scale(1.1); }
 .stagestuff .circle-btn.export:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.stagestuff .circle-btn.import { background-color: #178C3A; }
+.stagestuff .circle-btn.import:hover { background-color: #15803d; transform: scale(1.1); }
 
 /* ================= Responsive ================= */
 @media (max-width: 1024px) {
@@ -590,6 +596,8 @@ html, body {
     width: 100%;
   }
 }
+
+/* =================== Track List =================== */
 .track-list {
   margin: 20px;
   padding: 10px;
@@ -603,8 +611,19 @@ html, body {
   margin: 5px 0;
 }
 
+.track-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .track-buttons button {
   margin-left: 5px;
   padding: 5px 10px;
   cursor: pointer;
+}
+
+/* Track Volume Slider - Match Master Volume Slider */
+.track-volume-slider {
+  accent-color: #178C3A;
 }
