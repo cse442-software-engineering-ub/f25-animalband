@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
+import AddToPlaylistButton from "../../../components/desktop_add_to_playlist_button.js";
 import "./desktop_landing.css";
 
 import Ostrich from "../../../assets/ostrich.jpeg";
@@ -267,6 +268,14 @@ export default function Landing() {
                 <button className="song-download-btn" onClick={() => downloadWav(song)}>
                   <span className="material-symbols-outlined">download</span>
                 </button>
+                <AddToPlaylistButton
+                  songId={song.id}
+                  compact
+                  onAdded={() => {
+                    try { new AudioContext(); } catch (e) { }
+                    alert(`Added “${song.title || `song_${song.id}`}” to your playlist!`);
+                  }}
+                />
               </div>
             </div>
           ))}

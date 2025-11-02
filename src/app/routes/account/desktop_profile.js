@@ -144,6 +144,7 @@ export default function DesktopProfile() {
           <ul>
             <li><button onClick={() => console.log("My Posts")}>My Posts</button></li>
             <li><button onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+            <li><button onClick={() => navigate("/playlists")}>My Playlists</button></li>
             <li><button onClick={() => navigate("/account/edit")}>Edit Account</button></li>
             <li><button onClick={() => setModalOpen(true)}>Delete Account</button></li>
             <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>

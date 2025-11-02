@@ -103,7 +103,6 @@
   background-color: #15803d;
 }
 
-
 /* ==========Main Description========== */
 .main-description {
   text-align: center;
@@ -268,7 +267,6 @@
 }
 
 /* ==========Footer========== */
-
 .footer {
   background-color: #178C3A;
   color: rgb(0, 0, 0);
@@ -280,9 +278,159 @@
 .footer h3 {
   font-size: 1.5rem;
   font-weight: bold;
-  /* max-width: 600px; */
-  margin: auto;
 }
+
+/* ==========Featured Songs Section========== */
+.featured-songs-section {
+  background-color: #F9F9F9;
+  padding: 1.5rem 1rem 2rem;
+  text-align: center;
+}
+
+.featured-songs-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #000;
+  margin-bottom: 1rem;
+}
+
+.featured-songs-grid {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.song-card {
+  background-color: #F0F0F0;
+  border-radius: 0.5rem;
+  width: 200px;
+  height: auto;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.75rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.song-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.song-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 0.25rem;
+}
+
+.song-author {
+  font-size: 0.85rem;
+  color: #6E6E6E;
+  margin-bottom: 0.5rem;
+}
+
+.song-desc {
+  font-size: 0.8rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.song-button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 0.5rem;
+}
+
+.song-play-btn,
+.song-download-btn {
+  background-color: #178C3A;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 1.5rem;
+  transition: background-color 0.2s;
+}
+
+.song-play-btn:hover,
+.song-download-btn:hover {
+  background-color: #15803d;
+}
+/* ---- Modal (shared) ---- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  display: grid;
+  place-items: center;
+  z-index: 1000; /* above everything on landing */
+}
+.modal-card {
+  width: min(520px, 92vw);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 15px 40px rgba(0,0,0,.25);
+  overflow: hidden;
+  font-family: inherit;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid #eee;
+}
+.modal-body {
+  padding: 1rem;
+}
+.icon-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.list { list-style: none; padding: 0; margin: 0; }
+.list-item {
+  width: 100%;
+  text-align: left;
+  padding: .625rem .75rem;
+  background: #f7f7f7;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  margin-bottom: .5rem;
+  cursor: pointer;
+}
+.list-item:hover { background: #efefef; }
+.field { display: grid; gap: .25rem; margin-top: .5rem; text-align: left; }
+.field input {
+  padding: .5rem .6rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.btn.primary {
+  margin-top: .5rem;
+  padding: .55rem .9rem;
+  border: none;
+  border-radius: 9999px;
+  background: #178C3A;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn.primary:disabled { opacity: .6; cursor: not-allowed; }
+.divider { height: 1px; background: #eee; margin: .75rem 0; }
 
 /* ==========Formatting========== */
 @media (max-width: 1024px) {
@@ -338,4 +486,51 @@
   .band-stage {
     padding: 2rem 1rem;
   }
+
+
+  .animals-container {
+    gap: 1rem;
+  }
+
+  .animal-circle {
+    width: 96px;
+    height: 96px;
+  }
 }
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .main-heading {
+    font-size: 1.75rem;
+  }
+
+  .site-title {
+    font-size: 1.75rem;
+  }
+
+  .paw-icon {
+    font-size: 3.5rem !important;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .animals-container {
+    flex-wrap: wrap;
+  }
+
+  .band-stage {
+    padding: 2rem 1rem;
+  }
+}
+
