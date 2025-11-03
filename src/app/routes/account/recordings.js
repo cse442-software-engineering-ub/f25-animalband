@@ -16,7 +16,7 @@ import Snake from "../../../assets/snake.png";
 import SnakePlaying from "../../../assets/snakerockin.png";
 
 const PHP_URL =
-  "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/saveRecordingsIsabel/php";
+  "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 export default function MyRecordings() {
   const navigate = useNavigate();
