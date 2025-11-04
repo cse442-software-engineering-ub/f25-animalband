@@ -290,8 +290,9 @@ export default function MyRecordings() {
           <h3>Menu</h3>
           <ul>
             <li>
-              <button onClick={() => navigate("/account")}>My Profile</button>
+              <button >My Recordings</button>
             </li>
+            <li><button onClick={() => navigate("/playlists")}>My Playlists</button></li>
             <li>
               <button onClick={() => navigate("/stage")}>Back to Stage</button>
             </li>
