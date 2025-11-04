@@ -26,6 +26,12 @@ function timeAgoTS(ts) {
     if (day < 7) return `${day}d`;
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+function formatCreated(ts) {
+  const t = timeAgoTS(ts);
+  if (!t) return "";
+  const noAgo = t === "just now" || t === "yesterday";
+  return `Created ${t}${noAgo ? "" : " ago"}`;
+}
 
 function buildTree(rows) {
     const byId = new Map();
@@ -423,7 +429,7 @@ export default function ForumPostModal({
                             {!!post.created_at && (
                                 <>
                                     <span className="ab-comment-dot">•</span>
-                                    <span className="post-time">Created {timeAgoTS(post.created_at)} ago</span>
+                                    <span className="post-time">{formatCreated(post.created_at)}</span>
                                 </>
                             )}
                         </div>
