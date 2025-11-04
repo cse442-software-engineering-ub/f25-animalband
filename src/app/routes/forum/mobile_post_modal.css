@@ -1,0 +1,58 @@
+/* ==== Mini player (mobile) ==== */
+.m-attached-recording {
+  margin: 0.75rem 0 1rem;
+}
+
+.m-mini-player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .75rem .9rem;
+  border: 2px solid #eaeaea;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.m-mini-player-meta {
+  color: #333;
+  font-size: .95rem;
+}
+
+.m-mini-desc {
+  color: #666;
+}
+
+.m-mini-player-controls .m-mini-play {
+  border: none;
+  background: #178c3a;
+  color: #fff;
+  font-weight: 700;
+  padding: .55rem .9rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.m-mini-player-controls .m-mini-play:disabled {
+  background: #c7c7c7;
+  cursor: not-allowed;
+}
+
+.m-mini-player-controls .m-mini-play:hover:not(:disabled) {
+  background: #106e2b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(23,140,58,.25);
+}
+
+/* optional, keeps error style consistent with desktop */
+.m-error {
+  margin: 0 0 .5rem 0;
+  padding: .5rem .75rem;
+  border-radius: 8px;
+  background: #ffeaea;
+  color: #b00020;
+  border: 1px solid #ffb3b3;
+  font-weight: 600;
+  font-size: .9rem;
+}

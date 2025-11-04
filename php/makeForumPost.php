@@ -24,7 +24,8 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
     authorId INT,
     likeCount INT DEFAULT 0,
     comments INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    recording_id INT DEFAULT NULL
 )");
 
 $json = file_get_contents('php://input');
@@ -43,10 +44,11 @@ $author = $data['author'] ?? '';
 $authorId = $data['authorId'] ?? 0;
 $likeCount = $data['likes'] ?? 0;
 $comments = $data['comments'] ?? 0;
+$recording_id = $data['recording_id'] ?? null;
 
 $stmt = $conn->prepare("INSERT INTO forumPosts 
-    (title, content, tags, likesFrom, author, authorId, likeCount, comments) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    (title, content, tags, likesFrom, author, authorId, likeCount, comments, recording_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
 );
 
 if (!$stmt) {
@@ -54,7 +56,7 @@ if (!$stmt) {
     exit;
 }
 
-$stmt->bind_param("sssssiii", $title, $content, $tags, $likesFrom, $author, $authorId, $likeCount, $comments);
+$stmt->bind_param("sssssiiii", $title, $content, $tags, $likesFrom, $author, $authorId, $likeCount, $comments, $recording_id);
 
 if ($stmt->execute()) {
     echo json_encode(["success" => true, 'message' => 'Post inserted successfully.']);
