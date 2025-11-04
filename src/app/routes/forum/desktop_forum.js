@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
 import ForumPostModal from "./desktop_post_modal";
 
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 export default function DesktopForum() {
     const navigate = useNavigate();

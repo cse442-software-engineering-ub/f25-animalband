@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player";
 import "./mobile_post_modal.css";
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
+const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 function parseDbTimestamp(s) {
     if (!s) return null;
