@@ -837,3 +837,50 @@ body.popup-open { overflow: hidden; }
   font-weight: 600;
   font-size: .9rem;
 }
+
+/* ==== Attach Recording <select> (mobile popup) ==== */
+.m-recording-select-wrap { position: relative; width: 100%; }
+
+.m-recording-select {
+  -webkit-appearance: none; -moz-appearance: none; appearance: none;
+  width: 100%;
+  padding: 0.65rem 2.2rem 0.65rem 0.8rem; /* extra right space for chevron */
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+  font-size: 1rem;
+  color: #333;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23178c3a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 18px 18px;
+}
+
+.m-recording-select:hover {
+  border-color: #cfcfcf;
+  background: #fff;
+}
+
+.m-recording-select:focus {
+  outline: none;
+  border-color: #178c3a;
+  box-shadow: 0 0 0 3px rgba(23, 140, 58, 0.10);
+  background: #fff;
+}
+
+.m-recording-select:disabled {
+  color: #777;
+  background: #f3f3f3;
+  border-color: #e3e3e3;
+  cursor: not-allowed;
+}
+
+.m-recording-select-hint {
+  display: inline-block;
+  margin-top: 6px;
+  color: #666;
+  font-size: 12px;
+}

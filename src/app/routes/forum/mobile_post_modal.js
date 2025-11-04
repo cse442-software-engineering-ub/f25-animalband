@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
+import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player";
+import "./mobile_post_modal.css";
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 function parseDbTimestamp(s) {
@@ -24,6 +25,13 @@ function timeAgoTS(ts) {
     if (day < 7) return `${day}d`;
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+function formatCreated(ts) {
+    const t = timeAgoTS(ts);
+    if (!t) return "";
+    const noAgo = t === "just now" || t === "yesterday";
+    return `Created ${t}${noAgo ? "" : " ago"}`;
+}
+
 function buildTree(rows) {
     const byId = new Map();
     rows.forEach(r => byId.set(r.id, { ...r, children: [] }));
@@ -133,6 +141,15 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
     const listRef = useRef(null);
     const firstLoadRef = useRef(true);
     const [postError, setPostError] = useState("");
+    // ==== Attached recording (mini player) ====
+    const [buffers, setBuffers] = useState(null);
+    const [recLoading, setRecLoading] = useState(false);
+    const [recErr, setRecErr] = useState("");
+    const [recMeta, setRecMeta] = useState(null);   // { id, title, description }
+    const [recNotes, setRecNotes] = useState([]);   // notes or tracks-of-notes
+    const [isPlaying, setIsPlaying] = useState(false);
+    const stopRef = useRef(null);
+
 
     const tree = useMemo(() => buildTree(commentsFlat), [commentsFlat]);
 
@@ -143,6 +160,77 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
             return n;
         });
     }, []);
+    useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                const b = await preloadLandingSounds();
+                if (mounted) setBuffers(b);
+            } catch (e) {
+                console.error("preloadLandingSounds failed:", e);
+            }
+        })();
+        return () => { mounted = false; };
+    }, []);
+    const fetchRecordingById = useCallback(async (id) => {
+        if (id == null || Number.isNaN(id)) return;
+        try {
+            setRecLoading(true);
+            setRecErr("");
+            const res = await fetch(
+                `${PHP_URL}/getLocalRecordingById.php?id=${encodeURIComponent(id)}`,
+                { credentials: "include", cache: "no-store" }
+            );
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            if (!data?.success || !data?.recording) throw new Error("Bad recording payload");
+
+            setRecMeta({
+                id: data.id,
+                title: data.title ?? `Recording #${data.id}`,
+                description: data.description ?? ""
+            });
+            setRecNotes(data.recording);
+        } catch (e) {
+            console.error("fetchRecordingById failed:", e);
+            setRecMeta(null);
+            setRecNotes([]);
+            setRecErr("Failed to load attached recording.");
+        } finally {
+            setRecLoading(false);
+        }
+    }, []);
+    useEffect(() => {
+        if (post?.recording_id != null && !Number.isNaN(post.recording_id)) {
+            fetchRecordingById(post.recording_id);
+        } else {
+            setRecMeta(null);
+            setRecNotes([]);
+            setRecErr("");
+        }
+    }, [post?.recording_id, fetchRecordingById]);
+    const stopAll = useCallback(() => {
+        if (stopRef.current) {
+            try { stopRef.current(); } catch { }
+            stopRef.current = null;
+        }
+        setIsPlaying(false);
+    }, []);
+
+    const onPlay = useCallback(() => {
+        if (!buffers || !recNotes || (Array.isArray(recNotes) && recNotes.length === 0)) return;
+        stopAll();
+        stopRef.current = schedulePlayback(buffers, recNotes, () => {
+            setIsPlaying(false);
+            stopRef.current = null;
+        });
+        setIsPlaying(true);
+    }, [buffers, recNotes, stopAll]);
+
+    useEffect(() => {
+        return () => stopAll();   // stop audio if modal unmounts
+    }, [stopAll]);
 
     // const fetchComments = useCallback(async () => {
     //     setLoading(true);
@@ -370,8 +458,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
                             {!!post.created_at && (
                                 <>
                                     <span className="m-dot">•</span>
-                                    <span className="m-post-time">Created {timeAgoTS(post.created_at)} ago</span>
-                                </>
+                                    <span className="m-post-time">{formatCreated(post.created_at)}</span>                                </>
                             )}
                         </div>
                         <div className="m-post-content">{post.content}</div>
@@ -382,6 +469,31 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
                             <span>{post.likes ?? 0} likes</span>
                             <span>{post.comments ?? 0} comments</span>
                         </div>
+                        <div className="m-attached-recording">
+                            {recLoading && <div className="m-loading">Loading recording…</div>}
+                            {!recLoading && recErr && (
+                                <div className="m-error" role="alert">{recErr}</div>
+                            )}
+                            {!recLoading && !recErr && recMeta && Array.isArray(recNotes) && recNotes.length > 0 && (
+                                <div className="m-mini-player">
+                                    <div className="m-mini-player-meta">
+                                        <strong>{recMeta.title}</strong>
+                                        {recMeta.description ? <span className="m-mini-desc"> — {recMeta.description}</span> : null}
+                                    </div>
+                                    <div className="m-mini-player-controls">
+                                        <button
+                                            type="button"
+                                            className="m-mini-play"
+                                            onClick={() => (isPlaying ? stopAll() : onPlay())}
+                                            disabled={!buffers}
+                                        >
+                                            {isPlaying ? "⏹ Stop" : "▶ Play"}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                     </div>
 
                     <form className="m-new-comment" onSubmit={submitComment}>

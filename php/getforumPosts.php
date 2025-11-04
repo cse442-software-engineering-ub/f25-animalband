@@ -35,10 +35,11 @@ $conn->query("CREATE TABLE IF NOT EXISTS forumPosts (
     authorId INT,
     likeCount INT DEFAULT 0,
     comments INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    recording_id INT DEFAULT NULL
 )");
 
-$selectPosts = "SELECT id, title, content, tags, likesFrom, author, authorId, likeCount, comments, created_at
+$selectPosts = "SELECT id, title, content, tags, likesFrom, author, authorId, likeCount, comments, created_at, recording_id
                 FROM forumPosts
                 ORDER BY created_at DESC, id DESC";
 
