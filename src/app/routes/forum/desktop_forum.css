@@ -998,3 +998,65 @@ body.popup-open {
   font-weight: 600;
   font-size: .9rem;
 }
+
+/* === Attach Recording <select> (light theme to match your form inputs) === */
+
+/* Wrapper keeps the custom arrow aligned */
+.recording-select-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+}
+
+/* Native select styled like your inputs/textarea */
+.recording-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 0.9rem; /* extra right space for arrow */
+  border: 2px solid #ddd;                 /* same as .form-group input */
+  border-radius: 8px;                      /* same radius */
+  background: #fafafa;                     /* same background */
+  font-size: 1rem;
+  color: #333;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+
+  /* Green chevron to match tags/buttons */
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23178c3a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px 18px;
+}
+
+/* Hover: subtle, like your tags */
+.recording-select:hover {
+  border-color: #cfcfcf;
+  background: #fff;
+}
+
+/* Focus: same green ring as other fields */
+.recording-select:focus {
+  outline: none;
+  border-color: #178c3a;
+  box-shadow: 0 0 0 3px rgba(23, 140, 58, 0.10);
+  background: #fff;
+}
+
+/* Disabled to match your disabled button/input vibe */
+.recording-select:disabled {
+  color: #777;
+  background: #f3f3f3;
+  border-color: #e3e3e3;
+  cursor: not-allowed;
+}
+
+/* Optional hint text under the select */
+.recording-select-hint {
+  display: inline-block;
+  margin-top: 6px;
+  color: #666;
+  font-size: 12px;
+}

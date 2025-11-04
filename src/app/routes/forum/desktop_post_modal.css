@@ -1,0 +1,49 @@
+/* mini player container */
+.pmp-attached-recording {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f7f7f7;
+    border-radius: 8px;
+    border: 1px solid #e2e2e2;
+}
+
+/* text line with title */
+.ab-mini-player-meta {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+/* description fade-down */
+.ab-mini-desc {
+    color: #666;
+    font-weight: normal;
+}
+
+/* buttons row */
+.ab-mini-player-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* the play button in mini player */
+.ab-mini-play {
+    padding: 6px 12px;
+    border: none;
+    background-color: #178c3a;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.ab-mini-play:hover {
+    background-color: #178c3a;
+}
+
+/* disabled state */
+.ab-mini-play:disabled {
+    background-color: #ccc;
+    cursor: default;
+}
