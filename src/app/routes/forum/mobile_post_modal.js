@@ -25,6 +25,13 @@ function timeAgoTS(ts) {
     if (day < 7) return `${day}d`;
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+function formatCreated(ts) {
+    const t = timeAgoTS(ts);
+    if (!t) return "";
+    const noAgo = t === "just now" || t === "yesterday";
+    return `Created ${t}${noAgo ? "" : " ago"}`;
+}
+
 function buildTree(rows) {
     const byId = new Map();
     rows.forEach(r => byId.set(r.id, { ...r, children: [] }));
@@ -451,8 +458,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
                             {!!post.created_at && (
                                 <>
                                     <span className="m-dot">•</span>
-                                    <span className="m-post-time">Created {timeAgoTS(post.created_at)} ago</span>
-                                </>
+                                    <span className="m-post-time">{formatCreated(post.created_at)}</span>                                </>
                             )}
                         </div>
                         <div className="m-post-content">{post.content}</div>
