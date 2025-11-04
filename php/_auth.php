@@ -8,6 +8,16 @@ function get_json_body()
     return is_array($data) ? $data : [];
 }
 
+function escape_user_data($user)
+{
+    if (!$user) return null;
+    return [
+        'ID' => $user['ID'],
+        'Name' => htmlspecialchars($user['Name'], ENT_QUOTES, 'UTF-8'),
+        'Email' => htmlspecialchars($user['Email'], ENT_QUOTES, 'UTF-8')
+    ];
+}
+
 function require_user($conn)
 {
     $body = get_json_body();
@@ -20,7 +30,6 @@ function require_user($conn)
         echo json_encode(["error" => "Missing auth token"]);
         exit;
     }
-
     $stmt = $conn->prepare("SELECT Email FROM authTokens WHERE Token=?");
     $stmt->bind_param("s", $auth_token);
     $stmt->execute();
@@ -31,7 +40,6 @@ function require_user($conn)
         echo json_encode(["error" => "Invalid auth token"]);
         exit;
     }
-
     $email = $row["Email"];
     $stmt2 = $conn->prepare("SELECT ID, Name, Email FROM accountCredentials WHERE Email=?");
     $stmt2->bind_param("s", $email);
@@ -43,9 +51,9 @@ function require_user($conn)
         echo json_encode(["error" => "Account not found"]);
         exit;
     }
-
-    return $user;
+    return escape_user_data($user);
 }
+
 function try_get_user($conn)
 {
     $body = get_json_body();
@@ -56,7 +64,6 @@ function try_get_user($conn)
     if ($auth_token === "") {
         return null;
     }
-
     $stmt = $conn->prepare("SELECT Email FROM authTokens WHERE Token=?");
     $stmt->bind_param("s", $auth_token);
     $stmt->execute();
@@ -71,6 +78,6 @@ function try_get_user($conn)
     $stmt2->execute();
     $uRes = $stmt2->get_result();
     $user = $uRes->fetch_assoc();
-
-    return $user ?: null;
+    return $user ? escape_user_data($user) : null;
 }
+?>
