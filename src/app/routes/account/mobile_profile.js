@@ -44,7 +44,7 @@ export default function MobileProfile() {
 
     try {
       const res = await fetch(
-        "https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
         {
           method: "POST",
           body: formData,
@@ -105,7 +105,7 @@ export default function MobileProfile() {
         <div className="mobile-header-right">
           {user ? (
             <img
-              src={`https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
               alt="Profile"
               className="mobile-profile-pic"
               onClick={handleAccountClick}
@@ -136,7 +136,10 @@ export default function MobileProfile() {
           <nav className="mobile-nav">
             <button
               className="mobile-nav-btn"
-              onClick={() => { navigate("/"); setShowMobileMenu(false); }}
+              onClick={() => {
+                navigate("/");
+                setShowMobileMenu(false);
+              }}
             >
               <span className="material-symbols-outlined">home</span>
               Home
@@ -164,21 +167,30 @@ export default function MobileProfile() {
             </button>
             <button
               className="mobile-nav-btn"
-              onClick={() => { navigate("/my-recordings"); setShowMobileMenu(false); }}
+              onClick={() => {
+                navigate("/my-recordings");
+                setShowMobileMenu(false);
+              }}
             >
               <span className="material-symbols-outlined">mic</span>
               My Recordings
             </button>
             <button
               className="mobile-nav-btn"
-              onClick={() => { navigate("/playlists"); setShowMobileMenu(false); }}
+              onClick={() => {
+                navigate("/playlists");
+                setShowMobileMenu(false);
+              }}
             >
               <span className="material-symbols-outlined">playlist_play</span>
               My Playlists
             </button>
             <button
               className="mobile-nav-btn active"
-              onClick={() => { navigate("/account"); setShowMobileMenu(false); }}
+              onClick={() => {
+                navigate("/account");
+                setShowMobileMenu(false);
+              }}
             >
               <span className="material-symbols-outlined">person</span>
               My Profile
@@ -186,14 +198,20 @@ export default function MobileProfile() {
             {/* NEW: Edit Profile option in mobile menu */}
             <button
               className="mobile-nav-btn"
-              onClick={() => { navigate("/account/edit"); setShowMobileMenu(false); }}
+              onClick={() => {
+                navigate("/account/edit");
+                setShowMobileMenu(false);
+              }}
             >
               <span className="material-symbols-outlined">edit</span>
               Edit Profile
             </button>
             <button
               className="mobile-nav-btn logout"
-              onClick={() => { navigate("/login"); setShowMobileMenu(false); }}
+              onClick={() => {
+                navigate("/login");
+                setShowMobileMenu(false);
+              }}
             >
               <span className="material-symbols-outlined">logout</span>
               Log Out
@@ -206,9 +224,12 @@ export default function MobileProfile() {
       <main className="mobile-profile-content">
         {user ? (
           <>
-            <div className="mobile-profile-pic-container" onClick={handleProfilePicClick}>
+            <div
+              className="mobile-profile-pic-container"
+              onClick={handleProfilePicClick}
+            >
               <img
-                src={`https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
                 alt="Profile"
                 className="mobile-profile-pic-large"
               />
@@ -242,11 +263,15 @@ export default function MobileProfile() {
                 </div>
                 <div className="mobile-info-item">
                   <div className="mobile-info-label">Email</div>
-                  <div className="mobile-info-value">{user.email || "Not provided"}</div>
+                  <div className="mobile-info-value">
+                    {user.email || "Not provided"}
+                  </div>
                 </div>
                 <div className="mobile-info-item">
                   <div className="mobile-info-label">Member Since</div>
-                  <div className="mobile-info-value">{user.joinDate || "Recently joined"}</div>
+                  <div className="mobile-info-value">
+                    {user.joinDate || "Recently joined"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -271,28 +296,34 @@ export default function MobileProfile() {
             </div>
           </>
         ) : (
-          <div className="mobile-loading">
-            Loading profile...
-          </div>
+          <div className="mobile-loading">Loading profile...</div>
         )}
       </main>
 
       {/* Bottom Navigation */}
       <nav className="mobile-bottom-nav">
         <Link to="/stage" className="mobile-nav-item">
-          <span className="material-symbols-outlined mobile-nav-icon">piano</span>
+          <span className="material-symbols-outlined mobile-nav-icon">
+            piano
+          </span>
           <span>Stage</span>
         </Link>
         <Link to="/looping" className="mobile-nav-item">
-          <span className="material-symbols-outlined mobile-nav-icon">instant_mix</span>
+          <span className="material-symbols-outlined mobile-nav-icon">
+            instant_mix
+          </span>
           <span>Looping</span>
         </Link>
         <Link to="/forum" className="mobile-nav-item">
-          <span className="material-symbols-outlined mobile-nav-icon">chat</span>
+          <span className="material-symbols-outlined mobile-nav-icon">
+            chat
+          </span>
           <span>Forum</span>
         </Link>
         <Link to="/account" className="mobile-nav-item active">
-          <span className="material-symbols-outlined mobile-nav-icon">person</span>
+          <span className="material-symbols-outlined mobile-nav-icon">
+            person
+          </span>
           <span>Profile</span>
         </Link>
       </nav>
