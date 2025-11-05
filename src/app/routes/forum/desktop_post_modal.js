@@ -27,10 +27,10 @@ function timeAgoTS(ts) {
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 function formatCreated(ts) {
-  const t = timeAgoTS(ts);
-  if (!t) return "";
-  const noAgo = t === "just now" || t === "yesterday";
-  return `Created ${t}${noAgo ? "" : " ago"}`;
+    const t = timeAgoTS(ts);
+    if (!t) return "";
+    const noAgo = t === "just now" || t === "yesterday";
+    return `Created ${t}${noAgo ? "" : " ago"}`;
 }
 
 function buildTree(rows) {
@@ -164,7 +164,7 @@ export default function ForumPostModal({
         (async () => {
             try {
                 const b = await preloadLandingSounds();
-                if (mounted) setBuffers(b);
+                console.log("[mini-player] preloadLandingSounds resolved:", b); if (mounted) setBuffers(b);
             } catch (e) {
                 console.error("preloadLandingSounds failed:", e);
             }
@@ -182,8 +182,7 @@ export default function ForumPostModal({
             );
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-
-            if (!data?.success || !data?.recording) throw new Error("Bad recording payload");
+            console.log("[getLocalRecordingById] parsed JSON:", data);  // <-- log it            if (!data?.success || !data?.recording) throw new Error("Bad recording payload");
 
             setRecMeta({
                 id: data.id,
