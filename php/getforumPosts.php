@@ -74,6 +74,7 @@ if ($result && $result->num_rows > 0) {
             'likeCount' => (int)$row['likeCount'],
             'comments' => (int)$row['comments'],
             'created_at' => htmlspecialchars($row['created_at'], ENT_QUOTES, 'UTF-8')
+            'recording_id'=> isset($row['recording_id']) ? (int)$row['recording_id'] : null
         ];
     }
 }
