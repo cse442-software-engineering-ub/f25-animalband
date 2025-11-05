@@ -39,6 +39,12 @@ export default function MobileStage() {
   const [editingTrack, setEditingTrack] = useState(null);
   const [editingName, setEditingName] = useState("");
 
+  // Local save state
+  const [showSaveForm, setShowSaveForm] = useState(false);
+  const [recordingTitle, setRecordingTitle] = useState("");
+  const [recordingDescription, setRecordingDescription] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
 
@@ -46,6 +52,8 @@ export default function MobileStage() {
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
   const MAX_AUDIO_DURATION = 600; // 10 minutes
   const MAX_TRACKS = 20;
+  const MAX_TITLE_LENGTH = 100;
+  const MAX_DESCRIPTION_LENGTH = 500;
   const MAX_TRACK_NAME_LENGTH = 50;
 
   const ANIMAL_IMAGES = {
@@ -65,33 +73,49 @@ export default function MobileStage() {
   };
 
   const animalKeyMap = {
-    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-    c: "bird", v: "bird", b: "bird", n: "bird",
-    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-    q: "snake", w: "snake", e: "snake", r: "snake",
+    a: "hamster",
+    s: "hamster",
+    d: "hamster",
+    f: "hamster",
+    c: "bird",
+    v: "bird",
+    b: "bird",
+    n: "bird",
+    h: "ostrich",
+    j: "ostrich",
+    k: "ostrich",
+    l: "ostrich",
+    u: "kangaroo",
+    i: "kangaroo",
+    o: "kangaroo",
+    p: "kangaroo",
+    q: "snake",
+    w: "snake",
+    e: "snake",
+    r: "snake",
   };
 
   // Security: Input sanitization function
   const sanitizeInput = (input, maxLength = 200) => {
-    if (!input) return '';
+    if (!input) return "";
     return input
       .trim()
       .substring(0, maxLength)
-      .replace(/[<>]/g, '')
-      .replace(/javascript:/gi, '')
-      .replace(/on\w+=/gi, '')
-      .replace(/[^\w\s\-_.,:;!?()]/g, '');
+      .replace(/[<>]/g, "")
+      .replace(/javascript:/gi, "")
+      .replace(/on\w+=/gi, "")
+      .replace(/[^\w\s\-_.,:;!?()]/g, "");
   };
 
   // Security: Validate filename
   const sanitizeFilename = (filename) => {
-    if (!filename) return 'unnamed';
-    return filename
-      .replace(/\.[^/.]+$/, '')
-      .replace(/[^a-zA-Z0-9_-]/g, '_')
-      .substring(0, 50)
-      || 'unnamed';
+    if (!filename) return "unnamed";
+    return (
+      filename
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[^a-zA-Z0-9_-]/g, "_")
+        .substring(0, 50) || "unnamed"
+    );
   };
 
   // Fetch user with timeout and error handling
@@ -106,9 +130,9 @@ export default function MobileStage() {
       try {
         const res = await fetch(
           "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
-          { 
+          {
             credentials: "include",
-            signal: controller.signal
+            signal: controller.signal,
           }
         );
         clearTimeout(timeoutId);
@@ -121,7 +145,7 @@ export default function MobileStage() {
         if (data.loggedIn) setUser(data);
       } catch (err) {
         clearTimeout(timeoutId);
-        if (err.name === 'AbortError') {
+        if (err.name === "AbortError") {
           console.error("Request timeout");
         } else {
           console.error("Failed to fetch user", err);
@@ -136,11 +160,15 @@ export default function MobileStage() {
   // Initialize AudioContext with cleanup
   useEffect(() => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
     }
 
     return () => {
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state !== "closed"
+      ) {
         audioContextRef.current.close();
       }
     };
@@ -164,6 +192,9 @@ export default function MobileStage() {
 
   // Handle tap with security checks
   const handleTap = (key) => {
+    // Prevent sound triggers when save form is open
+    if (showSaveForm) return;
+
     // Security: Validate key is in whitelist
     if (!animalKeyMap[key]) return;
     if (!sounds[key]) return;
@@ -173,19 +204,22 @@ export default function MobileStage() {
 
     if (isRecording) {
       const timeSinceStart = performance.now() - recordStartTime;
-      
+
       // Security: Prevent recordings longer than 10 minutes
       if (timeSinceStart > MAX_AUDIO_DURATION * 1000) {
         alert("Recording limit reached (10 minutes). Please stop recording.");
         return;
       }
-      
-      setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
+
+      setCurrentTrack((prev) => [...prev, { key, time: timeSinceStart }]);
     }
 
     playSound(sounds[key], masterVolume);
-    setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-    setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+    setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+    setTimeout(
+      () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
+      300
+    );
   };
 
   // Load master volume with validation
@@ -214,7 +248,9 @@ export default function MobileStage() {
   const toggleRecording = () => {
     // Security: Limit number of tracks
     if (!isRecording && recordedTracks.length >= MAX_TRACKS) {
-      alert(`Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`);
+      alert(
+        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
+      );
       return;
     }
 
@@ -232,12 +268,12 @@ export default function MobileStage() {
       }
 
       const trackName = `Track ${trackCounter}`;
-      setRecordedTracks(prev => [...prev, currentTrack]);
-      setTrackSettings(prev => [
+      setRecordedTracks((prev) => [...prev, currentTrack]);
+      setTrackSettings((prev) => [
         ...prev,
-        { name: trackName, muted: false, solo: false, volume: 1 }
+        { name: trackName, muted: false, solo: false, volume: 1 },
       ]);
-      setTrackCounter(c => c + 1);
+      setTrackCounter((c) => c + 1);
       setIsRecording(false);
       stopPlayback();
     }
@@ -275,8 +311,11 @@ export default function MobileStage() {
           sources.push(source);
 
           const timeout1 = setTimeout(() => {
-            setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+            const timeout2 = setTimeout(
+              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
+              300
+            );
             timeouts.push(timeout2);
           }, time);
           timeouts.push(timeout1);
@@ -296,16 +335,16 @@ export default function MobileStage() {
     const sources = [];
     const timeouts = [];
 
-    const anySolo = trackSettings.some(t => t.solo);
-    
+    const anySolo = trackSettings.some((t) => t.solo);
+
     recordedTracks.forEach((track, trackIndex) => {
       const settings = trackSettings[trackIndex];
-      
+
       if (settings?.muted || (anySolo && !settings?.solo)) return;
-      
+
       const trackVolume = settings?.volume ?? 1;
       const finalGain = masterVolume * trackVolume;
-      
+
       track.forEach(({ key, time, isImported, audioBuffer }) => {
         if (isImported && audioBuffer) {
           const source = audioContext.createBufferSource();
@@ -328,8 +367,11 @@ export default function MobileStage() {
           sources.push(source);
 
           const timeout1 = setTimeout(() => {
-            setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+            const timeout2 = setTimeout(
+              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
+              300
+            );
             timeouts.push(timeout2);
           }, time);
           timeouts.push(timeout1);
@@ -339,15 +381,17 @@ export default function MobileStage() {
 
     setActiveAudioSources({ sources, timeouts });
 
-    const longestTrack = Math.max(...recordedTracks.map(track => {
-      if (track.length === 0) return 0;
-      const lastNote = track[track.length - 1];
-      if (lastNote.isImported && lastNote.audioBuffer) {
-        return lastNote.time + (lastNote.audioBuffer.duration * 1000);
-      }
-      return lastNote.time;
-    }));
-    
+    const longestTrack = Math.max(
+      ...recordedTracks.map((track) => {
+        if (track.length === 0) return 0;
+        const lastNote = track[track.length - 1];
+        if (lastNote.isImported && lastNote.audioBuffer) {
+          return lastNote.time + lastNote.audioBuffer.duration * 1000;
+        }
+        return lastNote.time;
+      })
+    );
+
     const endTimeout = setTimeout(() => {
       setIsPlaying(false);
       setActiveAudioSources([]);
@@ -358,18 +402,18 @@ export default function MobileStage() {
   // Stop playback
   const stopPlayback = () => {
     if (activeAudioSources.sources) {
-      activeAudioSources.sources.forEach(source => {
+      activeAudioSources.sources.forEach((source) => {
         try {
           source.stop();
         } catch (e) {
           // Source may have already stopped
         }
       });
-      
-      activeAudioSources.timeouts.forEach(timeout => {
+
+      activeAudioSources.timeouts.forEach((timeout) => {
         clearTimeout(timeout);
       });
-      
+
       setActiveAudioSources([]);
       setIsPlaying(false);
       setPlayingAnimals({});
@@ -378,29 +422,31 @@ export default function MobileStage() {
 
   // Delete a track
   const deleteTrack = (index) => {
-    setRecordedTracks(prev => prev.filter((_, i) => i !== index));
-    setTrackSettings(prev => prev.filter((_, i) => i !== index));
+    setRecordedTracks((prev) => prev.filter((_, i) => i !== index));
+    setTrackSettings((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Track control functions
   const toggleMute = (index) => {
-    setTrackSettings(prev => prev.map((t, i) =>
-      i === index ? { ...t, muted: !t.muted, solo: false } : t
-    ));
+    setTrackSettings((prev) =>
+      prev.map((t, i) =>
+        i === index ? { ...t, muted: !t.muted, solo: false } : t
+      )
+    );
   };
 
   const toggleSolo = (index) => {
-    setTrackSettings(prev => prev.map((t, i) =>
-      i === index ? { ...t, solo: !t.solo } : t
-    ));
+    setTrackSettings((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, solo: !t.solo } : t))
+    );
   };
 
   const setTrackVolume = (index, volume) => {
     // Security: Validate volume is in valid range
     const newVolume = Math.max(0, Math.min(1, parseFloat(volume)));
-    setTrackSettings(prev => prev.map((t, i) =>
-      i === index ? { ...t, volume: newVolume } : t
-    ));
+    setTrackSettings((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, volume: newVolume } : t))
+    );
   };
 
   const startRename = (index) => {
@@ -411,9 +457,9 @@ export default function MobileStage() {
   const finishRename = (index) => {
     const sanitizedName = sanitizeInput(editingName, MAX_TRACK_NAME_LENGTH);
     if (sanitizedName) {
-      setTrackSettings(prev => prev.map((t, i) =>
-        i === index ? { ...t, name: sanitizedName } : t
-      ));
+      setTrackSettings((prev) =>
+        prev.map((t, i) => (i === index ? { ...t, name: sanitizedName } : t))
+      );
     }
     setEditingTrack(null);
   };
@@ -421,7 +467,9 @@ export default function MobileStage() {
   // Security: Enhanced audio import with comprehensive validation
   const importAudioTrack = () => {
     if (recordedTracks.length >= MAX_TRACKS) {
-      alert(`Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`);
+      alert(
+        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
+      );
       return;
     }
 
@@ -434,59 +482,78 @@ export default function MobileStage() {
 
       // Security: Validate file size
       if (file.size > MAX_FILE_SIZE) {
-        alert(`File is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
+        alert(
+          `File is too large. Maximum size is ${
+            MAX_FILE_SIZE / (1024 * 1024)
+          }MB.`
+        );
         return;
       }
 
       // Security: Validate file type
       const allowedTypes = [
-        'audio/mpeg', 
-        'audio/wav', 
-        'audio/ogg', 
-        'audio/mp3', 
-        'audio/webm',
-        'audio/mp4',
-        'audio/x-m4a'
+        "audio/mpeg",
+        "audio/wav",
+        "audio/ogg",
+        "audio/mp3",
+        "audio/webm",
+        "audio/mp4",
+        "audio/x-m4a",
       ];
-      
-      if (!allowedTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|webm|m4a)$/i)) {
-        alert("Invalid file type. Please upload a valid audio file (MP3, WAV, OGG, WebM, M4A).");
+
+      if (
+        !allowedTypes.includes(file.type) &&
+        !file.name.match(/\.(mp3|wav|ogg|webm|m4a)$/i)
+      ) {
+        alert(
+          "Invalid file type. Please upload a valid audio file (MP3, WAV, OGG, WebM, M4A)."
+        );
         return;
       }
 
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-        
+        const audioBuffer = await audioContextRef.current.decodeAudioData(
+          arrayBuffer
+        );
+
         // Security: Validate audio duration
         if (audioBuffer.duration > MAX_AUDIO_DURATION) {
-          alert(`Audio file is too long. Maximum duration is ${MAX_AUDIO_DURATION / 60} minutes.`);
+          alert(
+            `Audio file is too long. Maximum duration is ${
+              MAX_AUDIO_DURATION / 60
+            } minutes.`
+          );
           return;
         }
-        
+
         // Security: Sanitize filename
         const sanitizedFileName = sanitizeFilename(file.name);
-        
-        const importedTrack = [{ 
-          key: `imported_${Date.now()}`, 
-          time: 0,
-          isImported: true,
-          audioBuffer: audioBuffer,
-          fileName: sanitizedFileName
-        }];
 
-        setRecordedTracks(prev => [...prev, importedTrack]);
-        setTrackSettings(prev => [
+        const importedTrack = [
+          {
+            key: `imported_${Date.now()}`,
+            time: 0,
+            isImported: true,
+            audioBuffer: audioBuffer,
+            fileName: sanitizedFileName,
+          },
+        ];
+
+        setRecordedTracks((prev) => [...prev, importedTrack]);
+        setTrackSettings((prev) => [
           ...prev,
-          { name: sanitizedFileName, muted: false, solo: false, volume: 1 }
+          { name: sanitizedFileName, muted: false, solo: false, volume: 1 },
         ]);
-        setTrackCounter(c => c + 1);
-        setImportedAudioBuffers(prev => [...prev, audioBuffer]);
-        
+        setTrackCounter((c) => c + 1);
+        setImportedAudioBuffers((prev) => [...prev, audioBuffer]);
+
         alert(`Successfully imported: ${sanitizedFileName}`);
       } catch (err) {
         console.error("Error importing audio:", err);
-        alert("Failed to import audio file. Make sure it's a valid audio format and not corrupted.");
+        alert(
+          "Failed to import audio file. Make sure it's a valid audio format and not corrupted."
+        );
       }
     };
     input.click();
@@ -496,7 +563,10 @@ export default function MobileStage() {
   const exportRecording = async () => {
     if (!audioContextRef.current || recordedTracks.length === 0) return;
 
-    let fileName = prompt("Enter a name for your recording:", "animalband_recording");
+    let fileName = prompt(
+      "Enter a name for your recording:",
+      "animalband_recording"
+    );
     if (!fileName) return;
 
     // Security: Sanitize filename
@@ -504,11 +574,11 @@ export default function MobileStage() {
 
     try {
       let maxDuration = 0;
-      recordedTracks.forEach(track => {
+      recordedTracks.forEach((track) => {
         if (track.length === 0) return;
         const lastNote = track[track.length - 1];
         if (lastNote.isImported && lastNote.audioBuffer) {
-          const trackEnd = lastNote.time + (lastNote.audioBuffer.duration * 1000);
+          const trackEnd = lastNote.time + lastNote.audioBuffer.duration * 1000;
           maxDuration = Math.max(maxDuration, trackEnd);
         } else {
           maxDuration = Math.max(maxDuration, lastNote.time + 1000);
@@ -556,6 +626,83 @@ export default function MobileStage() {
     }
   };
 
+  // Security: Enhanced save with validation and rate limiting
+  const saveRecordingLocally = async () => {
+    if (isSaving) return; // Prevent double submission
+
+    const sanitizedTitle = sanitizeInput(recordingTitle, MAX_TITLE_LENGTH);
+    const sanitizedDescription = sanitizeInput(
+      recordingDescription,
+      MAX_DESCRIPTION_LENGTH
+    );
+
+    if (!sanitizedTitle) {
+      alert("Please enter a valid title.");
+      return;
+    }
+
+    if (recordedTracks.length === 0) {
+      alert("No tracks to save.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    // Security: Get auth token safely
+    const cookies = document.cookie.split("; ");
+    const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
+    const authCookie = cookieObj["auth_token"] || "";
+
+    if (!authCookie) {
+      alert("You must be logged in to save recordings.");
+      setIsSaving(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+    try {
+      const response = await fetch(
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recording: recordedTracks,
+            title: sanitizedTitle,
+            description: sanitizedDescription,
+            userToken: authCookie,
+          }),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        alert("Recording saved successfully!");
+        setShowSaveForm(false);
+        setRecordingTitle("");
+        setRecordingDescription("");
+      } else {
+        const errorText = await response.text();
+        console.error("Save failed:", errorText);
+        alert("Failed to save recording. Please try again.");
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        alert("Request timeout. Please try again.");
+      } else {
+        console.error("Save error:", err);
+        alert("Error saving recording. Please try again.");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // WAV conversion helpers
   function bufferToWav(buffer) {
     const numOfChan = buffer.numberOfChannels;
@@ -564,29 +711,47 @@ export default function MobileStage() {
     const view = new DataView(bufferArray);
 
     const writeString = (view, offset, string) => {
-      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+      for (let i = 0; i < string.length; i++)
+        view.setUint8(offset + i, string.charCodeAt(i));
     };
 
     let offset = 0;
-    writeString(view, offset, "RIFF"); offset += 4;
-    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
-    writeString(view, offset, "WAVE"); offset += 4;
-    writeString(view, offset, "fmt "); offset += 4;
-    view.setUint32(offset, 16, true); offset += 4;
-    view.setUint16(offset, 1, true); offset += 2;
-    view.setUint16(offset, numOfChan, true); offset += 2;
-    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
-    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
-    view.setUint16(offset, numOfChan * 2, true); offset += 2;
-    view.setUint16(offset, 16, true); offset += 2;
-    writeString(view, offset, "data"); offset += 4;
-    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "RIFF");
+    offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true);
+    offset += 4;
+    writeString(view, offset, "WAVE");
+    offset += 4;
+    writeString(view, offset, "fmt ");
+    offset += 4;
+    view.setUint32(offset, 16, true);
+    offset += 4;
+    view.setUint16(offset, 1, true);
+    offset += 2;
+    view.setUint16(offset, numOfChan, true);
+    offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true);
+    offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
+    offset += 4;
+    view.setUint16(offset, numOfChan * 2, true);
+    offset += 2;
+    view.setUint16(offset, 16, true);
+    offset += 2;
+    writeString(view, offset, "data");
+    offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true);
+    offset += 4;
 
     const interleaved = interleave(buffer);
     let index = 44;
     for (let i = 0; i < interleaved.length; i++, index += 2) {
       const sample = Math.max(-1, Math.min(1, interleaved[i]));
-      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      view.setInt16(
+        index,
+        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+        true
+      );
     }
 
     return new Blob([view], { type: "audio/wav" });
@@ -594,7 +759,8 @@ export default function MobileStage() {
 
   function interleave(buffer) {
     const inputL = buffer.getChannelData(0);
-    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const inputR =
+      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
     const interleaved = new Float32Array(buffer.length * 2);
     for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
       interleaved[j] = inputL[i];
@@ -614,8 +780,15 @@ export default function MobileStage() {
         <div className="header-buttons">
           {!user ? (
             <>
-              <button className="btn-login" onClick={() => navigate("/login")}>Login</button>
-              <button className="btn-register" onClick={() => navigate("/register")}>Register</button>
+              <button className="btn-login" onClick={() => navigate("/login")}>
+                Login
+              </button>
+              <button
+                className="btn-register"
+                onClick={() => navigate("/register")}
+              >
+                Register
+              </button>
             </>
           ) : (
             <img
@@ -623,7 +796,13 @@ export default function MobileStage() {
               alt="Profile"
               className="profile-pic"
               onClick={() => navigate("/account")}
-              style={{ width: "75px", height: "75px", borderRadius: "50%", cursor: "pointer", objectFit: "cover" }}
+              style={{
+                width: "75px",
+                height: "75px",
+                borderRadius: "50%",
+                cursor: "pointer",
+                objectFit: "cover",
+              }}
             />
           )}
         </div>
@@ -637,7 +816,11 @@ export default function MobileStage() {
           {Object.keys(ANIMAL_IMAGES).map((animal) => (
             <div key={animal} className="m-animal-cell">
               <img
-                src={playingAnimals[animal] ? ANIMAL_IMAGES[animal][1] : ANIMAL_IMAGES[animal][0]}
+                src={
+                  playingAnimals[animal]
+                    ? ANIMAL_IMAGES[animal][1]
+                    : ANIMAL_IMAGES[animal][0]
+                }
                 alt={animal}
                 className={playingAnimals[animal] ? "playing" : ""}
               />
@@ -654,7 +837,15 @@ export default function MobileStage() {
 
         {/* Bottom controls */}
         <div className="master-volume">
-          <label style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "14px", fontWeight: "600" }}>
+          <label
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+            }}
+          >
             <span>Master Volume</span>
             <span>{(masterVolume * 100).toFixed(0)}%</span>
           </label>
@@ -688,8 +879,11 @@ export default function MobileStage() {
             max="1"
             step="0.01"
             value={masterVolume}
-            onChange={e => {
-              const newVol = Math.max(0, Math.min(1, parseFloat(e.target.value)));
+            onChange={(e) => {
+              const newVol = Math.max(
+                0,
+                Math.min(1, parseFloat(e.target.value))
+              );
               setMasterVol(newVol);
               setMasterVolume(newVol);
             }}
@@ -698,9 +892,11 @@ export default function MobileStage() {
               height: "8px",
               borderRadius: "4px",
               outline: "none",
-              background: `linear-gradient(to right, #4CAF50 0%, #4CAF50 ${masterVolume * 100}%, #ddd ${masterVolume * 100}%, #ddd 100%)`,
+              background: `linear-gradient(to right, #4CAF50 0%, #4CAF50 ${
+                masterVolume * 100
+              }%, #ddd ${masterVolume * 100}%, #ddd 100%)`,
               WebkitAppearance: "none",
-              appearance: "none"
+              appearance: "none",
             }}
             aria-label="Master Volume"
           />
@@ -720,12 +916,16 @@ export default function MobileStage() {
               borderRadius: "8px",
               backgroundColor: isRecording ? "#ff4444" : "white",
               color: isRecording ? "white" : "#333",
-              cursor: (recordedTracks.length >= MAX_TRACKS && !isRecording) ? "not-allowed" : "pointer",
-              opacity: (recordedTracks.length >= MAX_TRACKS && !isRecording) ? 0.5 : 1,
+              cursor:
+                recordedTracks.length >= MAX_TRACKS && !isRecording
+                  ? "not-allowed"
+                  : "pointer",
+              opacity:
+                recordedTracks.length >= MAX_TRACKS && !isRecording ? 0.5 : 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "8px"
+              gap: "8px",
             }}
             aria-label={isRecording ? "Stop Recording" : "Start Recording"}
           >
@@ -746,12 +946,15 @@ export default function MobileStage() {
               borderRadius: "8px",
               backgroundColor: "white",
               color: "#333",
-              cursor: isRecording || recordedTracks.length === 0 ? "not-allowed" : "pointer",
+              cursor:
+                isRecording || recordedTracks.length === 0
+                  ? "not-allowed"
+                  : "pointer",
               opacity: isRecording || recordedTracks.length === 0 ? 0.5 : 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "8px"
+              gap: "8px",
             }}
             aria-label={isPlaying ? "Stop Playback" : "Play Recording"}
           >
@@ -776,12 +979,37 @@ export default function MobileStage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "8px"
+              gap: "8px",
             }}
             aria-label="Export Recording"
           >
             <span className="material-symbols-outlined">file_download</span>
             Export
+          </button>
+
+          <button
+            onClick={() => setShowSaveForm(true)}
+            disabled={recordedTracks.length === 0}
+            style={{
+              width: "100%",
+              padding: "12px",
+              marginBottom: "10px",
+              fontSize: "16px",
+              fontWeight: "600",
+              border: "none",
+              borderRadius: "8px",
+              backgroundColor: recordedTracks.length === 0 ? "#ccc" : "#4CAF50",
+              color: "white",
+              cursor: recordedTracks.length === 0 ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+            }}
+            aria-label="Save Recording"
+          >
+            <span className="material-symbols-outlined">save</span>
+            Save
           </button>
 
           <button
@@ -796,12 +1024,13 @@ export default function MobileStage() {
               borderRadius: "8px",
               backgroundColor: "white",
               color: "#333",
-              cursor: recordedTracks.length >= MAX_TRACKS ? "not-allowed" : "pointer",
+              cursor:
+                recordedTracks.length >= MAX_TRACKS ? "not-allowed" : "pointer",
               opacity: recordedTracks.length >= MAX_TRACKS ? 0.5 : 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "8px"
+              gap: "8px",
             }}
             aria-label="Import Audio Track"
           >
@@ -810,20 +1039,80 @@ export default function MobileStage() {
           </button>
         </div>
 
+        {showSaveForm && (
+          <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+              <h3>Save Your Recording</h3>
+              <label>
+                Title:
+                <input
+                  type="text"
+                  value={recordingTitle}
+                  onChange={(e) => setRecordingTitle(e.target.value)}
+                  placeholder="Your Recording"
+                  maxLength={MAX_TITLE_LENGTH}
+                  required
+                  aria-label="Recording Title"
+                />
+              </label>
+              <label>
+                Description:
+                <textarea
+                  value={recordingDescription}
+                  onChange={(e) => setRecordingDescription(e.target.value)}
+                  placeholder="Description of your recording."
+                  maxLength={MAX_DESCRIPTION_LENGTH}
+                  aria-label="Recording Description"
+                />
+              </label>
+              <div className="form-buttons">
+                <button
+                  onClick={() => setShowSaveForm(false)}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button onClick={saveRecordingLocally} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Track list */}
-        <div className="tracks-list" style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f9f9f9", borderRadius: "8px" }}>
-          <h3 style={{ marginBottom: "15px", fontSize: "18px", fontWeight: "700" }}>
+        <div
+          className="tracks-list"
+          style={{
+            marginTop: "20px",
+            padding: "15px",
+            backgroundColor: "#f9f9f9",
+            borderRadius: "8px",
+          }}
+        >
+          <h3
+            style={{
+              marginBottom: "15px",
+              fontSize: "18px",
+              fontWeight: "700",
+            }}
+          >
             Recorded Tracks ({recordedTracks.length}/{MAX_TRACKS})
           </h3>
-          {recordedTracks.length === 0 && <p style={{ textAlign: "center", color: "#666" }}>No tracks yet.</p>}
+          {recordedTracks.length === 0 && (
+            <p style={{ textAlign: "center", color: "#666" }}>No tracks yet.</p>
+          )}
           {recordedTracks.map((track, index) => (
-            <div key={index} style={{
-              backgroundColor: "white",
-              padding: "12px",
-              marginBottom: "10px",
-              borderRadius: "8px",
-              border: "1px solid #ddd"
-            }}>
+            <div
+              key={index}
+              style={{
+                backgroundColor: "white",
+                padding: "12px",
+                marginBottom: "10px",
+                borderRadius: "8px",
+                border: "1px solid #ddd",
+              }}
+            >
               {/* Track name and volume */}
               <div style={{ marginBottom: "10px" }}>
                 {editingTrack === index ? (
@@ -842,28 +1131,30 @@ export default function MobileStage() {
                       fontWeight: "600",
                       border: "2px solid #4CAF50",
                       borderRadius: "4px",
-                      outline: "none"
+                      outline: "none",
                     }}
                     aria-label="Track Name"
                   />
                 ) : (
-                  <div 
-                    onDoubleClick={() => startRename(index)} 
+                  <div
+                    onDoubleClick={() => startRename(index)}
                     style={{
                       fontSize: "14px",
                       fontWeight: "600",
                       marginBottom: "8px",
                       wordBreak: "break-word",
-                      cursor: "pointer"
+                      cursor: "pointer",
                     }}
                     title="Double-tap to rename"
                   >
                     {trackSettings[index]?.name || `Track ${index + 1}`}
                   </div>
                 )}
-                
+
                 {/* Volume slider */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
                   <input
                     type="range"
                     min="0"
@@ -876,58 +1167,81 @@ export default function MobileStage() {
                       height: "6px",
                       borderRadius: "3px",
                       outline: "none",
-                      background: `linear-gradient(to right, #4CAF50 0%, #4CAF50 ${(trackSettings[index]?.volume ?? 1) * 100}%, #ddd ${(trackSettings[index]?.volume ?? 1) * 100}%, #ddd 100%)`,
+                      background: `linear-gradient(to right, #4CAF50 0%, #4CAF50 ${
+                        (trackSettings[index]?.volume ?? 1) * 100
+                      }%, #ddd ${
+                        (trackSettings[index]?.volume ?? 1) * 100
+                      }%, #ddd 100%)`,
                       WebkitAppearance: "none",
-                      appearance: "none"
+                      appearance: "none",
                     }}
-                    aria-label={`Volume for ${trackSettings[index]?.name || `Track ${index + 1}`}`}
+                    aria-label={`Volume for ${
+                      trackSettings[index]?.name || `Track ${index + 1}`
+                    }`}
                   />
-                  <span style={{ fontSize: "12px", fontWeight: "600", minWidth: "40px", textAlign: "right" }}>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      minWidth: "40px",
+                      textAlign: "right",
+                    }}
+                  >
                     {Math.round((trackSettings[index]?.volume ?? 1) * 100)}%
                   </span>
                 </div>
               </div>
-              
+
               {/* Track buttons */}
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "8px"
-              }}>
-                <button 
-                  onClick={() => toggleMute(index)} 
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "8px",
+                }}
+              >
+                <button
+                  onClick={() => toggleMute(index)}
                   style={{
                     padding: "8px",
                     fontSize: "13px",
                     fontWeight: "600",
                     border: "none",
                     borderRadius: "6px",
-                    backgroundColor: trackSettings[index]?.muted ? "#ff6b6b" : "#e0e0e0",
+                    backgroundColor: trackSettings[index]?.muted
+                      ? "#ff6b6b"
+                      : "#e0e0e0",
                     color: trackSettings[index]?.muted ? "white" : "#333",
-                    cursor: "pointer"
+                    cursor: "pointer",
                   }}
-                  aria-label={trackSettings[index]?.muted ? "Unmute Track" : "Mute Track"}
+                  aria-label={
+                    trackSettings[index]?.muted ? "Unmute Track" : "Mute Track"
+                  }
                 >
                   {trackSettings[index]?.muted ? "Unmute" : "Mute"}
                 </button>
-                <button 
-                  onClick={() => toggleSolo(index)} 
+                <button
+                  onClick={() => toggleSolo(index)}
                   style={{
                     padding: "8px",
                     fontSize: "13px",
                     fontWeight: "600",
                     border: "none",
                     borderRadius: "6px",
-                    backgroundColor: trackSettings[index]?.solo ? "#4CAF50" : "#e0e0e0",
+                    backgroundColor: trackSettings[index]?.solo
+                      ? "#4CAF50"
+                      : "#e0e0e0",
                     color: trackSettings[index]?.solo ? "white" : "#333",
-                    cursor: "pointer"
+                    cursor: "pointer",
                   }}
-                  aria-label={trackSettings[index]?.solo ? "Unsolo Track" : "Solo Track"}
+                  aria-label={
+                    trackSettings[index]?.solo ? "Unsolo Track" : "Solo Track"
+                  }
                 >
                   {trackSettings[index]?.solo ? "Unsolo" : "Solo"}
                 </button>
-                <button 
-                  onClick={() => startRename(index)} 
+                <button
+                  onClick={() => startRename(index)}
                   style={{
                     padding: "8px",
                     fontSize: "13px",
@@ -936,14 +1250,14 @@ export default function MobileStage() {
                     borderRadius: "6px",
                     backgroundColor: "#e0e0e0",
                     color: "#333",
-                    cursor: "pointer"
+                    cursor: "pointer",
                   }}
                   aria-label="Rename Track"
                 >
                   Rename
                 </button>
-                <button 
-                  onClick={() => deleteTrack(index)} 
+                <button
+                  onClick={() => deleteTrack(index)}
                   style={{
                     padding: "8px",
                     fontSize: "13px",
@@ -952,7 +1266,7 @@ export default function MobileStage() {
                     borderRadius: "6px",
                     backgroundColor: "#ff6b6b",
                     color: "white",
-                    cursor: "pointer"
+                    cursor: "pointer",
                   }}
                   aria-label="Delete Track"
                 >
