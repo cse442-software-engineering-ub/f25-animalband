@@ -65,33 +65,50 @@ export default function DesktopStage() {
   };
 
   const animalKeyMap = {
-    a: "hamster", s: "hamster", d: "hamster", f: "hamster",
-    c: "bird", v: "bird", b: "bird", n: "bird",
-    h: "ostrich", j: "ostrich", k: "ostrich", l: "ostrich",
-    u: "kangaroo", i: "kangaroo", o: "kangaroo", p: "kangaroo",
-    q: "snake", w: "snake", e: "snake", r: "snake",
+    a: "hamster",
+    s: "hamster",
+    d: "hamster",
+    f: "hamster",
+    c: "bird",
+    v: "bird",
+    b: "bird",
+    n: "bird",
+    h: "ostrich",
+    j: "ostrich",
+    k: "ostrich",
+    l: "ostrich",
+    u: "kangaroo",
+    i: "kangaroo",
+    o: "kangaroo",
+    p: "kangaroo",
+    q: "snake",
+    w: "snake",
+    e: "snake",
+    r: "snake",
   };
 
   // Security: Input sanitization function
   const sanitizeInput = (input, maxLength = 200) => {
-    if (!input) return '';
+    if (!input) return "";
     return input
       .trim()
       .substring(0, maxLength)
-      .replace(/[<>]/g, '') // Remove potential HTML tags
-      .replace(/javascript:/gi, '') // Remove javascript: protocol
-      .replace(/on\w+=/gi, '') // Remove event handlers
-      .replace(/[^\w\s\-_.,:;!?()]/g, ''); // Allow only safe characters
+      .replace(/[<>]/g, "") // Remove potential HTML tags
+      .replace(/javascript:/gi, "") // Remove javascript: protocol
+      .replace(/on\w+=/gi, "") // Remove event handlers
+      .replace(/[^\w\s\-_.,:;!?()]/g, ""); // Allow only safe characters
   };
 
   // Security: Validate filename
   const sanitizeFilename = (filename) => {
-    if (!filename) return 'unnamed';
-    return filename
-      .replace(/\.[^/.]+$/, '') // Remove extension
-      .replace(/[^a-zA-Z0-9_-]/g, '_') // Replace unsafe chars
-      .substring(0, 50) // Limit length
-      || 'unnamed';
+    if (!filename) return "unnamed";
+    return (
+      filename
+        .replace(/\.[^/.]+$/, "") // Remove extension
+        .replace(/[^a-zA-Z0-9_-]/g, "_") // Replace unsafe chars
+        .substring(0, 50) || // Limit length
+      "unnamed"
+    );
   };
 
   // Fetch user with timeout and error handling
@@ -106,9 +123,9 @@ export default function DesktopStage() {
       try {
         const res = await fetch(
           "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
-          { 
+          {
             credentials: "include",
-            signal: controller.signal
+            signal: controller.signal,
           }
         );
         clearTimeout(timeoutId);
@@ -121,7 +138,7 @@ export default function DesktopStage() {
         if (data.loggedIn) setUser(data);
       } catch (err) {
         clearTimeout(timeoutId);
-        if (err.name === 'AbortError') {
+        if (err.name === "AbortError") {
           console.error("Request timeout");
         } else {
           console.error("Failed to fetch user", err);
@@ -142,7 +159,10 @@ export default function DesktopStage() {
 
     // Cleanup on unmount
     return () => {
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state !== "closed"
+      ) {
         audioContextRef.current.close();
       }
     };
@@ -179,7 +199,7 @@ export default function DesktopStage() {
       if (showSaveForm) return;
 
       const key = e.key.toLowerCase();
-      
+
       // Security: Validate key is in our whitelist
       if (!animalKeyMap[key]) return;
 
@@ -189,20 +209,23 @@ export default function DesktopStage() {
       // Security: Check if we're exceeding reasonable recording length
       if (isRecording) {
         const timeSinceStart = performance.now() - recordStartTime;
-        
+
         // Prevent recordings longer than 10 minutes
         if (timeSinceStart > MAX_AUDIO_DURATION * 1000) {
           alert("Recording limit reached (10 minutes). Please stop recording.");
           return;
         }
-        
-        setCurrentTrack(prev => [...prev, { key, time: timeSinceStart }]);
+
+        setCurrentTrack((prev) => [...prev, { key, time: timeSinceStart }]);
       }
 
       if (sounds[key]) {
         playSound(sounds[key], masterVolume);
-        setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-        setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+        setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+        setTimeout(
+          () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
+          300
+        );
       }
     };
 
@@ -237,7 +260,9 @@ export default function DesktopStage() {
   const toggleRecording = () => {
     // Security: Limit number of tracks
     if (!isRecording && recordedTracks.length >= MAX_TRACKS) {
-      alert(`Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`);
+      alert(
+        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
+      );
       return;
     }
 
@@ -255,12 +280,12 @@ export default function DesktopStage() {
       }
 
       const trackName = `Track ${trackCounter}`;
-      setRecordedTracks(prev => [...prev, currentTrack]);
-      setTrackSettings(prev => [
+      setRecordedTracks((prev) => [...prev, currentTrack]);
+      setTrackSettings((prev) => [
         ...prev,
-        { name: trackName, muted: false, solo: false, volume: 1 }
+        { name: trackName, muted: false, solo: false, volume: 1 },
       ]);
-      setTrackCounter(c => c + 1);
+      setTrackCounter((c) => c + 1);
       setIsRecording(false);
       stopPlayback();
     }
@@ -298,8 +323,11 @@ export default function DesktopStage() {
           sources.push(source);
 
           const timeout1 = setTimeout(() => {
-            setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+            const timeout2 = setTimeout(
+              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
+              300
+            );
             timeouts.push(timeout2);
           }, time);
           timeouts.push(timeout1);
@@ -319,16 +347,16 @@ export default function DesktopStage() {
     const sources = [];
     const timeouts = [];
 
-    const anySolo = trackSettings.some(t => t.solo);
-    
+    const anySolo = trackSettings.some((t) => t.solo);
+
     recordedTracks.forEach((track, trackIndex) => {
       const settings = trackSettings[trackIndex];
-      
+
       if (settings?.muted || (anySolo && !settings?.solo)) return;
-      
+
       const trackVolume = settings?.volume ?? 1;
       const finalGain = masterVolume * trackVolume;
-      
+
       track.forEach(({ key, time, isImported, audioBuffer }) => {
         if (isImported && audioBuffer) {
           const source = audioContext.createBufferSource();
@@ -351,8 +379,11 @@ export default function DesktopStage() {
           sources.push(source);
 
           const timeout1 = setTimeout(() => {
-            setPlayingAnimals(prev => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(() => setPlayingAnimals(prev => ({ ...prev, [animal]: false })), 300);
+            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+            const timeout2 = setTimeout(
+              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
+              300
+            );
             timeouts.push(timeout2);
           }, time);
           timeouts.push(timeout1);
@@ -362,15 +393,17 @@ export default function DesktopStage() {
 
     setActiveAudioSources({ sources, timeouts });
 
-    const longestTrack = Math.max(...recordedTracks.map(track => {
-      if (track.length === 0) return 0;
-      const lastNote = track[track.length - 1];
-      if (lastNote.isImported && lastNote.audioBuffer) {
-        return lastNote.time + (lastNote.audioBuffer.duration * 1000);
-      }
-      return lastNote.time;
-    }));
-    
+    const longestTrack = Math.max(
+      ...recordedTracks.map((track) => {
+        if (track.length === 0) return 0;
+        const lastNote = track[track.length - 1];
+        if (lastNote.isImported && lastNote.audioBuffer) {
+          return lastNote.time + lastNote.audioBuffer.duration * 1000;
+        }
+        return lastNote.time;
+      })
+    );
+
     const endTimeout = setTimeout(() => {
       setIsPlaying(false);
       setActiveAudioSources([]);
@@ -381,18 +414,18 @@ export default function DesktopStage() {
   // Stop playback
   const stopPlayback = () => {
     if (activeAudioSources.sources) {
-      activeAudioSources.sources.forEach(source => {
+      activeAudioSources.sources.forEach((source) => {
         try {
           source.stop();
         } catch (e) {
           // Source may have already stopped
         }
       });
-      
-      activeAudioSources.timeouts.forEach(timeout => {
+
+      activeAudioSources.timeouts.forEach((timeout) => {
         clearTimeout(timeout);
       });
-      
+
       setActiveAudioSources([]);
       setIsPlaying(false);
       setPlayingAnimals({});
@@ -401,8 +434,8 @@ export default function DesktopStage() {
 
   // Delete a track
   const deleteTrack = (index) => {
-    setRecordedTracks(prev => prev.filter((_, i) => i !== index));
-    setTrackSettings(prev => prev.filter((_, i) => i !== index));
+    setRecordedTracks((prev) => prev.filter((_, i) => i !== index));
+    setTrackSettings((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Export combined tracks
@@ -413,7 +446,7 @@ export default function DesktopStage() {
       "Enter a name for your recording:",
       "animalband_recording"
     );
-    
+
     if (!fileName) return;
 
     // Security: Sanitize filename
@@ -422,11 +455,11 @@ export default function DesktopStage() {
     try {
       // Calculate the total duration needed
       let maxDuration = 0;
-      recordedTracks.forEach(track => {
+      recordedTracks.forEach((track) => {
         if (track.length === 0) return;
         const lastNote = track[track.length - 1];
         if (lastNote.isImported && lastNote.audioBuffer) {
-          const trackEnd = lastNote.time + (lastNote.audioBuffer.duration * 1000);
+          const trackEnd = lastNote.time + lastNote.audioBuffer.duration * 1000;
           maxDuration = Math.max(maxDuration, trackEnd);
         } else {
           maxDuration = Math.max(maxDuration, lastNote.time + 1000);
@@ -480,8 +513,11 @@ export default function DesktopStage() {
     if (isSaving) return; // Prevent double submission
 
     const sanitizedTitle = sanitizeInput(recordingTitle, MAX_TITLE_LENGTH);
-    const sanitizedDescription = sanitizeInput(recordingDescription, MAX_DESCRIPTION_LENGTH);
-    
+    const sanitizedDescription = sanitizeInput(
+      recordingDescription,
+      MAX_DESCRIPTION_LENGTH
+    );
+
     if (!sanitizedTitle) {
       alert("Please enter a valid title.");
       return;
@@ -520,7 +556,7 @@ export default function DesktopStage() {
             description: sanitizedDescription,
             userToken: authCookie,
           }),
-          signal: controller.signal
+          signal: controller.signal,
         }
       );
 
@@ -538,7 +574,7 @@ export default function DesktopStage() {
       }
     } catch (err) {
       clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
+      if (err.name === "AbortError") {
         alert("Request timeout. Please try again.");
       } else {
         console.error("Save error:", err);
@@ -557,23 +593,37 @@ export default function DesktopStage() {
     const view = new DataView(bufferArray);
 
     const writeString = (view, offset, string) => {
-      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+      for (let i = 0; i < string.length; i++)
+        view.setUint8(offset + i, string.charCodeAt(i));
     };
 
     let offset = 0;
-    writeString(view, offset, "RIFF"); offset += 4;
-    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
-    writeString(view, offset, "WAVE"); offset += 4;
-    writeString(view, offset, "fmt "); offset += 4;
-    view.setUint32(offset, 16, true); offset += 4;
-    view.setUint16(offset, 1, true); offset += 2;
-    view.setUint16(offset, numOfChan, true); offset += 2;
-    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
-    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
-    view.setUint16(offset, numOfChan * 2, true); offset += 2;
-    view.setUint16(offset, 16, true); offset += 2;
-    writeString(view, offset, "data"); offset += 4;
-    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "RIFF");
+    offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true);
+    offset += 4;
+    writeString(view, offset, "WAVE");
+    offset += 4;
+    writeString(view, offset, "fmt ");
+    offset += 4;
+    view.setUint32(offset, 16, true);
+    offset += 4;
+    view.setUint16(offset, 1, true);
+    offset += 2;
+    view.setUint16(offset, numOfChan, true);
+    offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true);
+    offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
+    offset += 4;
+    view.setUint16(offset, numOfChan * 2, true);
+    offset += 2;
+    view.setUint16(offset, 16, true);
+    offset += 2;
+    writeString(view, offset, "data");
+    offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true);
+    offset += 4;
 
     const interleaved = interleave(buffer);
     let index = 44;
@@ -603,23 +653,25 @@ export default function DesktopStage() {
 
   // Track control functions
   const toggleMute = (index) => {
-    setTrackSettings(prev => prev.map((t, i) =>
-      i === index ? { ...t, muted: !t.muted, solo: false } : t
-    ));
+    setTrackSettings((prev) =>
+      prev.map((t, i) =>
+        i === index ? { ...t, muted: !t.muted, solo: false } : t
+      )
+    );
   };
 
   const toggleSolo = (index) => {
-    setTrackSettings(prev => prev.map((t, i) =>
-      i === index ? { ...t, solo: !t.solo } : t
-    ));
+    setTrackSettings((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, solo: !t.solo } : t))
+    );
   };
 
   const setTrackVolume = (index, volume) => {
     // Security: Validate volume is in valid range
     const newVolume = Math.max(0, Math.min(1, parseFloat(volume)));
-    setTrackSettings(prev => prev.map((t, i) =>
-      i === index ? { ...t, volume: newVolume } : t
-    ));
+    setTrackSettings((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, volume: newVolume } : t))
+    );
   };
 
   const startRename = (index) => {
@@ -630,9 +682,9 @@ export default function DesktopStage() {
   const finishRename = (index) => {
     const sanitizedName = sanitizeInput(editingName, MAX_TRACK_NAME_LENGTH);
     if (sanitizedName) {
-      setTrackSettings(prev => prev.map((t, i) =>
-        i === index ? { ...t, name: sanitizedName } : t
-      ));
+      setTrackSettings((prev) =>
+        prev.map((t, i) => (i === index ? { ...t, name: sanitizedName } : t))
+      );
     }
     setEditingTrack(null);
   };
@@ -641,7 +693,9 @@ export default function DesktopStage() {
   const importAudioTrack = () => {
     // Security: Check track limit
     if (recordedTracks.length >= MAX_TRACKS) {
-      alert(`Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`);
+      alert(
+        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
+      );
       return;
     }
 
@@ -654,59 +708,78 @@ export default function DesktopStage() {
 
       // Security: Validate file size
       if (file.size > MAX_FILE_SIZE) {
-        alert(`File is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
+        alert(
+          `File is too large. Maximum size is ${
+            MAX_FILE_SIZE / (1024 * 1024)
+          }MB.`
+        );
         return;
       }
 
       // Security: Validate file type more strictly
       const allowedTypes = [
-        'audio/mpeg', 
-        'audio/wav', 
-        'audio/ogg', 
-        'audio/mp3', 
-        'audio/webm',
-        'audio/mp4',
-        'audio/x-m4a'
+        "audio/mpeg",
+        "audio/wav",
+        "audio/ogg",
+        "audio/mp3",
+        "audio/webm",
+        "audio/mp4",
+        "audio/x-m4a",
       ];
-      
-      if (!allowedTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|webm|m4a)$/i)) {
-        alert("Invalid file type. Please upload a valid audio file (MP3, WAV, OGG, WebM, M4A).");
+
+      if (
+        !allowedTypes.includes(file.type) &&
+        !file.name.match(/\.(mp3|wav|ogg|webm|m4a)$/i)
+      ) {
+        alert(
+          "Invalid file type. Please upload a valid audio file (MP3, WAV, OGG, WebM, M4A)."
+        );
         return;
       }
 
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-        
+        const audioBuffer = await audioContextRef.current.decodeAudioData(
+          arrayBuffer
+        );
+
         // Security: Validate decoded audio duration
         if (audioBuffer.duration > MAX_AUDIO_DURATION) {
-          alert(`Audio file is too long. Maximum duration is ${MAX_AUDIO_DURATION / 60} minutes.`);
+          alert(
+            `Audio file is too long. Maximum duration is ${
+              MAX_AUDIO_DURATION / 60
+            } minutes.`
+          );
           return;
         }
-        
+
         // Security: Sanitize filename
         const sanitizedFileName = sanitizeFilename(file.name);
-        
-        const importedTrack = [{ 
-          key: `imported_${Date.now()}`, 
-          time: 0,
-          isImported: true,
-          audioBuffer: audioBuffer,
-          fileName: sanitizedFileName
-        }];
 
-        setRecordedTracks(prev => [...prev, importedTrack]);
-        setTrackSettings(prev => [
+        const importedTrack = [
+          {
+            key: `imported_${Date.now()}`,
+            time: 0,
+            isImported: true,
+            audioBuffer: audioBuffer,
+            fileName: sanitizedFileName,
+          },
+        ];
+
+        setRecordedTracks((prev) => [...prev, importedTrack]);
+        setTrackSettings((prev) => [
           ...prev,
-          { name: sanitizedFileName, muted: false, solo: false, volume: 1 }
+          { name: sanitizedFileName, muted: false, solo: false, volume: 1 },
         ]);
-        setTrackCounter(c => c + 1);
-        setImportedAudioBuffers(prev => [...prev, audioBuffer]);
-        
+        setTrackCounter((c) => c + 1);
+        setImportedAudioBuffers((prev) => [...prev, audioBuffer]);
+
         alert(`Successfully imported: ${sanitizedFileName}`);
       } catch (err) {
         console.error("Error importing audio:", err);
-        alert("Failed to import audio file. Make sure it's a valid audio format and not corrupted.");
+        alert(
+          "Failed to import audio file. Make sure it's a valid audio format and not corrupted."
+        );
       }
     };
     input.click();
@@ -724,8 +797,18 @@ export default function DesktopStage() {
           <div className="header-buttons">
             {!user ? (
               <>
-                <button className="btn-login" onClick={() => navigate("/login")}>Login</button>
-                <button className="btn-register" onClick={() => navigate("/register")}>Register</button>
+                <button
+                  className="btn-login"
+                  onClick={() => navigate("/login")}
+                >
+                  Login
+                </button>
+                <button
+                  className="btn-register"
+                  onClick={() => navigate("/register")}
+                >
+                  Register
+                </button>
               </>
             ) : (
               <img
@@ -733,7 +816,13 @@ export default function DesktopStage() {
                 alt="Profile"
                 className="profile-pic"
                 onClick={() => navigate("/account")}
-                style={{ width: "75px", height: "75px", borderRadius: "50%", cursor: "pointer", objectFit: "cover" }}
+                style={{
+                  width: "75px",
+                  height: "75px",
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  objectFit: "cover",
+                }}
               />
             )}
           </div>
@@ -741,7 +830,7 @@ export default function DesktopStage() {
 
         <section className="band-stage">
           <div className="animals-container">
-            {Object.keys(ANIMAL_IMAGES).map(animal => (
+            {Object.keys(ANIMAL_IMAGES).map((animal) => (
               <div key={animal} className="animal-member">
                 <img
                   src={
@@ -754,13 +843,15 @@ export default function DesktopStage() {
                 />
                 <div className="animal-controls">
                   <p className="key-text">
-                    {Object.entries({
-                      hamster: "A S D F",
-                      bird: "C V B N",
-                      ostrich: "H J K L",
-                      kangaroo: "U I O P",
-                      snake: "Q W E R",
-                    })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]}
+                    {
+                      Object.entries({
+                        hamster: "A S D F",
+                        bird: "C V B N",
+                        ostrich: "H J K L",
+                        kangaroo: "U I O P",
+                        snake: "Q W E R",
+                      })[Object.keys(ANIMAL_IMAGES).indexOf(animal)][1]
+                    }
                   </p>
                 </div>
               </div>
@@ -776,8 +867,11 @@ export default function DesktopStage() {
             max="1"
             step="0.01"
             value={masterVolume}
-            onChange={e => {
-              const newVol = Math.max(0, Math.min(1, parseFloat(e.target.value)));
+            onChange={(e) => {
+              const newVol = Math.max(
+                0,
+                Math.min(1, parseFloat(e.target.value))
+              );
               setMasterVol(newVol);
               setMasterVolume(newVol);
             }}
@@ -865,7 +959,10 @@ export default function DesktopStage() {
                 />
               </label>
               <div className="form-buttons">
-                <button onClick={() => setShowSaveForm(false)} disabled={isSaving}>
+                <button
+                  onClick={() => setShowSaveForm(false)}
+                  disabled={isSaving}
+                >
                   Cancel
                 </button>
                 <button onClick={saveRecordingLocally} disabled={isSaving}>
@@ -878,7 +975,9 @@ export default function DesktopStage() {
 
         {/* Track list */}
         <div className="track-list">
-          <h3>Recorded Tracks ({recordedTracks.length}/{MAX_TRACKS})</h3>
+          <h3>
+            Recorded Tracks ({recordedTracks.length}/{MAX_TRACKS})
+          </h3>
           {recordedTracks.length === 0 && <p>No tracks yet.</p>}
           {recordedTracks.map((track, index) => (
             <div key={index} className="track-item">
@@ -895,7 +994,10 @@ export default function DesktopStage() {
                   aria-label="Track Name"
                 />
               ) : (
-                <span onDoubleClick={() => startRename(index)} title="Double-click to rename">
+                <span
+                  onDoubleClick={() => startRename(index)}
+                  title="Double-click to rename"
+                >
                   {trackSettings[index]?.name || `Track ${index + 1}`}
                 </span>
               )}
@@ -910,7 +1012,9 @@ export default function DesktopStage() {
                   className="track-volume-slider"
                   title="Track Volume"
                   style={{ width: "100px", marginRight: "5px" }}
-                  aria-label={`Volume for ${trackSettings[index]?.name || `Track ${index + 1}`}`}
+                  aria-label={`Volume for ${
+                    trackSettings[index]?.name || `Track ${index + 1}`
+                  }`}
                 />
                 <span style={{ fontSize: "12px", marginRight: "10px" }}>
                   {Math.round((trackSettings[index]?.volume ?? 1) * 100)}%
