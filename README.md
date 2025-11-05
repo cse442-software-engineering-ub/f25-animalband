@@ -1,79 +1,98 @@
-# Getting Started with Create React App
+# AnimalBand
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Welcome to ANIMALBAND, an interactive music creation platform inspired by BongoCat! Create music by controlling animal musicians using your keyboard, record multiple tracks, and share your creations with the community.
 
-## Available Scripts
+## Quick Start
 
-In the project directory, you can run:
+1. **Prerequisites**
+   - Node.js (v14 or higher)
+   - PHP (v7.4 or higher)
+   - MySQL/MariaDB
 
-### `npm start`
+2. **Installation**
+   ```bash
+   # Clone the repository
+   git clone https://github.com/cse442-software-engineering-ub/f25-animalband.git
+   
+   # Install frontend dependencies
+   npm install
+   
+   # Set up your database and configure PHP connection
+   # (See Database Setup section below)
+   ```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Project Structure
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```
+├── php/                    # Backend PHP files
+│   ├── commentsStream.php  # Forum comments handling
+│   ├── login.php          # Authentication
+│   ├── register.php       # User registration
+│   └── ...                # Other API endpoints
+│
+├── public/                 # Static assets
+│   └── stage_sounds/      # Instrument sound files
+│       ├── bass/
+│       ├── drums/
+│       ├── guitar/
+│       ├── keys/
+│       └── vocal/
+│
+└── src/                   # Frontend React code
+    ├── app/
+    │   ├── components/    # Reusable UI components
+    │   └── routes/        # Page-specific components
+    │       ├── account/   # User account management
+    │       ├── forum/     # Community forum
+    │       ├── landing/   # Homepage
+    │       ├── login/     # Authentication pages
+    │       ├── looping/   # Music loop functionality
+    │       ├── register/  # User registration
+    │       └── stage/     # Main music creation area
+    └── assets/            # Images and other assets
+```
 
-### `npm test`
+## 🔧 Key Components
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Frontend (React)
+- **Stage** (`src/app/routes/stage/`): The main music creation interface where users control animal musicians
+- **Forum** (`src/app/routes/forum/`): Community space for sharing recordings and discussions
+- **Account Management** (`src/app/routes/account/`): User profile and settings
+- **Landing** (`src/app/routes/landing/`): Homepage with featured content
 
-### `npm run build`
+### Backend (PHP)
+- **Authentication** (`php/login.php`, `php/register.php`): User authentication system
+- **Forum Management** (`php/commentsStream.php`, `php/postsStream.php`): Forum functionality
+- **Recording Management** (`php/getRecording.php`, `php/saveRecordingsLocal.php`): Handles music recordings
+- **User Management** (`php/getUser.php`, `php/updateAccount.php`): User profile operations
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Development Guidelines
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Frontend Development
+1. Components should follow the mobile-first approach with separate desktop/mobile versions
+2. Use CSS modules for styling to avoid class name conflicts
+3. Keep components small and focused on a single responsibility
+4. Implement responsive design using the `useIsMobile` hook
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Backend Development
+1. All API endpoints should return JSON responses
+2. Implement proper error handling and validation
+3. Follow REST principles for API design
+4. Secure all endpoints with proper authentication where needed
 
-### `npm run eject`
+## Workflow
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. **Create a new branch** for your feature/fix
+   - Use the GitHub website to create a new branch and then pull it to your IDE
+   - When working make frequent commits to not lose work
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. **Develop and test** your changes
+   - Test on both mobile and desktop views on aptitude
+   - Ensure PHP endpoints are properly secured
+   - Verify database operations work as expected
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-
-
-### REPO LAYOUT
-
-Most of the important react stuff is in src
-The Components folder will contain all of our React Components
-App.js contains the entire app, this is where the Components will be used.
-App.css contains the corresponding CSS.
-phpstuff contains our backend php code
+3. **Submit a Pull Request to dev**
+   - Provide clear description of changes in a short title
+   - Provide more details and why the commit to dev matters in the description
+   - Do not delete the branch you were working on, just close the pull request when merging
+   - Please communicate with other devs if merge conflicts occur

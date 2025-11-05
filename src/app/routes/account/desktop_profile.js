@@ -3,12 +3,15 @@ import { Link, useNavigate } from "react-router-dom";
 import DeleteAccountModal from "../../components/DeleteAccountModal";
 import "./desktop_profile.css";
 
-const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/php";
+const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 export default function DesktopProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [postCount, setPostCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+  const [recordingCount, setRecordingCount] = useState(0);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -16,11 +19,8 @@ export default function DesktopProfile() {
       try {
         const res = await fetch(`${PHP_BASE}/getUser.php`, { credentials: "include" });
         const data = await res.json();
-        if (data.loggedIn) {
-          setUser(data);
-        } else {
-          navigate("/login");
-        }
+        if (data.loggedIn) setUser(data);
+        else navigate("/login");
       } catch (err) {
         console.error("Failed to fetch user", err);
         navigate("/login");
@@ -29,27 +29,45 @@ export default function DesktopProfile() {
     fetchUser();
   }, [navigate]);
 
+  useEffect(() => {
+    if (!user?.username || !user?.email) return;
+    const fetchUserStats = async () => {
+      try {
+        const postRes = await fetch(`${PHP_BASE}/getUserPostCount.php?username=${encodeURIComponent(user.username)}`);
+        const postData = await postRes.json();
+        setPostCount(postData.count || 0);
+
+        const likeRes = await fetch(`${PHP_BASE}/getUserLikeCount.php?username=${encodeURIComponent(user.username)}`);
+        const likeData = await likeRes.json();
+        setLikeCount(likeData.totalLikes || 0);
+
+        const recRes = await fetch(`${PHP_BASE}/getUserRecordingCount.php?email=${encodeURIComponent(user.email)}`);
+        const recData = await recRes.json();
+        setRecordingCount(recData.count || 0);
+      } catch (err) {
+        console.error("Failed to fetch user's stats", err);
+      }
+    };
+    fetchUserStats();
+  }, [user]);
+
   const handleProfilePicClick = () => fileInputRef.current?.click();
 
   const handleProfilePicChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const formData = new FormData();
     formData.append("profilePic", file);
 
     try {
-      const res = await fetch(`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php`, {
+      const res = await fetch(`${PHP_BASE}/updateProfilePic.php`, {
         method: "POST",
         body: formData,
         credentials: "include",
       });
       const data = await res.json();
-      if (data.success) {
-        setUser((prev) => ({ ...prev, profilePic: data.profilePic }));
-      } else {
-        alert("Failed to update profile picture.");
-      }
+      if (data.success) setUser((prev) => ({ ...prev, profilePic: data.profilePic }));
+      else alert("Failed to update profile picture.");
     } catch (err) {
       console.error("Error uploading new profile pic", err);
       alert("Error uploading new profile pic.");
@@ -67,7 +85,6 @@ export default function DesktopProfile() {
     }
   };
 
-  // Called when user confirms deletion in modal.
   const handleDelete = async () => {
     try {
       const res = await fetch(`${PHP_BASE}/deleteAccount.php`, {
@@ -75,9 +92,8 @@ export default function DesktopProfile() {
         credentials: "include",
       });
       const data = await res.json();
-
       if (res.ok) {
-        window.location.href = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/shabad/"; // redirect home after deletion
+        window.location.href = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/";
       } else {
         alert(data.message || "Failed to delete account.");
       }
@@ -89,7 +105,6 @@ export default function DesktopProfile() {
 
   return (
     <div className="profile-page">
-      {/* Header */}
       <header className="header">
         <Link to="/" className="logo-section">
           <span className="material-symbols-outlined paw-icon">pets</span>
@@ -98,7 +113,7 @@ export default function DesktopProfile() {
         <div className="header-buttons">
           {user && (
             <img
-              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              src={`${PHP_BASE}/${user.profilePic}`}
               alt="Profile"
               className="profile-pic"
               onClick={() => navigate("/account")}
@@ -107,43 +122,35 @@ export default function DesktopProfile() {
         </div>
       </header>
 
-      {/* Body Layout */}
       <div className="profile-layout">
-        {/* Sidebar */}
         <aside className="sidebar">
           <h3>Menu</h3>
           <ul>
-            <li><button onClick={() => console.log("My Posts")}>My Posts</button></li>
-            <li><button onClick={() => console.log("My Recordings")}>My Recordings</button></li>
-            <li><button onClick={() => navigate("/account/edit")}>Edit Account</button></li>
-            <li><button onClick={() => setModalOpen(true)}>Delete Account</button></li>
+            <li><button onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+            <li><button onClick={() => navigate("/playlists")}>My Playlists</button></li>
             <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>
             <li><button onClick={handleLogout}>Logout</button></li>
           </ul>
         </aside>
 
-        {/* Modal */}
         <DeleteAccountModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           onConfirm={async () => {
-            // Wrap call so the modal can handle error/loading states
             try {
               await handleDelete();
             } catch (err) {
-              // Re-throw so DeleteAccountModal catches and shows error
               throw err;
             }
           }}
         />
 
-        {/* Main Profile Section */}
         <main className="profile-content">
           {user ? (
             <>
               <div className="profile-pic-container" onClick={handleProfilePicClick}>
                 <img
-                  src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                  src={`${PHP_BASE}/${user.profilePic}`}
                   alt="Profile"
                   className="profile-pic-large"
                 />
@@ -156,6 +163,7 @@ export default function DesktopProfile() {
                   onChange={handleProfilePicChange}
                 />
               </div>
+
               <h2>{user.username}</h2>
 
               <div className="profile-info">
@@ -180,18 +188,34 @@ export default function DesktopProfile() {
                 <h3>My Statistics</h3>
                 <div className="stats-container">
                   <div className="stat-card">
-                    <div className="stat-number">15</div>
+                    <div className="stat-number">{postCount}</div>
                     <div className="stat-label">Posts</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-number">8</div>
+                    <div className="stat-number">{recordingCount}</div>
                     <div className="stat-label">Recordings</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-number">127</div>
+                    <div className="stat-number">{likeCount}</div>
                     <div className="stat-label">Likes</div>
                   </div>
                 </div>
+              </div>
+
+              {/* New bottom action buttons */}
+              <div className="profile-actions">
+                <button
+                  className="action-btn edit-btn"
+                  onClick={() => navigate("/account/edit")}
+                >
+                  Edit Account
+                </button>
+                <button
+                  className="action-btn delete-btn"
+                  onClick={() => setModalOpen(true)}
+                >
+                  Delete Account
+                </button>
               </div>
             </>
           ) : (
@@ -200,8 +224,11 @@ export default function DesktopProfile() {
         </main>
       </div>
 
-      {/* Material Icons Font */}
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
     </div>
   );
 }
+

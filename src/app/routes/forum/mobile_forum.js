@@ -1,6 +1,8 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
+import MobilePostModal from "./mobile_post_modal";
 import "./mobile_forum.css";
+
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -16,7 +18,11 @@ export default function MobileForum() {
     const [activeView, setActiveView] = useState("community");
     const [showFilters, setShowFilters] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [openPost, setOpenPost] = useState(null);
     const location = useLocation();
+    const [myRecordings, setMyRecordings] = useState([]);
+    const [recsLoading, setRecsLoading] = useState(false);
+    const [selectedRecordingId, setSelectedRecordingId] = useState(null);
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -37,6 +43,36 @@ export default function MobileForum() {
         const d = new Date(iso);
         return isNaN(d.getTime()) ? null : d;
     }
+    const fetchMyRecordings = useCallback(async () => {
+        if (!user?.id) return;
+        try {
+            setRecsLoading(true);
+            // same cookie trick you used on desktop
+            const cookiePairs = document.cookie.split("; ").map(c => c.split("="));
+            const cookieMap = Object.fromEntries(cookiePairs);
+            const authCookie = cookieMap["auth_token"] || "";
+
+            const res = await fetch(`${PHP_URL}/getLocalRecordings.php`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ auth_token: authCookie }),
+                cache: "no-store",
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const data = await res.json();
+            const list = (data?.recordings || []).map(r => ({
+                id: Number(r.id),
+                title: r.title ?? `Recording #${r.id}`,
+            }));
+            setMyRecordings(list);
+        } catch (e) {
+            console.error("Failed to load recordings:", e);
+            setMyRecordings([]);
+        } finally {
+            setRecsLoading(false);
+        }
+    }, [user?.id]);
 
     function timeAgo(createdAt, now = Date.now()) {
         const d = typeof createdAt === 'string' ? parseDbTimestamp(createdAt) :
@@ -93,6 +129,10 @@ export default function MobileForum() {
                         comments: Number(p.comments ?? 0),
                         created_at: p.created_at || null,
                         likesFrom,
+                        recording_id:
+                            p.recording_id === null || p.recording_id === undefined
+                                ? null
+                                : Number(p.recording_id),
                     };
 
                     const prevLiked = prevById.get(base.id)?.liked ?? false;
@@ -246,8 +286,10 @@ export default function MobileForum() {
     };
 
     // ========== New Post ==========
-    const handleNewPost = () => {
+    const handleNewPost = async () => {
         setShowNewPostPopup(true);
+        setSelectedRecordingId(null);
+        await fetchMyRecordings();
     };
 
     const handleClosePopup = () => {
@@ -255,7 +297,9 @@ export default function MobileForum() {
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostTags([]);
+        setSelectedRecordingId(null);
     };
+
 
     const handleTagSelect = (tag) => {
         setNewPostTags(prev =>
@@ -282,6 +326,8 @@ export default function MobileForum() {
             author: user.username,
             authorId: user.id,
             likes: 1,
+            recording_id: selectedRecordingId ?? null,
+
         };
 
         const tempId = Date.now();
@@ -297,6 +343,8 @@ export default function MobileForum() {
             created_at: new Date().toISOString(),
             likesFrom: [user.username],
             liked: true,
+            recording_id: selectedRecordingId ?? null,
+
         };
         setPosts(prev => [optimistic, ...prev]);
         try {
@@ -577,7 +625,13 @@ export default function MobileForum() {
                         </div>
                     ) : (
                         sortedPosts.map((post) => (
-                            <div key={post.id} className="mobile-post-card">
+                            <div
+                                key={post.id}
+                                className="mobile-post-card"
+                                onClick={() => setOpenPost(post)}
+                                role="button"
+                                tabIndex={0}
+                            >
                                 <div className="mobile-post-header">
                                     <div className="mobile-post-author">
                                         <h3 className="mobile-post-title">{post.title}</h3>
@@ -588,7 +642,9 @@ export default function MobileForum() {
                                     </div>
                                     <button
                                         className={`mobile-like-btn ${post.liked ? "liked" : ""}`}
-                                        onClick={() => toggleLike(post.id)}
+                                        onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        onKeyDown={(e) => e.stopPropagation()}
                                     >
                                         {post.liked ? "❤️" : "🤍"}
                                         <span>{post.likes}</span>
@@ -700,6 +756,27 @@ export default function MobileForum() {
                                     ))}
                                 </div>
                             </div>
+                            <div className="mobile-form-group">
+                                <label>Attach Recording (optional):</label>
+                                <div className="m-recording-select-wrap">
+                                    <select
+                                        className="m-recording-select"
+                                        value={selectedRecordingId ?? ""}
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            setSelectedRecordingId(v === "" ? null : Number(v));
+                                        }}
+                                        disabled={recsLoading || !user}
+                                    >
+                                        <option value="">None</option>
+                                        {myRecordings.map(r => (
+                                            <option key={r.id} value={r.id}>{r.title}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {recsLoading && <small className="m-recording-select-hint">Loading your recordings…</small>}
+                            </div>
+
                         </div>
                         <div className="mobile-popup-footer">
                             <button className="mobile-cancel-btn" onClick={handleClosePopup}>Cancel</button>
@@ -715,7 +792,14 @@ export default function MobileForum() {
                     </div>
                 </div>
             )}
-
+            {openPost && (
+                <MobilePostModal
+                    post={openPost}
+                    user={user}
+                    onClose={() => setOpenPost(null)}
+                    onBumpPostComments={() => refreshNoJump()}
+                />
+            )}
             {/* Material Icons */}
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

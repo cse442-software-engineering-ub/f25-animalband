@@ -332,3 +332,54 @@ html, body, #root {
     font-size: 3.5rem !important;
   }
 }
+
+/* ========== PROFILE ACTION BUTTONS (Bottom of Profile) ========== */
+.profile-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 0.75rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.edit-btn {
+  background-color: #178C3A;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #146e2e;
+  transform: translateY(-2px);
+}
+
+.delete-btn {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #b71c1c;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 600px) {
+  .profile-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .action-btn {
+    width: 80%;
+  }
+}

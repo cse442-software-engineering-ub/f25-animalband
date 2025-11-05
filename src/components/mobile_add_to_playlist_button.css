@@ -1,0 +1,226 @@
+/* src/routes/playlists/mobile_add_to_playlist_button.css */
+
+/* Scope everything under .m-addpl to avoid bleed */
+.m-addpl {
+    display: inline-flex;
+}
+
+.m-addpl-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    padding: .55rem .7rem;
+    border: none;
+    border-radius: 12px;
+    background: #178c3a;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .12s ease, background .2s ease, opacity .2s ease;
+}
+
+.m-addpl-trigger:hover {
+    background: #106e2b;
+    transform: translateY(-1px);
+}
+
+.m-addpl-trigger:disabled {
+    opacity: .6;
+    transform: none;
+    cursor: not-allowed;
+}
+
+.m-addpl-trigger.compact {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    padding: 0;
+}
+
+.m-addpl-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .65);
+    z-index: 2600;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.m-addpl-sheet {
+    width: 100%;
+    max-width: 560px;
+    background: #fff;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, .28);
+    overflow: hidden;
+    animation: m-addpl-slideup .18s ease-out;
+}
+
+@keyframes m-addpl-slideup {
+    from {
+        transform: translateY(18px);
+        opacity: .9;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.m-addpl-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.m-addpl-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: #333;
+}
+
+.m-addpl-close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #666;
+    padding: .25rem .5rem;
+    border-radius: 8px;
+}
+
+.m-addpl-close:hover {
+    background: #f1f3f4;
+}
+
+.m-addpl-body {
+    padding: 1rem;
+    display: grid;
+    gap: .9rem;
+}
+
+.m-addpl-error {
+    background: #ffeaea;
+    color: #b00020;
+    border: 1px solid #ffb3b3;
+    border-radius: 10px;
+    padding: .6rem .75rem;
+    font-weight: 600;
+    font-size: .92rem;
+}
+
+.m-addpl-empty {
+    color: #666;
+    margin: .2rem 0 .5rem;
+}
+
+.m-addpl-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: .5rem;
+}
+
+.m-addpl-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: .7rem .8rem;
+    cursor: pointer;
+    transition: background .15s ease, transform .1s ease;
+}
+
+.m-addpl-item:hover {
+    background: #eef1f3;
+    transform: translateY(-1px);
+}
+
+.m-addpl-name {
+    font-weight: 700;
+    color: #333;
+    flex: 1;
+}
+
+.m-addpl-badge {
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 700;
+    padding: .2rem .5rem;
+    color: #1e7f3b;
+    background: #e8f5e8;
+    border: 2px solid #cfead0;
+}
+
+.m-addpl-badge.dim {
+    color: #666;
+    background: #f7f7f7;
+    border-color: #eaeaea;
+}
+
+.m-addpl-divider {
+    height: 1px;
+    background: #eee;
+    margin: .2rem 0;
+}
+
+.m-addpl-field {
+    display: grid;
+    gap: .45rem;
+}
+
+.m-addpl-field span {
+    font-weight: 700;
+    color: #333;
+}
+
+.m-addpl-field input {
+    width: 100%;
+    padding: .65rem .75rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+.m-addpl-field input:focus {
+    outline: none;
+    border-color: #178c3a;
+    box-shadow: 0 0 0 3px rgba(23, 140, 58, .12);
+}
+
+.m-addpl-primary {
+    background: #178c3a;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: .8rem 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(23, 140, 58, .25);
+}
+
+.m-addpl-primary:hover {
+    background: #106e2b;
+}
+
+.m-addpl-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+@media (max-width: 420px) {
+    .m-addpl-sheet {
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+    }
+}

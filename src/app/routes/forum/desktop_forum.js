@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
+import ForumPostModal from "./desktop_post_modal";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -14,6 +15,11 @@ export default function DesktopForum() {
     const [sortBy, setSortBy] = useState("recent");
     const [user, setUser] = useState(null);
     const [activeView, setActiveView] = useState("community");
+    const [openPost, setOpenPost] = useState(null);
+    const [myRecordings, setMyRecordings] = useState([]);
+    const [recsLoading, setRecsLoading] = useState(false);
+    const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -60,6 +66,38 @@ export default function DesktopForum() {
         return () => clearInterval(id);
     }, []);
 
+    const fetchMyRecordings = useCallback(async () => {
+        if (!user?.id) return;
+        try {
+            setRecsLoading(true);
+
+            // get auth_token cookie (same as your MyRecordings page)
+            const cookiePairs = document.cookie.split("; ").map(c => c.split("="));
+            const cookieMap = Object.fromEntries(cookiePairs);
+            const authCookie = cookieMap["auth_token"] || "";
+
+            const res = await fetch(`${PHP_URL}/getLocalRecordings.php`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ auth_token: authCookie }),
+                cache: "no-store",
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const data = await res.json();
+            // Expecting: { success: true, recordings: [{ id, title, description, recording: [...] }, ...] }
+            const list = (data?.recordings || []).map(r => ({
+                id: Number(r.id),
+                title: r.title ?? `Recording #${r.id}`,
+            }));
+            setMyRecordings(list);
+        } catch (e) {
+            console.error("Failed to load recordings:", e);
+            setMyRecordings([]);
+        } finally {
+            setRecsLoading(false);
+        }
+    }, [user?.id]);
 
 
 
@@ -93,6 +131,10 @@ export default function DesktopForum() {
                         comments: Number(p.comments ?? 0),
                         created_at: p.created_at || null,
                         likesFrom,
+                        recording_id:
+                            p.recording_id === null || p.recording_id === undefined
+                                ? null
+                                : Number(p.recording_id),
                     };
 
                     const prevLiked = prevById.get(base.id)?.liked ?? false;
@@ -243,8 +285,10 @@ export default function DesktopForum() {
     };
 
     // ========== New Post ==========
-    const handleNewPost = () => {
+    const handleNewPost = async () => {
         setShowNewPostPopup(true);
+        setSelectedRecordingId(null);
+        await fetchMyRecordings();
     };
 
     const handleClosePopup = () => {
@@ -278,19 +322,10 @@ export default function DesktopForum() {
             author: user.username,
             authorId: user.id,
             likes: 1,
+            recording_id: selectedRecordingId ?? null,
 
         };
 
-        // console.log("New Post Data Saved:", {
-        //     title: title,
-        //     content: content,
-        //     tags: tags,
-        //     likesFrom: likesFrom,
-        //     author: author,
-        //     authorId: authorId,
-        //     likeCount: likeCount
-
-        // });
         const tempId = Date.now();
         const optimistic = {
             id: tempId,
@@ -304,6 +339,7 @@ export default function DesktopForum() {
             created_at: new Date().toISOString(),
             likesFrom: [user.username],
             liked: true,
+            recording_id: selectedRecordingId ?? null,
         };
         setPosts(prev => [optimistic, ...prev]);
         try {
@@ -529,26 +565,25 @@ export default function DesktopForum() {
                             </div>
                         ) : (
                             sortedPosts.map((post) => (
-                                <div key={post.id} className="post-card">
-                                    <div className="post-header">
-                                        <div className="post-author">
-                                            <div>
-                                                <h3 className="post-title">{post.title}</h3>
-                                                <span className="author-name">by {post.author}</span>
-                                            </div>
+                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
+                                    <div className="post-author">
+                                        <div>
+                                            <h3 className="post-title">{post.title}</h3>
+                                            <span className="author-name">by {post.author}</span>
                                         </div>
-                                        {/* Time since posted */}
-                                        {post.created_at && (
-                                            (() => {
-                                                const ta = timeAgo(post.created_at, nowTick);
-                                                return (
-                                                    <span className="post-time">
-                                                        Created {ta === "just now" ? ta : `${ta} ago`}
-                                                    </span>
-                                                );
-                                            })()
-                                        )}
                                     </div>
+                                    {/* Time since posted */}
+                                    {post.created_at && (
+                                        (() => {
+                                            const ta = timeAgo(post.created_at, nowTick);
+                                            return (
+                                                <span className="post-time">
+                                                    Created {ta === "just now" ? ta : `${ta} ago`}
+                                                </span>
+                                            );
+                                        })()
+                                    )}
+                                </div>
                                     <p className="post-content">{post.content}</p>
                                     <div className="post-tags">
                                         {post.tags && post.tags.map(tag => (
@@ -562,7 +597,9 @@ export default function DesktopForum() {
                                         </div>
                                         <button
                                             className={`like-btn ${post.liked ? "liked" : ""}`}
-                                            onClick={() => toggleLike(post.id)}
+                                            onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onKeyDown={(e) => e.stopPropagation()}
                                             aria-label={post.liked ? "Unlike post" : "Like post"}
                                         >
                                             {post.liked ? "❤️" : "🤍"}
@@ -625,6 +662,32 @@ export default function DesktopForum() {
                                     ))}
                                 </div>
                             </div>
+                            <div className="form-group">
+                                <label>Attach Recording (optional):</label>
+
+                                <div className="recording-select-wrap">
+                                    <select
+                                        className="recording-select"
+                                        value={selectedRecordingId ?? ""}
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            setSelectedRecordingId(v === "" ? null : Number(v));
+                                        }}
+                                        disabled={recsLoading || !user}
+                                    >
+                                        <option value="">None</option>
+                                        {myRecordings.map(r => (
+                                            <option key={r.id} value={r.id}>
+                                                {r.title}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {recsLoading && <small className="recording-select-hint">Loading your recordings…</small>}
+                            </div>
+
+
                         </div>
                         <div className="popup-footer">
                             <button className="cancel-btn" onClick={handleClosePopup}>Cancel</button>
@@ -640,7 +703,16 @@ export default function DesktopForum() {
                     </div>
                 </div>
             )}
-
+            {openPost && (
+                <ForumPostModal
+                    post={openPost}
+                    user={user}
+                    onClose={() => setOpenPost(null)}
+                    onBumpPostComments={(postId) => {
+                        refreshNoJump();
+                    }}
+                />
+            )}
             {/* Material Icons */}
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
