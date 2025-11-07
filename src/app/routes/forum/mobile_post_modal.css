@@ -56,3 +56,53 @@
   font-weight: 600;
   font-size: .9rem;
 }
+
+
+/* allow long words/URLs/titles/descriptions to wrap (mobile) */
+.m-mini-player-meta,
+.m-mini-desc {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* make modal scrollable on small screens */
+.m-post-modal {
+  max-height: 90vh;
+  overflow: auto;
+}
+
+/* allow title and content containers to shrink + wrap */
+.m-post-modal-header,
+.m-post-modal-body,
+.m-post-modal-post {
+  min-width: 0;     /* THE FIX */
+  max-width: 100%;
+}
+
+/* wrap the big title text in mobile modal */
+.m-post-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* wrap post body text in mobile modal */
+.m-post-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* also break long URLs if present */
+.m-pmp-content a {
+  word-break: break-all;
+}
+
+.m-comment-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

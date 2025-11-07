@@ -43,6 +43,11 @@ export default function MobileForum() {
         const d = new Date(iso);
         return isNaN(d.getTime()) ? null : d;
     }
+    function truncate20(s) {
+        if (!s) return "";
+        return s.length > 20 ? s.slice(0, 20) + "..." : s;
+    }
+
     const fetchMyRecordings = useCallback(async () => {
         if (!user?.id) return;
         try {
@@ -634,8 +639,8 @@ export default function MobileForum() {
                             >
                                 <div className="mobile-post-header">
                                     <div className="mobile-post-author">
-                                        <h3 className="mobile-post-title">{post.title}</h3>
-                                        <span className="mobile-author-name">by {post.author}</span>
+                                        <h3 className="mobile-post-title">{truncate20(post.title)}</h3>
+                                        <span className="mobile-author-name">by {truncate20(post.author)}</span>
                                         {post.created_at && (
                                             <span className="mobile-post-time">{timeAgo(post.created_at, nowTick)}</span>
                                         )}
@@ -651,7 +656,7 @@ export default function MobileForum() {
                                     </button>
                                 </div>
 
-                                <p className="mobile-post-content">{post.content}</p>
+                                <p className="mobile-post-content">{truncate20(post.content)}</p>
 
                                 <div className="mobile-post-tags">
                                     {post.tags && post.tags.map(tag => (

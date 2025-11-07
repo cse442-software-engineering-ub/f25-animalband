@@ -66,6 +66,12 @@ export default function DesktopForum() {
         return () => clearInterval(id);
     }, []);
 
+    function truncate30(s) {
+        if (!s) return "";
+        return s.length > 30 ? s.slice(0, 30) + "..." : s;
+    }
+
+
     const fetchMyRecordings = useCallback(async () => {
         if (!user?.id) return;
         try {
@@ -568,8 +574,8 @@ export default function DesktopForum() {
                                 <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
                                     <div className="post-author">
                                         <div>
-                                            <h3 className="post-title">{post.title}</h3>
-                                            <span className="author-name">by {post.author}</span>
+                                            <h3 className="post-title">{truncate30(post.title)}</h3>
+                                            <span className="author-name">by {truncate30(post.author)}</span>
                                         </div>
                                     </div>
                                     {/* Time since posted */}
@@ -584,7 +590,7 @@ export default function DesktopForum() {
                                         })()
                                     )}
                                 </div>
-                                    <p className="post-content">{post.content}</p>
+                                    <p className="post-content">{truncate30(post.content)}</p>
                                     <div className="post-tags">
                                         {post.tags && post.tags.map(tag => (
                                             <span key={tag} className="post-tag">{tag}</span>
