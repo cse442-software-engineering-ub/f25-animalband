@@ -157,20 +157,16 @@ export default function MobileStage() {
     checkUser();
   }, []);
 
-  // Initialize AudioContext with cleanup
+  // Initialize AudioContext - don't close it automatically
   useEffect(() => {
-    if (!audioContextRef.current) {
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
       audioContextRef.current = new (window.AudioContext ||
         window.webkitAudioContext)();
     }
 
+    // Don't cleanup on unmount - keep context alive
     return () => {
-      if (
-        audioContextRef.current &&
-        audioContextRef.current.state !== "closed"
-      ) {
-        audioContextRef.current.close();
-      }
+      // Removed automatic close - context will persist
     };
   }, []);
 
@@ -281,8 +277,17 @@ export default function MobileStage() {
 
   // Play existing tracks during recording
   const playTracksDuringRecording = () => {
-    if (!audioContextRef.current) return;
+    // Recreate AudioContext if it was closed
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
     const audioContext = audioContextRef.current;
+    
+    // Resume if suspended
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
 
     const sources = [];
     const timeouts = [];
@@ -291,34 +296,44 @@ export default function MobileStage() {
       const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
       track.forEach(({ key, time, isImported, audioBuffer }) => {
         if (isImported && audioBuffer) {
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = masterVolume * trackVolume;
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+          try {
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = masterVolume * trackVolume;
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(audioContext.currentTime + time / 1000);
+            sources.push(source);
+          } catch (err) {
+            console.error("Error playing imported audio:", err);
+          }
         } else if (sounds[key]) {
-          const animal = animalKeyMap[key];
-          const source = audioContext.createBufferSource();
-          source.buffer = sounds[key];
+          try {
+            const animal = animalKeyMap[key];
+            const source = audioContext.createBufferSource();
+            source.buffer = sounds[key];
 
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = masterVolume * trackVolume;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = masterVolume * trackVolume;
 
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(audioContext.currentTime + time / 1000);
+            sources.push(source);
 
-          const timeout1 = setTimeout(() => {
-            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(
-              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
-              300
-            );
-            timeouts.push(timeout2);
-          }, time);
-          timeouts.push(timeout1);
+            if (animal) {
+              const timeout1 = setTimeout(() => {
+                setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+                const timeout2 = setTimeout(
+                  () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
+                  300
+                );
+                timeouts.push(timeout2);
+              }, time);
+              timeouts.push(timeout1);
+            }
+          } catch (err) {
+            console.error("Error playing sound:", err);
+          }
         }
       });
     });
@@ -328,9 +343,21 @@ export default function MobileStage() {
 
   // Play all tracks simultaneously
   const playAllTracks = () => {
-    if (!audioContextRef.current || recordedTracks.length === 0) return;
-    setIsPlaying(true);
+    if (recordedTracks.length === 0) return;
+    
+    // Recreate AudioContext if it was closed
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
     const audioContext = audioContextRef.current;
+    
+    // Resume audio context if suspended (browser autoplay policy)
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    
+    setIsPlaying(true);
 
     const sources = [];
     const timeouts = [];
@@ -347,34 +374,44 @@ export default function MobileStage() {
 
       track.forEach(({ key, time, isImported, audioBuffer }) => {
         if (isImported && audioBuffer) {
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = finalGain;
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+          try {
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(audioContext.currentTime + time / 1000);
+            sources.push(source);
+          } catch (err) {
+            console.error("Error playing imported audio:", err);
+          }
         } else if (sounds[key]) {
-          const animal = animalKeyMap[key];
-          const source = audioContext.createBufferSource();
-          source.buffer = sounds[key];
+          try {
+            const animal = animalKeyMap[key];
+            const source = audioContext.createBufferSource();
+            source.buffer = sounds[key];
 
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = finalGain;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
 
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(audioContext.currentTime + time / 1000);
+            sources.push(source);
 
-          const timeout1 = setTimeout(() => {
-            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(
-              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
-              300
-            );
-            timeouts.push(timeout2);
-          }, time);
-          timeouts.push(timeout1);
+            if (animal) {
+              const timeout1 = setTimeout(() => {
+                setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+                const timeout2 = setTimeout(
+                  () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
+                  300
+                );
+                timeouts.push(timeout2);
+              }, time);
+              timeouts.push(timeout1);
+            }
+          } catch (err) {
+            console.error("Error playing sound:", err);
+          }
         }
       });
     });
@@ -388,7 +425,7 @@ export default function MobileStage() {
         if (lastNote.isImported && lastNote.audioBuffer) {
           return lastNote.time + lastNote.audioBuffer.duration * 1000;
         }
-        return lastNote.time;
+        return lastNote.time + 1000;
       })
     );
 
@@ -1080,7 +1117,7 @@ export default function MobileStage() {
           </div>
         )}
 
-        {/* Track list */}
+        {/* Track list with scrolling */}
         <div
           className="tracks-list"
           style={{
@@ -1088,6 +1125,9 @@ export default function MobileStage() {
             padding: "15px",
             backgroundColor: "#f9f9f9",
             borderRadius: "8px",
+            maxHeight: "500px",
+            overflowY: "auto",
+            overflowX: "hidden",
           }}
         >
           <h3
