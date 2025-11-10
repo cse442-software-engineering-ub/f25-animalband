@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SOUND_CONFIG } from "./stage_soundsConfig";
 import { loadSound, playSound, setMasterVolume } from "./stage_audioUtil";
@@ -47,10 +47,13 @@ export default function MobileStage() {
 
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
+  
+  // Performance optimization: Cache for animation timers
+  const animationTimersRef = useRef(new Map());
 
   // Security constants
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-  const MAX_AUDIO_DURATION = 600; // 10 minutes
+  const MAX_FILE_SIZE = 50 * 1024 * 1024;
+  const MAX_AUDIO_DURATION = 600;
   const MAX_TRACKS = 20;
   const MAX_TITLE_LENGTH = 100;
   const MAX_DESCRIPTION_LENGTH = 500;
@@ -95,7 +98,6 @@ export default function MobileStage() {
     r: "snake",
   };
 
-  // Security: Input sanitization function
   const sanitizeInput = (input, maxLength = 200) => {
     if (!input) return "";
     return input
@@ -107,7 +109,6 @@ export default function MobileStage() {
       .replace(/[^\w\s\-_.,:;!?()]/g, "");
   };
 
-  // Security: Validate filename
   const sanitizeFilename = (filename) => {
     if (!filename) return "unnamed";
     return (
@@ -118,7 +119,6 @@ export default function MobileStage() {
     );
   };
 
-  // Fetch user with timeout and error handling
   useEffect(() => {
     const checkUser = async () => {
       if (requestInProgressRef.current) return;
@@ -157,24 +157,23 @@ export default function MobileStage() {
     checkUser();
   }, []);
 
-  // Initialize AudioContext with cleanup
+  // Performance: Initialize AudioContext with optimal settings
   useEffect(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext ||
-        window.webkitAudioContext)();
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioContextRef.current = new AudioContextClass({
+        latencyHint: 'interactive',
+        sampleRate: 44100
+      });
     }
 
     return () => {
-      if (
-        audioContextRef.current &&
-        audioContextRef.current.state !== "closed"
-      ) {
-        audioContextRef.current.close();
-      }
+      // Clean up animation timers
+      animationTimersRef.current.forEach(timer => clearTimeout(timer));
+      animationTimersRef.current.clear();
     };
   }, []);
 
-  // Load sounds with error handling
   useEffect(() => {
     const loadAllSounds = async () => {
       const loadedSounds = {};
@@ -190,12 +189,26 @@ export default function MobileStage() {
     loadAllSounds();
   }, []);
 
-  // Handle tap with security checks
-  const handleTap = (key) => {
-    // Prevent sound triggers when save form is open
-    if (showSaveForm) return;
+  // Performance: Optimized animation handling
+  const triggerAnimalAnimation = useCallback((animal) => {
+    const existingTimer = animationTimersRef.current.get(animal);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
 
-    // Security: Validate key is in whitelist
+    setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+    
+    const timer = setTimeout(() => {
+      setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
+      animationTimersRef.current.delete(animal);
+    }, 300);
+    
+    animationTimersRef.current.set(animal, timer);
+  }, []);
+
+  // Performance: Memoized tap handler
+  const handleTap = useCallback((key) => {
+    if (showSaveForm) return;
     if (!animalKeyMap[key]) return;
     if (!sounds[key]) return;
 
@@ -205,7 +218,6 @@ export default function MobileStage() {
     if (isRecording) {
       const timeSinceStart = performance.now() - recordStartTime;
 
-      // Security: Prevent recordings longer than 10 minutes
       if (timeSinceStart > MAX_AUDIO_DURATION * 1000) {
         alert("Recording limit reached (10 minutes). Please stop recording.");
         return;
@@ -215,14 +227,9 @@ export default function MobileStage() {
     }
 
     playSound(sounds[key], masterVolume);
-    setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-    setTimeout(
-      () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
-      300
-    );
-  };
+    triggerAnimalAnimation(animal);
+  }, [showSaveForm, animalKeyMap, sounds, isRecording, recordStartTime, masterVolume, triggerAnimalAnimation]);
 
-  // Load master volume with validation
   useEffect(() => {
     try {
       const savedVol = parseFloat(localStorage.getItem("masterVolume") || "1");
@@ -244,9 +251,7 @@ export default function MobileStage() {
     }
   }, [masterVolume]);
 
-  // Start/stop recording with overdub playback
   const toggleRecording = () => {
-    // Security: Limit number of tracks
     if (!isRecording && recordedTracks.length >= MAX_TRACKS) {
       alert(
         `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
@@ -260,7 +265,6 @@ export default function MobileStage() {
       setIsRecording(true);
       if (recordedTracks.length > 0) playTracksDuringRecording();
     } else {
-      // Security: Validate track has content
       if (currentTrack.length === 0) {
         alert("Cannot save empty track.");
         setIsRecording(false);
@@ -279,63 +283,98 @@ export default function MobileStage() {
     }
   };
 
-  // Play existing tracks during recording
-  const playTracksDuringRecording = () => {
-    if (!audioContextRef.current) return;
+  // Performance: Optimized playback with pre-calculated timing
+  const playTracksDuringRecording = useCallback(() => {
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+        latencyHint: 'interactive',
+        sampleRate: 44100
+      });
+    }
+    
     const audioContext = audioContextRef.current;
+    
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
 
     const sources = [];
     const timeouts = [];
+    const startTime = audioContext.currentTime;
 
     recordedTracks.forEach((track, trackIndex) => {
       const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
+      const finalGain = masterVolume * trackVolume;
+      
       track.forEach(({ key, time, isImported, audioBuffer }) => {
+        const scheduleTime = startTime + time / 1000;
+        
         if (isImported && audioBuffer) {
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = masterVolume * trackVolume;
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+          try {
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(scheduleTime);
+            sources.push(source);
+          } catch (err) {
+            console.error("Error playing imported audio:", err);
+          }
         } else if (sounds[key]) {
-          const animal = animalKeyMap[key];
-          const source = audioContext.createBufferSource();
-          source.buffer = sounds[key];
+          try {
+            const animal = animalKeyMap[key];
+            const source = audioContext.createBufferSource();
+            source.buffer = sounds[key];
 
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = masterVolume * trackVolume;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
 
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(scheduleTime);
+            sources.push(source);
 
-          const timeout1 = setTimeout(() => {
-            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(
-              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
-              300
-            );
-            timeouts.push(timeout2);
-          }, time);
-          timeouts.push(timeout1);
+            if (animal) {
+              const timeout1 = setTimeout(() => {
+                triggerAnimalAnimation(animal);
+              }, time);
+              timeouts.push(timeout1);
+            }
+          } catch (err) {
+            console.error("Error playing sound:", err);
+          }
         }
       });
     });
 
     setActiveAudioSources({ sources, timeouts });
-  };
+  }, [recordedTracks, trackSettings, sounds, masterVolume, triggerAnimalAnimation]);
 
-  // Play all tracks simultaneously
-  const playAllTracks = () => {
-    if (!audioContextRef.current || recordedTracks.length === 0) return;
-    setIsPlaying(true);
+  // Performance: Optimized track playback
+  const playAllTracks = useCallback(() => {
+    if (recordedTracks.length === 0) return;
+    
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+        latencyHint: 'interactive',
+        sampleRate: 44100
+      });
+    }
+    
     const audioContext = audioContextRef.current;
+    
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    
+    setIsPlaying(true);
 
     const sources = [];
     const timeouts = [];
-
+    const startTime = audioContext.currentTime;
     const anySolo = trackSettings.some((t) => t.solo);
+
+    let longestTrack = 0;
 
     recordedTracks.forEach((track, trackIndex) => {
       const settings = trackSettings[trackIndex];
@@ -346,61 +385,60 @@ export default function MobileStage() {
       const finalGain = masterVolume * trackVolume;
 
       track.forEach(({ key, time, isImported, audioBuffer }) => {
+        const scheduleTime = startTime + time / 1000;
+        
         if (isImported && audioBuffer) {
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = finalGain;
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+          try {
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(scheduleTime);
+            sources.push(source);
+            
+            longestTrack = Math.max(longestTrack, time + audioBuffer.duration * 1000);
+          } catch (err) {
+            console.error("Error playing imported audio:", err);
+          }
         } else if (sounds[key]) {
-          const animal = animalKeyMap[key];
-          const source = audioContext.createBufferSource();
-          source.buffer = sounds[key];
+          try {
+            const animal = animalKeyMap[key];
+            const source = audioContext.createBufferSource();
+            source.buffer = sounds[key];
 
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = finalGain;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
 
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(scheduleTime);
+            sources.push(source);
 
-          const timeout1 = setTimeout(() => {
-            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(
-              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
-              300
-            );
-            timeouts.push(timeout2);
-          }, time);
-          timeouts.push(timeout1);
+            if (animal) {
+              const timeout1 = setTimeout(() => {
+                triggerAnimalAnimation(animal);
+              }, time);
+              timeouts.push(timeout1);
+            }
+            
+            longestTrack = Math.max(longestTrack, time + 1000);
+          } catch (err) {
+            console.error("Error playing sound:", err);
+          }
         }
       });
     });
 
     setActiveAudioSources({ sources, timeouts });
 
-    const longestTrack = Math.max(
-      ...recordedTracks.map((track) => {
-        if (track.length === 0) return 0;
-        const lastNote = track[track.length - 1];
-        if (lastNote.isImported && lastNote.audioBuffer) {
-          return lastNote.time + lastNote.audioBuffer.duration * 1000;
-        }
-        return lastNote.time;
-      })
-    );
-
     const endTimeout = setTimeout(() => {
       setIsPlaying(false);
       setActiveAudioSources([]);
     }, longestTrack + 400);
     timeouts.push(endTimeout);
-  };
+  }, [recordedTracks, trackSettings, sounds, masterVolume, triggerAnimalAnimation]);
 
-  // Stop playback
-  const stopPlayback = () => {
+  const stopPlayback = useCallback(() => {
     if (activeAudioSources.sources) {
       activeAudioSources.sources.forEach((source) => {
         try {
@@ -418,15 +456,13 @@ export default function MobileStage() {
       setIsPlaying(false);
       setPlayingAnimals({});
     }
-  };
+  }, [activeAudioSources]);
 
-  // Delete a track
   const deleteTrack = (index) => {
     setRecordedTracks((prev) => prev.filter((_, i) => i !== index));
     setTrackSettings((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Track control functions
   const toggleMute = (index) => {
     setTrackSettings((prev) =>
       prev.map((t, i) =>
@@ -442,7 +478,6 @@ export default function MobileStage() {
   };
 
   const setTrackVolume = (index, volume) => {
-    // Security: Validate volume is in valid range
     const newVolume = Math.max(0, Math.min(1, parseFloat(volume)));
     setTrackSettings((prev) =>
       prev.map((t, i) => (i === index ? { ...t, volume: newVolume } : t))
@@ -464,7 +499,6 @@ export default function MobileStage() {
     setEditingTrack(null);
   };
 
-  // Security: Enhanced audio import with comprehensive validation
   const importAudioTrack = () => {
     if (recordedTracks.length >= MAX_TRACKS) {
       alert(
@@ -480,7 +514,6 @@ export default function MobileStage() {
       const file = e.target.files[0];
       if (!file) return;
 
-      // Security: Validate file size
       if (file.size > MAX_FILE_SIZE) {
         alert(
           `File is too large. Maximum size is ${
@@ -490,7 +523,6 @@ export default function MobileStage() {
         return;
       }
 
-      // Security: Validate file type
       const allowedTypes = [
         "audio/mpeg",
         "audio/wav",
@@ -517,7 +549,6 @@ export default function MobileStage() {
           arrayBuffer
         );
 
-        // Security: Validate audio duration
         if (audioBuffer.duration > MAX_AUDIO_DURATION) {
           alert(
             `Audio file is too long. Maximum duration is ${
@@ -527,7 +558,6 @@ export default function MobileStage() {
           return;
         }
 
-        // Security: Sanitize filename
         const sanitizedFileName = sanitizeFilename(file.name);
 
         const importedTrack = [
@@ -559,7 +589,6 @@ export default function MobileStage() {
     input.click();
   };
 
-  // Export combined tracks with security
   const exportRecording = async () => {
     if (!audioContextRef.current || recordedTracks.length === 0) return;
 
@@ -569,7 +598,6 @@ export default function MobileStage() {
     );
     if (!fileName) return;
 
-    // Security: Sanitize filename
     fileName = sanitizeFilename(fileName);
 
     try {
@@ -626,9 +654,8 @@ export default function MobileStage() {
     }
   };
 
-  // Security: Enhanced save with validation and rate limiting
   const saveRecordingLocally = async () => {
-    if (isSaving) return; // Prevent double submission
+    if (isSaving) return;
 
     const sanitizedTitle = sanitizeInput(recordingTitle, MAX_TITLE_LENGTH);
     const sanitizedDescription = sanitizeInput(
@@ -648,7 +675,6 @@ export default function MobileStage() {
 
     setIsSaving(true);
 
-    // Security: Get auth token safely
     const cookies = document.cookie.split("; ");
     const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
     const authCookie = cookieObj["auth_token"] || "";
@@ -660,7 +686,7 @@ export default function MobileStage() {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch(
@@ -703,7 +729,6 @@ export default function MobileStage() {
     }
   };
 
-  // WAV conversion helpers
   function bufferToWav(buffer) {
     const numOfChan = buffer.numberOfChannels;
     const length = buffer.length * numOfChan * 2 + 44;
@@ -835,7 +860,6 @@ export default function MobileStage() {
           ))}
         </div>
 
-        {/* Bottom controls */}
         <div className="master-volume">
           <label
             style={{
@@ -1080,7 +1104,6 @@ export default function MobileStage() {
           </div>
         )}
 
-        {/* Track list */}
         <div
           className="tracks-list"
           style={{
@@ -1088,6 +1111,9 @@ export default function MobileStage() {
             padding: "15px",
             backgroundColor: "#f9f9f9",
             borderRadius: "8px",
+            maxHeight: "500px",
+            overflowY: "auto",
+            overflowX: "hidden",
           }}
         >
           <h3
@@ -1113,7 +1139,6 @@ export default function MobileStage() {
                 border: "1px solid #ddd",
               }}
             >
-              {/* Track name and volume */}
               <div style={{ marginBottom: "10px" }}>
                 {editingTrack === index ? (
                   <input
@@ -1151,7 +1176,6 @@ export default function MobileStage() {
                   </div>
                 )}
 
-                {/* Volume slider */}
                 <div
                   style={{ display: "flex", alignItems: "center", gap: "8px" }}
                 >
@@ -1192,7 +1216,6 @@ export default function MobileStage() {
                 </div>
               </div>
 
-              {/* Track buttons */}
               <div
                 style={{
                   display: "grid",
