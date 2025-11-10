@@ -152,19 +152,15 @@ export default function DesktopStage() {
 
   // Initialize AudioContext
   useEffect(() => {
-    if (!audioContextRef.current) {
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
       audioContextRef.current = new (window.AudioContext ||
         window.webkitAudioContext)();
     }
 
-    // Cleanup on unmount
+    // Don't cleanup on unmount - keep context alive
+    // Only close when truly unmounting the component
     return () => {
-      if (
-        audioContextRef.current &&
-        audioContextRef.current.state !== "closed"
-      ) {
-        audioContextRef.current.close();
-      }
+      // Removed automatic close - context will persist
     };
   }, []);
 
@@ -293,8 +289,17 @@ export default function DesktopStage() {
 
   // Play existing tracks during recording
   const playTracksDuringRecording = () => {
-    if (!audioContextRef.current) return;
+    // Recreate AudioContext if it was closed
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
     const audioContext = audioContextRef.current;
+    
+    // Resume if suspended
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
 
     const sources = [];
     const timeouts = [];
@@ -340,9 +345,21 @@ export default function DesktopStage() {
 
   // Play all tracks simultaneously
   const playAllTracks = () => {
-    if (!audioContextRef.current || recordedTracks.length === 0) return;
-    setIsPlaying(true);
+    if (recordedTracks.length === 0) return;
+    
+    // Recreate AudioContext if it was closed
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
     const audioContext = audioContextRef.current;
+    
+    // Resume audio context if suspended (browser autoplay policy)
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    
+    setIsPlaying(true);
 
     const sources = [];
     const timeouts = [];
@@ -359,34 +376,44 @@ export default function DesktopStage() {
 
       track.forEach(({ key, time, isImported, audioBuffer }) => {
         if (isImported && audioBuffer) {
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = finalGain;
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+          try {
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(audioContext.currentTime + time / 1000);
+            sources.push(source);
+          } catch (err) {
+            console.error("Error playing imported audio:", err);
+          }
         } else if (sounds[key]) {
-          const animal = animalKeyMap[key];
-          const source = audioContext.createBufferSource();
-          source.buffer = sounds[key];
+          try {
+            const animal = animalKeyMap[key];
+            const source = audioContext.createBufferSource();
+            source.buffer = sounds[key];
 
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = finalGain;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
 
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(audioContext.currentTime + time / 1000);
+            sources.push(source);
 
-          const timeout1 = setTimeout(() => {
-            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(
-              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
-              300
-            );
-            timeouts.push(timeout2);
-          }, time);
-          timeouts.push(timeout1);
+            if (animal) {
+              const timeout1 = setTimeout(() => {
+                setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+                const timeout2 = setTimeout(
+                  () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
+                  300
+                );
+                timeouts.push(timeout2);
+              }, time);
+              timeouts.push(timeout1);
+            }
+          } catch (err) {
+            console.error("Error playing sound:", err);
+          }
         }
       });
     });
@@ -400,7 +427,7 @@ export default function DesktopStage() {
         if (lastNote.isImported && lastNote.audioBuffer) {
           return lastNote.time + lastNote.audioBuffer.duration * 1000;
         }
-        return lastNote.time;
+        return lastNote.time + 1000;
       })
     );
 
@@ -974,7 +1001,15 @@ export default function DesktopStage() {
         )}
 
         {/* Track list */}
-        <div className="track-list">
+        <div className="track-list" style={{
+          maxHeight: '400px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          border: '1px solid #ccc',
+          borderRadius: '8px',
+          padding: '15px',
+          marginTop: '20px'
+        }}>
           <h3>
             Recorded Tracks ({recordedTracks.length}/{MAX_TRACKS})
           </h3>
