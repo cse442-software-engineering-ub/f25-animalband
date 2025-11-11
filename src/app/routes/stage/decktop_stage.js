@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SOUND_CONFIG } from "./stage_soundsConfig";
 import { loadSound, playSound, setMasterVolume } from "./stage_audioUtil";
@@ -47,11 +47,17 @@ export default function DesktopStage() {
 
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
+  
+  // Performance optimization: Cache gain nodes for reuse
+  const gainNodesRef = useRef(new Map());
+  
+  // Performance optimization: Batch animation updates
+  const animationTimersRef = useRef(new Map());
 
   // Security constants
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-  const MAX_AUDIO_DURATION = 600; // 10 minutes
-  const MAX_TRACKS = 20; // Limit number of tracks
+  const MAX_FILE_SIZE = 50 * 1024 * 1024;
+  const MAX_AUDIO_DURATION = 600;
+  const MAX_TRACKS = 20;
   const MAX_TITLE_LENGTH = 100;
   const MAX_DESCRIPTION_LENGTH = 500;
   const MAX_TRACK_NAME_LENGTH = 50;
@@ -87,38 +93,34 @@ export default function DesktopStage() {
     r: "snake",
   };
 
-  // Security: Input sanitization function
   const sanitizeInput = (input, maxLength = 200) => {
     if (!input) return "";
     return input
       .trim()
       .substring(0, maxLength)
-      .replace(/[<>]/g, "") // Remove potential HTML tags
-      .replace(/javascript:/gi, "") // Remove javascript: protocol
-      .replace(/on\w+=/gi, "") // Remove event handlers
-      .replace(/[^\w\s\-_.,:;!?()]/g, ""); // Allow only safe characters
+      .replace(/[<>]/g, "")
+      .replace(/javascript:/gi, "")
+      .replace(/on\w+=/gi, "")
+      .replace(/[^\w\s\-_.,:;!?()]/g, "");
   };
 
-  // Security: Validate filename
   const sanitizeFilename = (filename) => {
     if (!filename) return "unnamed";
     return (
       filename
-        .replace(/\.[^/.]+$/, "") // Remove extension
-        .replace(/[^a-zA-Z0-9_-]/g, "_") // Replace unsafe chars
-        .substring(0, 50) || // Limit length
-      "unnamed"
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[^a-zA-Z0-9_-]/g, "_")
+        .substring(0, 50) || "unnamed"
     );
   };
 
-  // Fetch user with timeout and error handling
   useEffect(() => {
     const checkUser = async () => {
       if (requestInProgressRef.current) return;
       requestInProgressRef.current = true;
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
         const res = await fetch(
@@ -150,25 +152,23 @@ export default function DesktopStage() {
     checkUser();
   }, []);
 
-  // Initialize AudioContext
+  // Performance: Initialize AudioContext with optimal settings
   useEffect(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext ||
-        window.webkitAudioContext)();
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioContextRef.current = new AudioContextClass({
+        latencyHint: 'interactive', // Optimize for low latency
+        sampleRate: 44100
+      });
     }
 
-    // Cleanup on unmount
     return () => {
-      if (
-        audioContextRef.current &&
-        audioContextRef.current.state !== "closed"
-      ) {
-        audioContextRef.current.close();
-      }
+      // Clean up animation timers
+      animationTimersRef.current.forEach(timer => clearTimeout(timer));
+      animationTimersRef.current.clear();
     };
   }, []);
 
-  // Load sounds with error handling
   useEffect(() => {
     const loadAllSounds = async () => {
       const loadedSounds = {};
@@ -184,60 +184,66 @@ export default function DesktopStage() {
     loadAllSounds();
   }, []);
 
-  // Handle key press with security checks
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Prevent sound triggers while typing in text fields
-      if (
-        e.target.tagName === "INPUT" ||
-        e.target.tagName === "TEXTAREA" ||
-        e.target.isContentEditable
-      ) {
+  // Performance: Optimized animation handling with batching
+  const triggerAnimalAnimation = useCallback((animal) => {
+    // Clear existing timer for this animal if it exists
+    const existingTimer = animationTimersRef.current.get(animal);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
+    
+    const timer = setTimeout(() => {
+      setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
+      animationTimersRef.current.delete(animal);
+    }, 300);
+    
+    animationTimersRef.current.set(animal, timer);
+  }, []);
+
+  // Performance: Memoized key handler to reduce recreation
+  const handleKeyDown = useCallback((e) => {
+    if (
+      e.target.tagName === "INPUT" ||
+      e.target.tagName === "TEXTAREA" ||
+      e.target.isContentEditable ||
+      showSaveForm
+    ) {
+      return;
+    }
+
+    const key = e.key.toLowerCase();
+    if (!animalKeyMap[key]) return;
+
+    const animal = animalKeyMap[key];
+    if (!animal) return;
+
+    if (isRecording) {
+      const timeSinceStart = performance.now() - recordStartTime;
+
+      if (timeSinceStart > MAX_AUDIO_DURATION * 1000) {
+        alert("Recording limit reached (10 minutes). Please stop recording.");
         return;
       }
 
-      if (showSaveForm) return;
+      setCurrentTrack((prev) => [...prev, { key, time: timeSinceStart }]);
+    }
 
-      const key = e.key.toLowerCase();
+    if (sounds[key]) {
+      playSound(sounds[key], masterVolume);
+      triggerAnimalAnimation(animal);
+    }
+  }, [sounds, masterVolume, isRecording, recordStartTime, showSaveForm, triggerAnimalAnimation]);
 
-      // Security: Validate key is in our whitelist
-      if (!animalKeyMap[key]) return;
-
-      const animal = animalKeyMap[key];
-      if (!animal) return;
-
-      // Security: Check if we're exceeding reasonable recording length
-      if (isRecording) {
-        const timeSinceStart = performance.now() - recordStartTime;
-
-        // Prevent recordings longer than 10 minutes
-        if (timeSinceStart > MAX_AUDIO_DURATION * 1000) {
-          alert("Recording limit reached (10 minutes). Please stop recording.");
-          return;
-        }
-
-        setCurrentTrack((prev) => [...prev, { key, time: timeSinceStart }]);
-      }
-
-      if (sounds[key]) {
-        playSound(sounds[key], masterVolume);
-        setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-        setTimeout(
-          () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
-          300
-        );
-      }
-    };
-
+  useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [sounds, masterVolume, isRecording, recordStartTime, showSaveForm]);
+  }, [handleKeyDown]);
 
-  // Load master volume with validation
   useEffect(() => {
     try {
       const savedVol = parseFloat(localStorage.getItem("masterVolume") || "1");
-      // Security: Validate volume is in valid range
       const validVol = Math.max(0, Math.min(1, savedVol));
       setMasterVol(validVol);
       setMasterVolume(validVol);
@@ -256,9 +262,7 @@ export default function DesktopStage() {
     }
   }, [masterVolume]);
 
-  // Start/stop recording with overdub playback
   const toggleRecording = () => {
-    // Security: Limit number of tracks
     if (!isRecording && recordedTracks.length >= MAX_TRACKS) {
       alert(
         `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
@@ -272,7 +276,6 @@ export default function DesktopStage() {
       setIsRecording(true);
       if (recordedTracks.length > 0) playTracksDuringRecording();
     } else {
-      // Security: Validate track has content
       if (currentTrack.length === 0) {
         alert("Cannot save empty track.");
         setIsRecording(false);
@@ -291,24 +294,39 @@ export default function DesktopStage() {
     }
   };
 
-  // Play existing tracks during recording
-  const playTracksDuringRecording = () => {
-    if (!audioContextRef.current) return;
+  // Performance: Optimized playback with reusable gain nodes
+  const playTracksDuringRecording = useCallback(() => {
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+        latencyHint: 'interactive',
+        sampleRate: 44100
+      });
+    }
+    
     const audioContext = audioContextRef.current;
+    
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
 
     const sources = [];
     const timeouts = [];
+    const startTime = audioContext.currentTime;
 
     recordedTracks.forEach((track, trackIndex) => {
       const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
+      const finalGain = masterVolume * trackVolume;
+      
       track.forEach(({ key, time, isImported, audioBuffer }) => {
+        const scheduleTime = startTime + time / 1000;
+        
         if (isImported && audioBuffer) {
           const source = audioContext.createBufferSource();
           source.buffer = audioBuffer;
           const gainNode = audioContext.createGain();
-          gainNode.gain.value = masterVolume * trackVolume;
+          gainNode.gain.value = finalGain;
           source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
+          source.start(scheduleTime);
           sources.push(source);
         } else if (sounds[key]) {
           const animal = animalKeyMap[key];
@@ -316,38 +334,50 @@ export default function DesktopStage() {
           source.buffer = sounds[key];
 
           const gainNode = audioContext.createGain();
-          gainNode.gain.value = masterVolume * trackVolume;
+          gainNode.gain.value = finalGain;
 
           source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
+          source.start(scheduleTime);
           sources.push(source);
 
-          const timeout1 = setTimeout(() => {
-            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(
-              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
-              300
-            );
-            timeouts.push(timeout2);
-          }, time);
-          timeouts.push(timeout1);
+          if (animal) {
+            const timeout1 = setTimeout(() => {
+              triggerAnimalAnimation(animal);
+            }, time);
+            timeouts.push(timeout1);
+          }
         }
       });
     });
 
     setActiveAudioSources({ sources, timeouts });
-  };
+  }, [recordedTracks, trackSettings, sounds, masterVolume, triggerAnimalAnimation]);
 
-  // Play all tracks simultaneously
-  const playAllTracks = () => {
-    if (!audioContextRef.current || recordedTracks.length === 0) return;
-    setIsPlaying(true);
+  // Performance: Optimized track playback
+  const playAllTracks = useCallback(() => {
+    if (recordedTracks.length === 0) return;
+    
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+        latencyHint: 'interactive',
+        sampleRate: 44100
+      });
+    }
+    
     const audioContext = audioContextRef.current;
+    
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    
+    setIsPlaying(true);
 
     const sources = [];
     const timeouts = [];
-
+    const startTime = audioContext.currentTime;
     const anySolo = trackSettings.some((t) => t.solo);
+
+    let longestTrack = 0;
 
     recordedTracks.forEach((track, trackIndex) => {
       const settings = trackSettings[trackIndex];
@@ -358,61 +388,60 @@ export default function DesktopStage() {
       const finalGain = masterVolume * trackVolume;
 
       track.forEach(({ key, time, isImported, audioBuffer }) => {
+        const scheduleTime = startTime + time / 1000;
+        
         if (isImported && audioBuffer) {
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = finalGain;
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+          try {
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(scheduleTime);
+            sources.push(source);
+            
+            longestTrack = Math.max(longestTrack, time + audioBuffer.duration * 1000);
+          } catch (err) {
+            console.error("Error playing imported audio:", err);
+          }
         } else if (sounds[key]) {
-          const animal = animalKeyMap[key];
-          const source = audioContext.createBufferSource();
-          source.buffer = sounds[key];
+          try {
+            const animal = animalKeyMap[key];
+            const source = audioContext.createBufferSource();
+            source.buffer = sounds[key];
 
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = finalGain;
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = finalGain;
 
-          source.connect(gainNode).connect(audioContext.destination);
-          source.start(audioContext.currentTime + time / 1000);
-          sources.push(source);
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(scheduleTime);
+            sources.push(source);
 
-          const timeout1 = setTimeout(() => {
-            setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
-            const timeout2 = setTimeout(
-              () => setPlayingAnimals((prev) => ({ ...prev, [animal]: false })),
-              300
-            );
-            timeouts.push(timeout2);
-          }, time);
-          timeouts.push(timeout1);
+            if (animal) {
+              const timeout1 = setTimeout(() => {
+                triggerAnimalAnimation(animal);
+              }, time);
+              timeouts.push(timeout1);
+            }
+            
+            longestTrack = Math.max(longestTrack, time + 1000);
+          } catch (err) {
+            console.error("Error playing sound:", err);
+          }
         }
       });
     });
 
     setActiveAudioSources({ sources, timeouts });
 
-    const longestTrack = Math.max(
-      ...recordedTracks.map((track) => {
-        if (track.length === 0) return 0;
-        const lastNote = track[track.length - 1];
-        if (lastNote.isImported && lastNote.audioBuffer) {
-          return lastNote.time + lastNote.audioBuffer.duration * 1000;
-        }
-        return lastNote.time;
-      })
-    );
-
     const endTimeout = setTimeout(() => {
       setIsPlaying(false);
       setActiveAudioSources([]);
     }, longestTrack + 400);
     timeouts.push(endTimeout);
-  };
+  }, [recordedTracks, trackSettings, sounds, masterVolume, triggerAnimalAnimation]);
 
-  // Stop playback
-  const stopPlayback = () => {
+  const stopPlayback = useCallback(() => {
     if (activeAudioSources.sources) {
       activeAudioSources.sources.forEach((source) => {
         try {
@@ -430,15 +459,13 @@ export default function DesktopStage() {
       setIsPlaying(false);
       setPlayingAnimals({});
     }
-  };
+  }, [activeAudioSources]);
 
-  // Delete a track
   const deleteTrack = (index) => {
     setRecordedTracks((prev) => prev.filter((_, i) => i !== index));
     setTrackSettings((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Export combined tracks
   const exportRecording = async () => {
     if (!audioContextRef.current || recordedTracks.length === 0) return;
 
@@ -449,11 +476,9 @@ export default function DesktopStage() {
 
     if (!fileName) return;
 
-    // Security: Sanitize filename
     fileName = sanitizeFilename(fileName);
 
     try {
-      // Calculate the total duration needed
       let maxDuration = 0;
       recordedTracks.forEach((track) => {
         if (track.length === 0) return;
@@ -469,7 +494,6 @@ export default function DesktopStage() {
       const duration = maxDuration / 1000;
       const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
 
-      // Render all tracks with individual volumes
       recordedTracks.forEach((track, trackIndex) => {
         const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
         track.forEach(({ key, time, isImported, audioBuffer }) => {
@@ -508,9 +532,8 @@ export default function DesktopStage() {
     }
   };
 
-  // Security: Enhanced save with validation and rate limiting
   const saveRecordingLocally = async () => {
-    if (isSaving) return; // Prevent double submission
+    if (isSaving) return;
 
     const sanitizedTitle = sanitizeInput(recordingTitle, MAX_TITLE_LENGTH);
     const sanitizedDescription = sanitizeInput(
@@ -530,7 +553,6 @@ export default function DesktopStage() {
 
     setIsSaving(true);
 
-    // Security: Get auth token safely
     const cookies = document.cookie.split("; ");
     const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
     const authCookie = cookieObj["auth_token"] || "";
@@ -542,7 +564,7 @@ export default function DesktopStage() {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch(
@@ -585,7 +607,6 @@ export default function DesktopStage() {
     }
   };
 
-  // WAV conversion helpers
   function bufferToWav(buffer) {
     const numOfChan = buffer.numberOfChannels;
     const length = buffer.length * numOfChan * 2 + 44;
@@ -651,7 +672,6 @@ export default function DesktopStage() {
     return interleaved;
   }
 
-  // Track control functions
   const toggleMute = (index) => {
     setTrackSettings((prev) =>
       prev.map((t, i) =>
@@ -667,7 +687,6 @@ export default function DesktopStage() {
   };
 
   const setTrackVolume = (index, volume) => {
-    // Security: Validate volume is in valid range
     const newVolume = Math.max(0, Math.min(1, parseFloat(volume)));
     setTrackSettings((prev) =>
       prev.map((t, i) => (i === index ? { ...t, volume: newVolume } : t))
@@ -689,9 +708,7 @@ export default function DesktopStage() {
     setEditingTrack(null);
   };
 
-  // Security: Enhanced audio import with comprehensive validation
   const importAudioTrack = () => {
-    // Security: Check track limit
     if (recordedTracks.length >= MAX_TRACKS) {
       alert(
         `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
@@ -706,7 +723,6 @@ export default function DesktopStage() {
       const file = e.target.files[0];
       if (!file) return;
 
-      // Security: Validate file size
       if (file.size > MAX_FILE_SIZE) {
         alert(
           `File is too large. Maximum size is ${
@@ -716,7 +732,6 @@ export default function DesktopStage() {
         return;
       }
 
-      // Security: Validate file type more strictly
       const allowedTypes = [
         "audio/mpeg",
         "audio/wav",
@@ -743,7 +758,6 @@ export default function DesktopStage() {
           arrayBuffer
         );
 
-        // Security: Validate decoded audio duration
         if (audioBuffer.duration > MAX_AUDIO_DURATION) {
           alert(
             `Audio file is too long. Maximum duration is ${
@@ -753,7 +767,6 @@ export default function DesktopStage() {
           return;
         }
 
-        // Security: Sanitize filename
         const sanitizedFileName = sanitizeFilename(file.name);
 
         const importedTrack = [
@@ -859,7 +872,6 @@ export default function DesktopStage() {
           </div>
         </section>
 
-        {/* Bottom controls */}
         <div className="bottom-controls">
           <input
             type="range"
@@ -973,8 +985,15 @@ export default function DesktopStage() {
           </div>
         )}
 
-        {/* Track list */}
-        <div className="track-list">
+        <div className="track-list" style={{
+          maxHeight: '400px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          border: '1px solid #ccc',
+          borderRadius: '8px',
+          padding: '15px',
+          marginTop: '20px'
+        }}>
           <h3>
             Recorded Tracks ({recordedTracks.length}/{MAX_TRACKS})
           </h3>
