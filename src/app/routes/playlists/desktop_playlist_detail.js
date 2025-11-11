@@ -241,59 +241,76 @@ export default function DesktopPlaylistDetail() {
 
     return (
         <div className="forum-page">
-            {/* SIDEBAR */}
-            <aside className="forum-sidebar">
-                <div className="sidebar-header">
-                    <Link to="/">
-                        <span className="material-symbols-outlined paw-icon">pets</span>
-                        <span className="forum-site-title">ANIMALBAND</span>
-                    </Link>
+            {/* ===== HEADER (Matching Profile & Forum) ===== */}
+            <header className="forum-header">
+                <Link to="/" className="logo-section">
+                    <span className="material-symbols-outlined paw-icon">pets</span>
+                    <h1 className="site-title">ANIMALBAND</h1>
+                </Link>
+                <div className="header-buttons">
+                    {user ? (
+                        <img
+                            src={`${PHP_URL}/${user?.profilePic}`}
+                            alt="Profile"
+                            className="profile-pic"
+                            onClick={handleAccountClick}
+                        />
+                    ) : (
+                        <div className="header-auth-buttons">
+                            <button className="nav-btn" onClick={() => navigate("/login")}>Login</button>
+                            <button className="nav-btn" onClick={() => navigate("/register")}>Register</button>
+                        </div>
+                    )}
                 </div>
+            </header>
 
-                <nav className="sidebar-nav">
-                    <ul>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
-                        <li><button className="df-sidebar-btn active" onClick={() => navigate("/playlists")}>My Playlists</button></li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/account")}>My Profile</button></li>
-                        <button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>Log Out</button>
-                    </ul>
-                </nav>
-            </aside>
-
-            {/* MAIN */}
-            <div className="forum-main">
-                {/* HEADER */}
-                <header className="forum-header">
-                    <div className="header-left">
-                        <h1 className="forum-title">{info?.playlist?.name || "Playlist"}</h1>
-                        <span className="post-count">{headerCount} tracks{dirty ? " • unsaved" : ""}</span>
+            {/* ===== MAIN LAYOUT ===== */}
+            <div className="forum-layout">
+                {/* ===== SIDEBAR (Matching Profile & Forum) ===== */}
+                <aside className="forum-sidebar">
+                    <div className="sidebar-header">
+                        <h3>Menu</h3>
                     </div>
 
-                    <div className="header-right">
-                        <button className="nav-btn" onClick={() => navigate("/playlists")}>Back</button>
-                        <button className="new-post-btn" onClick={saveOrder} disabled={savingOrder || !dirty || !canEdit}>
-                            {savingOrder ? "Saving…" : "Save Order"}
-                        </button>
-                        {user ? (
-                            <img
-                                src={`${PHP_URL}/${user?.profilePic}`}
-                                alt="Profile"
-                                className="profile-pic"
-                                onClick={handleAccountClick}
-                            />
-                        ) : (
-                            <div className="header-auth-buttons">
-                                <button className="nav-btn" onClick={() => navigate("/login")}>Login</button>
-                                <button className="nav-btn" onClick={() => navigate("/register")}>Register</button>
-                            </div>
-                        )}
-                    </div>
-                </header>
+                    <nav className="sidebar-nav">
+                        <ul>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+                            <li><button className="df-sidebar-btn active" onClick={() => navigate("/playlists")}>My Playlists</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
+            
+                            <li>
+                                <button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
+                                    Logout
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
 
-                {/* CONTENT */}
-                <main className="forum-content">
+                {/* ===== MAIN CONTENT ===== */}
+                <main className="forum-main">
+                    {/* ===== CONTENT HEADER ===== */}
+                    <div className="content-header">
+                        <div>
+                            <h1>{info?.playlist?.name || "Playlist"}</h1>
+                            <span className="post-count">{headerCount} tracks{dirty ? " • unsaved" : ""}</span>
+                        </div>
+
+                        <div className="header-actions">
+                            <button className="nav-btn" onClick={() => navigate("/playlists")}>Back</button>
+                            <button 
+                                className="new-post-btn" 
+                                onClick={saveOrder} 
+                                disabled={savingOrder || !dirty || !canEdit}
+                            >
+                                {savingOrder ? "Saving…" : "Save Order"}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* ===== TRACKS CONTENT ===== */}
                     {loading ? (
                         <ul className="plf-tracks">
                             {Array.from({ length: 5 }).map((_, i) => <li key={i} className="post-card plf-skel" />)}
@@ -301,7 +318,7 @@ export default function DesktopPlaylistDetail() {
                     ) : !info ? (
                         <div className="no-posts"><p>Not found.</p></div>
                     ) : tracks.length === 0 ? (
-                        <div className="no-posts"><p>No tracks yet. Use “Add to Playlist” on songs.</p></div>
+                        <div className="no-posts"><p>No tracks yet. Use "Add to Playlist" on songs.</p></div>
                     ) : (
                         <ul className="plf-tracks">
                             {tracks.map((t, i) => (

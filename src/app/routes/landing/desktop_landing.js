@@ -4,11 +4,11 @@ import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
 import AddToPlaylistButton from "../../../components/desktop_add_to_playlist_button.js";
 import "./desktop_landing.css";
 
-import Ostrich from "../../../assets/ostrich.jpeg";
-import Bird from "../../../assets/bird.jpeg";
-import Hamster from "../../../assets/hamster.jpeg";
-import Kangaroo from "../../../assets/kangaroo.jpeg";
-import Snake from "../../../assets/snake.jpeg";
+import Ostrich from "../../../assets/ostrich.png";
+import Bird from "../../../assets/bird.png";
+import Hamster from "../../../assets/hamster.png";
+import Kangaroo from "../../../assets/kangaroo.png";
+import Snake from "../../../assets/snake.png";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -233,8 +233,8 @@ export default function Landing() {
           </Link>
           <Link to="/looping" className="feature-card">
             <span className="material-symbols-outlined feature-icon">instant_mix</span>
-            <h3>Looping</h3>
-            <p>Layer beats & notes with a visual mixer.</p>
+            <h3>Rhythm Game</h3>
+            <p>Test your musical gaming abilities!</p>
           </Link>
           <Link to="/forum" className="feature-card">
             <span className="material-symbols-outlined feature-icon">chat</span>

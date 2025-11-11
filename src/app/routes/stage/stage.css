@@ -629,3 +629,7 @@ html, body {
 .track-volume-slider {
   accent-color: #178C3A;
 }
+
+.header{
+  background-color: #bfbfbf;
+}

@@ -289,23 +289,15 @@ export default function MyRecordings() {
         <aside className="ea-sidebar">
           <h3>Menu</h3>
           <ul>
-            <li>
-              <button >My Recordings</button>
-            </li>
+          <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+          <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
+            <li><button onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
             <li><button onClick={() => navigate("/playlists")}>My Playlists</button></li>
-            <li>
-              <button onClick={() => navigate("/stage")}>Back to Stage</button>
-            </li>
-            <li>
-              <button
-                onClick={() => {
-                  fetch(`${PHP_URL}/logout.php`, { credentials: "include" });
-                  navigate("/login");
-                }}
-              >
-                Logout
-              </button>
-            </li>
+            <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>
+                                <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
+                                    Logout
+                                </button>
+                            </li>
           </ul>
         </aside>
 

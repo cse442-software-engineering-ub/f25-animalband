@@ -49,9 +49,11 @@ export default function DesktopMyPlaylists() {
         setLoading(false);
     }
     useEffect(() => { refresh(); }, []);
+    
     function truncateName(name, max = 14) {
         return name.length > max ? name.slice(0, max) + "…" : name;
     }
+    
     async function handleCopyLink(id) {
         const url = `${window.location.origin}${window.location.pathname}#/playlists/${id}`;
         try {
@@ -100,35 +102,61 @@ export default function DesktopMyPlaylists() {
 
     return (
         <div className="forum-page">
-            {/* ===== SIDEBAR ===== */}
-            <aside className="forum-sidebar">
-                <div className="sidebar-header">
-                    <Link to="/">
-                        <span className="material-symbols-outlined paw-icon">pets</span>
-                        <span className="forum-site-title">ANIMALBAND</span>
-                    </Link>
+            {/* ===== HEADER (Matching Profile & Forum) ===== */}
+            <header className="forum-header">
+                <Link to="/" className="logo-section">
+                    <span className="material-symbols-outlined paw-icon">pets</span>
+                    <h1 className="site-title">ANIMALBAND</h1>
+                </Link>
+                <div className="header-buttons">
+                    {user ? (
+                        <img
+                            src={`${PHP_URL}/${user.profilePic}`}
+                            alt="Profile"
+                            className="profile-pic"
+                            onClick={handleAccountClick}
+                        />
+                    ) : (
+                        <div className="header-auth-buttons">
+                            <button className="nav-btn" onClick={() => navigate("/login")}>Login</button>
+                            <button className="nav-btn" onClick={() => navigate("/register")}>Register</button>
+                        </div>
+                    )}
                 </div>
+            </header>
 
-                <nav className="sidebar-nav">
-                    <ul>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
-                        <li><button className="df-sidebar-btn active">My Playlists</button></li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
-                        <button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>Log Out</button>
-                    </ul>
-                </nav>
-            </aside>
-
-            {/* ===== MAIN ===== */}
-            <div className="forum-main">
-                {/* ===== HEADER ===== */}
-                <header className="forum-header">
-                    <div className="header-left">
-                        <h1 className="forum-title">My Playlists</h1>
-                        <span className="post-count">{playlists?.length || 0} total</span>
+            {/* ===== MAIN LAYOUT ===== */}
+            <div className="forum-layout">
+                {/* ===== SIDEBAR (Matching Profile & Forum) ===== */}
+                <aside className="forum-sidebar">
+                    <div className="sidebar-header">
+                        <h3>Menu</h3>
                     </div>
 
-                    <div className="header-right">
+                    <nav className="sidebar-nav">
+                        <ul>
+                        <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+          <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
+            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+            <li><button className="df-sidebar-btn" onClick={() => navigate("/playlists")}>My Playlists</button></li>
+            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
+                                <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
+                                    Logout
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                {/* ===== MAIN CONTENT ===== */}
+                <main className="forum-main">
+                    {/* ===== CONTENT HEADER ===== */}
+                    <div className="content-header">
+                        <div>
+                            <h1>My Playlists</h1>
+                            <span className="post-count">{playlists?.length || 0} total</span>
+                        </div>
+
                         <form className="plf-create" onSubmit={handleCreate}>
                             <input
                                 className="plf-input"
@@ -141,25 +169,9 @@ export default function DesktopMyPlaylists() {
                                 {creating ? "Creating…" : "Create"}
                             </button>
                         </form>
-
-                        {user ? (
-                            <img
-                                src={`${PHP_URL}/${user.profilePic}`}
-                                alt="Profile"
-                                className="profile-pic"
-                                onClick={handleAccountClick}
-                            />
-                        ) : (
-                            <div className="header-auth-buttons">
-                                <button className="nav-btn" onClick={() => navigate("/login")}>Login</button>
-                                <button className="nav-btn" onClick={() => navigate("/register")}>Register</button>
-                            </div>
-                        )}
                     </div>
-                </header>
 
-                {/* ===== CONTENT ===== */}
-                <main className="forum-content">
+                    {/* ===== PLAYLISTS CONTENT ===== */}
                     {loading ? (
                         <div className="plf-grid">
                             {Array.from({ length: 6 }).map((_, i) => <div key={i} className="post-card plf-skel" />)}
@@ -193,7 +205,7 @@ export default function DesktopMyPlaylists() {
                                         <button className="nav-btn plf-danger" onClick={() => handleDelete(p.id)}>Delete</button>
                                         {p.is_public ? (
                                             <button
-                                                className="btn sm copy-link-btn"
+                                                className="nav-btn copy-link-btn"
                                                 onClick={() => handleCopyLink(p.id)}
                                             >
                                                 Copy Link

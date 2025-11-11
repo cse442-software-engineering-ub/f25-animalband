@@ -411,101 +411,93 @@ export default function DesktopForum() {
 
     return (
         <div className="forum-page">
-            {/* Sidebar */}
-            <aside className="forum-sidebar">
-                <div className="sidebar-header">
-                    <Link to="/">
-                        <span className="material-symbols-outlined paw-icon">pets</span>
-                        <span className="forum-site-title">ANIMALBAND</span>
-                    </Link>
-                </div>
-
-                <nav className="sidebar-nav">
-                    <ul>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
-                        <li>
-                            <button
-                                className={`df-sidebar-btn ${activeView === "community" ? "active" : ""}`}
-                                onClick={() => setActiveView("community")}
-                            >
-                                Forum
+            {/* Header - Matching Profile Page */}
+            <header className="forum-header">
+                <Link to="/" className="logo-section">
+                    <span className="material-symbols-outlined paw-icon">pets</span>
+                    <h1 className="site-title">ANIMALBAND</h1>
+                </Link>
+                <div className="header-buttons">
+                    {!user ? (
+                        <>
+                            <button className="btn-login" onClick={() => navigate("/login")}>
+                                Login
                             </button>
-                        </li>
-                        <li>
-                            <button
-                                className={`df-sidebar-btn ${activeView === "my-posts" ? "active" : ""}`}
-                                onClick={() => setActiveView("my-posts")}
-                            >
-                                My Posts
+                            <button className="btn-register" onClick={() => navigate("/register")}>
+                                Register
                             </button>
-                        </li>
-                        <li>
-                            <button
-                                className={`df-sidebar-btn ${activeView === "my-likes" ? "active" : ""}`}
-                                onClick={() => setActiveView("my-likes")}
-                            >
-                                My Likes
-                            </button>
-                        </li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/account")}>My Profile</button></li>
-                        <button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
-                            Log Out
-                        </button>
-                    </ul>
-                </nav>
-            </aside>
-
-            {/* Main Content */}
-            <div className="forum-main">
-                {/* Header */}
-                <header className="forum-header">
-                    <div className="header-left">
-                        <h1 className="forum-title">{getViewTitle()}</h1>
-                        <span className="post-count">{sortedPosts.length} posts</span>
-                    </div>
-
-                    <div className="header-search">
-                        <input
-                            type="text"
-                            placeholder="Search post or users"
-                            className="search-bar"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                        </>
+                    ) : (
+                        <img
+                            src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                            alt="Profile"
+                            className="profile-pic"
+                            onClick={handleAccountClick}
                         />
-                        <span className="material-symbols-outlined search-icon">search</span>
-                    </div>
+                    )}
+                </div>
+            </header>
 
-                    <div className="header-right">
-                        {/* Profile */}
-                        {!user ? (
-                            <div className="header-auth-buttons">
+            {/* Main Layout */}
+            <div className="forum-layout">
+                {/* Sidebar - Matching Profile Page */}
+                <aside className="forum-sidebar">
+                    <div className="sidebar-header">
+                        <h3>Menu</h3>
+                    </div>
+                    <nav className="sidebar-nav">
+                        <ul>
+                        <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+          <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
+            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+            <li><button className="df-sidebar-btn" onClick={() => navigate("/playlists")}>My Playlists</button></li>
+            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
+                                <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
+                                    Logout
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                {/* Main Content */}
+                <main className="forum-main">
+                    {/* Content Header */}
+                    <div className="content-header">
+                        <div>
+                            <h1>{getViewTitle()}</h1>
+                            <span className="post-count">{sortedPosts.length} posts</span>
+                        </div>
+
+                        <div className="header-controls">
+                            <div className="view-buttons">
                                 <button
-                                    className="btn-login"
-                                    onClick={() => navigate("/login")}
+                                    className={`nav-btn ${activeView === "my-posts" ? "active" : ""}`}
+                                    onClick={() => setActiveView("my-posts")}
                                 >
-                                    Login
+                                    My Posts
                                 </button>
                                 <button
-                                    className="btn-register"
-                                    onClick={() => navigate("/register")}
+                                    className={`nav-btn ${activeView === "my-likes" ? "active" : ""}`}
+                                    onClick={() => setActiveView("my-likes")}
                                 >
-                                    Register
+                                    My Likes
                                 </button>
                             </div>
-                        ) : (
-                            <img
-                                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
-                                alt="Profile"
-                                className="profile-pic"
-                                onClick={handleAccountClick}
-                            />
-                        )}
-                    </div>
-                </header>
 
-                {/* Posts Section */}
-                <main className="forum-content">
+                            <div className="header-search">
+                                <input
+                                    type="text"
+                                    placeholder="Search post or users"
+                                    className="search-bar"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                <span className="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Filter bar */}
                     <div className="tag-filter-bar">
                         {/* Animals */}
@@ -565,25 +557,24 @@ export default function DesktopForum() {
                             </div>
                         ) : (
                             sortedPosts.map((post) => (
-                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
-                                    <div className="post-author">
-                                        <div>
+                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>
+                                    <div className="post-header">
+                                        <div className="post-author">
                                             <h3 className="post-title">{post.title}</h3>
                                             <span className="author-name">by {post.author}</span>
                                         </div>
+                                        {/* Time since posted */}
+                                        {post.created_at && (
+                                            (() => {
+                                                const ta = timeAgo(post.created_at, nowTick);
+                                                return (
+                                                    <span className="post-time">
+                                                        Created {ta === "just now" ? ta : `${ta} ago`}
+                                                    </span>
+                                                );
+                                            })()
+                                        )}
                                     </div>
-                                    {/* Time since posted */}
-                                    {post.created_at && (
-                                        (() => {
-                                            const ta = timeAgo(post.created_at, nowTick);
-                                            return (
-                                                <span className="post-time">
-                                                    Created {ta === "just now" ? ta : `${ta} ago`}
-                                                </span>
-                                            );
-                                        })()
-                                    )}
-                                </div>
                                     <p className="post-content">{post.content}</p>
                                     <div className="post-tags">
                                         {post.tags && post.tags.map(tag => (
@@ -686,8 +677,6 @@ export default function DesktopForum() {
 
                                 {recsLoading && <small className="recording-select-hint">Loading your recordings…</small>}
                             </div>
-
-
                         </div>
                         <div className="popup-footer">
                             <button className="cancel-btn" onClick={handleClosePopup}>Cancel</button>
