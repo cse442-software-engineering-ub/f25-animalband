@@ -536,10 +536,11 @@
 
 /* ===== Make all section backgrounds pure white ===== */
 .landing-page,
-.main-description,
+
 .band-stage,
 .features-section,
 .stats-container,
+.header,
 .featured-songs-section
  {
   background-color: #ffffff !important;
@@ -551,12 +552,12 @@ body {
 }
 
 /* ===== Subtle dividers between sections ===== */
-section,
+
 .features-section,
 .featured-songs-section,
 .stats-container,
 .band-stage,
-.main-description {
+.header {
   border-bottom: 1px solid #e5e5e5;
 }
 
