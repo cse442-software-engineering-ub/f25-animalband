@@ -492,15 +492,32 @@ export default function DesktopForum() {
                             <span className="post-count">{sortedPosts.length} posts</span>
                         </div>
 
-                        <div className="header-search">
-                            <input
-                                type="text"
-                                placeholder="Search post or users"
-                                className="search-bar"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                            <span className="material-symbols-outlined search-icon">search</span>
+                        <div className="header-controls">
+                            <div className="view-buttons">
+                                <button
+                                    className={`nav-btn ${activeView === "my-posts" ? "active" : ""}`}
+                                    onClick={() => setActiveView("my-posts")}
+                                >
+                                    My Posts
+                                </button>
+                                <button
+                                    className={`nav-btn ${activeView === "my-likes" ? "active" : ""}`}
+                                    onClick={() => setActiveView("my-likes")}
+                                >
+                                    My Likes
+                                </button>
+                            </div>
+
+                            <div className="header-search">
+                                <input
+                                    type="text"
+                                    placeholder="Search post or users"
+                                    className="search-bar"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                <span className="material-symbols-outlined search-icon">search</span>
+                            </div>
                         </div>
                     </div>
 
