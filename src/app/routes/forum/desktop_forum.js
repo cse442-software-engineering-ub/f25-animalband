@@ -447,35 +447,12 @@ export default function DesktopForum() {
                     </div>
                     <nav className="sidebar-nav">
                         <ul>
-                            <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
-                            <li>
-                                <button
-                                    className={`df-sidebar-btn ${activeView === "community" ? "active" : ""}`}
-                                    onClick={() => setActiveView("community")}
-                                >
-                                    Forum
-                                </button>
-                            </li>
-                            <li>
-                                <button
-                                    className={`df-sidebar-btn ${activeView === "my-posts" ? "active" : ""}`}
-                                    onClick={() => setActiveView("my-posts")}
-                                >
-                                    My Posts
-                                </button>
-                            </li>
-                            <li>
-                                <button
-                                    className={`df-sidebar-btn ${activeView === "my-likes" ? "active" : ""}`}
-                                    onClick={() => setActiveView("my-likes")}
-                                >
-                                    My Likes
-                                </button>
-                            </li>
-                            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
-                            <li><button className="df-sidebar-btn" onClick={() => navigate("/account")}>My Profile</button></li>
-                            <li>
-                                <button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
+                        <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+          <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
+            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+            <li><button className="df-sidebar-btn" onClick={() => navigate("/playlists")}>My Playlists</button></li>
+            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
+                                <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
                                     Logout
                                 </button>
                             </li>

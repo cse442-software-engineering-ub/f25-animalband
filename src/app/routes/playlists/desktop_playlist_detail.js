@@ -275,10 +275,11 @@ export default function DesktopPlaylistDetail() {
                     <nav className="sidebar-nav">
                         <ul>
                             <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
                             <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
                             <li><button className="df-sidebar-btn active" onClick={() => navigate("/playlists")}>My Playlists</button></li>
-                            <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
-                            <li><button className="df-sidebar-btn" onClick={() => navigate("/account")}>My Profile</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
+            
                             <li>
                                 <button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
                                     Logout
