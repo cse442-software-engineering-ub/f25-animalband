@@ -93,7 +93,7 @@ if ($name === "") {
   echo json_encode(["error" => "Playlist name is required"]);
   exit;
 }
-if (mb_strlen($name) > 80) {
+if (mb_strlen($name, 'UTF-8') > 80) {
   http_response_code(400);
   echo json_encode(["error" => "Playlist name max length is 80 characters"]);
   exit;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getMyPlaylists, addSongToPlaylist, createPlaylist } from "../api/playlists.js";
+import "./desktop_add_to_playlist_button.css"
 
 export default function AddToPlaylistButton({ songId, compact = false, onAdded }) {
     const [open, setOpen] = useState(false);
