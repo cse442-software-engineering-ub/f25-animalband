@@ -1,220 +1,211 @@
-import { useState, useEffect, useRef } from "react";
-import "./rhythm.css";
+import { useEffect, useState, useRef } from "react";
 
 import Ostrich from "../../../assets/ostrich.png";
-import Bird from "../../../assets/bird.png";
-import Hamster from "../../../assets/hamster.png";
 import Kangaroo from "../../../assets/kangaroo.png";
-import Snake from "../../../assets/snake.png";
+import OstrichPlaying from "../../../assets/ostrichrockin.png";
+import KangarooPlaying from "../../../assets/kangaroorockin.png";
 
-// Use your original public URL sound paths
-const SOUND_PATHS = {
-  ostrich: `${process.env.PUBLIC_URL}/stage_sounds/keys/temp_keys_CM.wav`,
-  bird: `${process.env.PUBLIC_URL}/stage_sounds/vocal/double_chirp.wav`,
-  hamster: `${process.env.PUBLIC_URL}/stage_sounds/drums/Snare_temp.wav`,
-  kangaroo: `${process.env.PUBLIC_URL}/stage_sounds/guitar/temp_guitar_CM.wav`,
-  snake: `${process.env.PUBLIC_URL}/stage_sounds/bass/temp_bass_G.wav`,
-};
-
-const LANES = [
-  { key: "a", animal: "ostrich", image: Ostrich, sound: SOUND_PATHS.ostrich },
-  { key: "s", animal: "bird", image: Bird, sound: SOUND_PATHS.bird },
-  { key: "d", animal: "hamster", image: Hamster, sound: SOUND_PATHS.hamster },
-  {
-    key: "f",
-    animal: "kangaroo",
-    image: Kangaroo,
-    sound: SOUND_PATHS.kangaroo,
-  },
-  { key: "g", animal: "snake", image: Snake, sound: SOUND_PATHS.snake },
-];
-
-const NOTES = [
-  { lane: 0, time: 1000 },
-  { lane: 2, time: 1500 },
-  { lane: 1, time: 2000 },
-  { lane: 4, time: 2500 },
-  { lane: 3, time: 3000 },
-];
+import "./rhythm.css";
 
 export default function RhythmGame() {
-  const [time, setTime] = useState(0);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [countdown, setCountdown] = useState(null);
   const [notes, setNotes] = useState([]);
-  const [running, setRunning] = useState(false);
-  const [soundsReady, setSoundsReady] = useState(false);
-  const [sounds, setSounds] = useState({});
-  const [points, setPoints] = useState(0);
-  const audioCtxRef = useRef(null);
+  const [pressedKeys, setPressedKeys] = useState({});
 
-  const startTime = useRef(null);
-  const raf = useRef(null);
+  const NOTE_SPEED = 4;
+  const SPAWN_INTERVAL = 600;
+  const HIT_ZONE_Y = 450;
+  const HIT_TOLERANCE = 40;
 
-  const timeRef = useRef(time);
-  const notesRef = useRef(notes);
+  const OSTRICH_KEYS = ["h", "j", "k", "l"];
+  const KANGAROO_KEYS = ["u", "i", "o", "p"];
 
-  const laneHeight = 400;
-  const speed = 0.13;
-  const HIT_ZONE = 5000; // basically anywhere in the lane
+  const gameLoopRef = useRef(null);
+  const spawnIntervalRef = useRef(null);
+  const noteIdRef = useRef(0);
 
-  useEffect(() => {
-    timeRef.current = time;
-    notesRef.current = notes;
-  }, [time, notes]);
+  /* --- Start Game --- */
+  const startGame = () => {
+    setNotes([]);
+    noteIdRef.current = 0;
+    setCountdown(3);
 
-  // Initialize AudioContext and preload sounds
-  useEffect(() => {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    audioCtxRef.current = ctx;
-
-    const loadSound = async (url) => {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Failed to load sound: ${url}`);
-      const arrayBuffer = await res.arrayBuffer();
-      return await ctx.decodeAudioData(arrayBuffer);
-    };
-
-    const loadAll = async () => {
-      const loaded = {};
-      for (const lane of LANES) {
-        try {
-          loaded[lane.key] = await loadSound(lane.sound);
-        } catch (err) {
-          console.error("Error loading sound:", lane.sound, err);
+    const countInterval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === 1) {
+          clearInterval(countInterval);
+          setGameStarted(true);
+          return null;
         }
-      }
-      setSounds(loaded);
-      setSoundsReady(true);
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  /* --- Spawn Notes --- */
+  useEffect(() => {
+    if (!gameStarted) return;
+
+    spawnIntervalRef.current = setInterval(() => {
+      const player = Math.random() > 0.5 ? "ostrich" : "kangaroo";
+      const keys = player === "ostrich" ? OSTRICH_KEYS : KANGAROO_KEYS;
+      const key = keys[Math.floor(Math.random() * keys.length)];
+
+      setNotes((prev) => [
+        ...prev,
+        { id: noteIdRef.current++, player, key, y: -50 },
+      ]);
+    }, SPAWN_INTERVAL);
+
+    return () => clearInterval(spawnIntervalRef.current);
+  }, [gameStarted]);
+
+  /* --- Game Loop --- */
+  useEffect(() => {
+    if (!gameStarted) return;
+
+    const loop = () => {
+      setNotes((prev) =>
+        prev
+          .map((note) => ({ ...note, y: note.y + NOTE_SPEED }))
+          .filter((note) => note.y < window.innerHeight)
+      );
+
+      gameLoopRef.current = requestAnimationFrame(loop);
     };
 
-    loadAll();
+    gameLoopRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(gameLoopRef.current);
+  }, [gameStarted]);
 
-    const resumeAudio = () => {
-      if (ctx.state === "suspended") ctx.resume();
+  /* --- Key Handling --- */
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const key = e.key.toLowerCase();
+      setPressedKeys((prev) => ({ ...prev, [key]: true }));
     };
-    window.addEventListener("click", resumeAudio);
-    window.addEventListener("keydown", resumeAudio);
+
+    const handleKeyUp = (e) => {
+      const key = e.key.toLowerCase();
+      setPressedKeys((prev) => ({ ...prev, [key]: false }));
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
     return () => {
-      window.removeEventListener("click", resumeAudio);
-      window.removeEventListener("keydown", resumeAudio);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
 
-  // Game loop
-  const update = (t) => {
-    if (!startTime.current) startTime.current = t;
-    const elapsed = t - startTime.current;
-    setTime(elapsed);
-    raf.current = requestAnimationFrame(update);
-  };
+  /* --- Derived States: isPlaying --- */
+  const isOstrichPlaying = OSTRICH_KEYS.some((key) => pressedKeys[key]);
+  const isKangarooPlaying = KANGAROO_KEYS.some((key) => pressedKeys[key]);
 
-  const handleStart = () => {
-    if (!running && soundsReady) {
-      const ctx = audioCtxRef.current;
-      if (ctx && ctx.state === "suspended") ctx.resume();
-
-      setRunning(true);
-      startTime.current = null;
-      setTime(0);
-      setNotes(NOTES.map((n) => ({ ...n, hit: false })));
-      setPoints(0); // reset points
-      raf.current = requestAnimationFrame(update);
-    }
-  };
-
-  const handleReset = () => {
-    cancelAnimationFrame(raf.current);
-    setRunning(false);
-    setTime(0);
+  /* --- Reset Game --- */
+  const resetGame = () => {
+    setGameStarted(false);
     setNotes([]);
-    setPoints(0);
+    setPressedKeys({});
+    setCountdown(null);
+    cancelAnimationFrame(gameLoopRef.current);
+    clearInterval(spawnIntervalRef.current);
   };
 
-  const handleKeyDown = (e) => {
-    const laneIndex = LANES.findIndex((l) => l.key === e.key);
-    if (laneIndex === -1) return;
-
-    const ctx = audioCtxRef.current;
-    if (!ctx || !sounds[e.key]) return;
-
-    if (ctx.state === "suspended") ctx.resume();
-
-    const source = ctx.createBufferSource();
-    source.buffer = sounds[e.key];
-    source.connect(ctx.destination);
-    source.start(0);
-
-    const currentTime = timeRef.current;
-    const currentNotes = notesRef.current;
-
-    // Find the first unhit note in the lane within HIT_ZONE
-    const note = currentNotes.find(
-      (n) =>
-        n.lane === laneIndex &&
-        !n.hit &&
-        Math.abs((currentTime - n.time) * speed) < HIT_ZONE
-    );
-
-    if (note) {
-      note.hit = true;
-      setNotes([...currentNotes]);
-
-      // --- POINTS CALCULATION ---
-      const distanceFromTop = (currentTime - note.time) * speed;
-      const pointsEarned = Math.max(
-        0,
-        Math.round(((laneHeight - distanceFromTop) / laneHeight) * 100)
-      );
-      setPoints((prev) => prev + pointsEarned);
-    }
-  };
-
-
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [sounds]);
-
+  /* --- Render --- */
   return (
-    <div className="game">
-      <div className="points">Points: {points}</div>
-      <div className="lanes">
-        {LANES.map((lane, i) => (
-          <div className="lane" key={i}>
-            <img src={lane.image} alt="" className="target" />
-            {notes
-              .filter((n) => n.lane === i && !n.hit)
-              .map((n, j) => {
-                const y = (time - n.time) * speed;
-                const visible = y >= 0 && y <= laneHeight;
-                if (!visible) return null;
-                return (
-                  <img
-                    key={j}
-                    src={lane.image}
-                    alt=""
-                    className="note"
-                    style={{ bottom: `${y}px` }}
-                  />
-                );
-              })}
-            <div className="lane-key">{lane.key.toUpperCase()}</div>
-          </div>
-        ))}
-      </div>
+    <div className="rhythm-container">
+      {!gameStarted && countdown === null && (
+        <div className="start-screen">
+          <h1 className="start-title">RHYTHM BATTLE</h1>
+          <button className="start-button" onClick={startGame}>
+            START GAME
+          </button>
+        </div>
+      )}
 
-      <div className="controls">
-        <button
-          className="start-button"
-          onClick={handleStart}
-          disabled={!soundsReady}
-        >
-          {soundsReady ? "Start" : "Loading..."}
-        </button>
-        <button className="reset-button" onClick={handleReset}>
-          Reset
-        </button>
-      </div>
+      {countdown !== null && <div className="countdown">{countdown}</div>}
+
+      {gameStarted && (
+        <div className="game-area">
+          {/* Ostrich Section */}
+          <div className="player-section">
+            <img
+              src={isOstrichPlaying ? OstrichPlaying : Ostrich}
+              alt="Ostrich"
+              className="animal-icon"
+            />
+            <div className="lanes-group">
+              {OSTRICH_KEYS.map((key) => (
+                <div
+                  key={key}
+                  className={`lane ${pressedKeys[key] ? "lane-pressed" : ""}`}
+                >
+                  {notes
+                    .filter((n) => n.key === key && n.player === "ostrich")
+                    .map((note) => (
+                      <div
+                        key={note.id}
+                        className="note note-ostrich"
+                        style={{ top: `${note.y}px` }}
+                      >
+                        <div className="note-inner" />
+                      </div>
+                    ))}
+                  <div
+                    className={`hit-zone ${
+                      pressedKeys[key] ? "hit-zone-active" : ""
+                    }`}
+                  >
+                    <span className="hit-key">{key.toUpperCase()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Kangaroo Section */}
+          <div className="player-section">
+            <img
+              src={isKangarooPlaying ? KangarooPlaying : Kangaroo}
+              alt="Kangaroo"
+              className="animal-icon"
+            />
+            <div className="lanes-group">
+              {KANGAROO_KEYS.map((key) => (
+                <div
+                  key={key}
+                  className={`lane ${pressedKeys[key] ? "lane-pressed" : ""}`}
+                >
+                  {notes
+                    .filter((n) => n.key === key && n.player === "kangaroo")
+                    .map((note) => (
+                      <div
+                        key={note.id}
+                        className="note note-kangaroo"
+                        style={{ top: `${note.y}px` }}
+                      >
+                        <div className="note-inner" />
+                      </div>
+                    ))}
+                  <div
+                    className={`hit-zone ${
+                      pressedKeys[key] ? "hit-zone-active" : ""
+                    }`}
+                  >
+                    <span className="hit-key">{key.toUpperCase()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button className="reset-button" onClick={resetGame}>
+            RESET
+          </button>
+        </div>
+      )}
     </div>
   );
 }

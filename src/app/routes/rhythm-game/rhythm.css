@@ -1,67 +1,180 @@
-/* Overall game container */
-.game {
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.rhythm-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #4caf50 0%, #1b5e20 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  padding: 20px 0;
-  min-height: 100vh;
-  background-color: #f0f0f0; /* light background */
-  font-family: sans-serif;
+  color: #fff;
+  font-family: "Segoe UI", sans-serif;
+  overflow: hidden;
 }
 
-.lanes {
+/* --- Start Screen --- */
+.start-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: white;
+}
+
+.start-title {
+  font-size: 56px;
+  margin-bottom: 30px;
+  font-weight: 800;
+}
+
+.start-button {
+  padding: 15px 50px;
+  background: white;
+  color: #388e3c;
+  border: none;
+  border-radius: 40px;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.start-button:hover {
+  background: #2e7d32;
+  color: #fff;
+}
+
+/* --- Countdown --- */
+.countdown {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 140px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Game Layout --- */
+.game-area {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  align-items: flex-start;
+  gap: 140px;
+  width: 100%;
+  height: 100vh;
+  padding-top: 40px; /* less padding to keep all visible */
+  position: relative;
+}
+
+.player-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- Animal Images --- */
+.animal-icon {
+  width: 100px;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+/* --- Lanes --- */
+.lanes-group {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  height: calc(60vh); /* fits comfortably on screen */
+  justify-content: center;
 }
 
 .lane {
   position: relative;
-  width: 80px;
-  height: 400px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid #ccc;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.note {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-}
-
-.target {
-  width: 50px;
-  height: 50px;
-  margin-top: 5px;
-}
-
-.lane-label {
-  position: absolute;
-  bottom: -30px;
-  font-size: 18px;
-  font-weight: bold;
-  text-align: center;
-  color: #178c3a;
-}
-
-.controls {
-  margin-top: 50px;
+  width: 60px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  overflow: hidden;
   display: flex;
   justify-content: center;
-  gap: 10px;
 }
 
-.start-button,
+.lane-pressed {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* --- Notes --- */
+.note {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+}
+
+.note-ostrich {
+  background: #ce93d8;
+  border: 3px solid white;
+}
+
+.note-kangaroo {
+  background: #ffcc80;
+  border: 3px solid white;
+}
+
+/* --- Hit Zones --- */
+.hit-zone {
+  position: absolute;
+  bottom: 10px; /* closer to bottom but visible */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55px;
+  height: 55px;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+
+.hit-zone-active {
+  background: rgba(255, 255, 255, 0.4);
+  transform: translateX(-50%) scale(1.15);
+}
+
+.hit-key {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* --- Reset Button --- */
 .reset-button {
-  padding: 8px 16px;
-  font-size: 16px;
-  border: none;
-  background-color: #178c3a;
-  color: white;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 30px;
+  background: white;
+  color: #388e3c;
+  border: 2px solid #388e3c;
+  border-radius: 25px;
+  font-weight: 700;
   cursor: pointer;
-  border-radius: 4px;
+  transition: 0.3s;
+  z-index: 10;
+}
+
+.reset-button:hover {
+  background: #388e3c;
+  color: white;
 }
