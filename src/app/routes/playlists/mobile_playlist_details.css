@@ -313,3 +313,17 @@
 .mobile-track-card {
     position: relative;
 }
+
+/* Allow very long playlist names to wrap in the page title */
+.mobile-page-title {
+  white-space: normal;        /* allow multi-line */
+  overflow-wrap: anywhere;    /* break long unbroken strings */
+  word-break: break-word;     /* fallback for older engines */
+  hyphens: auto;              /* optional: hyphenate when possible */
+  line-height: 1.25;
+}
+
+/* If you ever make the header a flex row, keep the title allowed to shrink/wrap */
+.mobile-title-section {
+  min-width: 0;               /* critical if parent becomes display:flex */
+}

@@ -884,3 +884,24 @@ body.popup-open { overflow: hidden; }
   color: #666;
   font-size: 12px;
 }
+
+
+/* The author/title column must be allowed to shrink/wrap inside the flex row */
+.mobile-post-author {
+  flex: 1;
+  min-width: 0;               /* CRITICAL so children can wrap instead of overflowing */
+}
+
+/* Wrap long titles (even one-word strings/URLs) */
+.mobile-post-title {
+  white-space: normal;         /* allow multiple lines */
+  overflow-wrap: anywhere;     /* break long unbroken strings */
+  word-break: break-word;      /* fallback for older engines */
+  line-height: 1.3;
+  margin: 0 0 0.25rem 0;
+}
+
+/* Keep the like button from squishing the title */
+.mobile-like-btn {
+  flex-shrink: 0;
+}
