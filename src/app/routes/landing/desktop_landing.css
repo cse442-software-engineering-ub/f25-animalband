@@ -7,7 +7,7 @@
 
 .landing-page {
   min-height: 100vh;
-  background-color: #E4E2E2;
+  background-color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -19,7 +19,7 @@
   align-items: center;
   justify-content: flex-end;
   padding: 1rem 2rem;
-  background-color: #D9D9D9;
+  background-color: #ffffff;
   position: relative;
 }
 
@@ -44,7 +44,7 @@
   font-size: 2.5rem;
   font-weight: bold;
   color: #000;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.25);
 }
 
 .header-buttons {
@@ -173,7 +173,7 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(255, 255, 255, 0.1);
   transition: background-color 0.2s;
   z-index: 10;
   text-decoration: none;
@@ -185,7 +185,7 @@
 
 /* ==========Feature Cards========== */
 .features-section {
-  background-color: #F2F2F2;
+  background-color: #ffffff;
   padding: 2rem 0.5rem .5rem;
 }
 
@@ -372,7 +372,7 @@
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.35);
+  background: rgba(255, 255, 255, 0.35);
   display: grid;
   place-items: center;
   z-index: 1000; /* above everything on landing */
@@ -390,7 +390,7 @@
   align-items: center;
   justify-content: space-between;
   padding: .75rem 1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #ffffff;
 }
 .modal-body {
   padding: 1rem;
@@ -430,7 +430,7 @@
   cursor: pointer;
 }
 .btn.primary:disabled { opacity: .6; cursor: not-allowed; }
-.divider { height: 1px; background: #eee; margin: .75rem 0; }
+.divider { height: 1px; background: #ffffff; margin: .75rem 0; }
 
 /* ==========Formatting========== */
 @media (max-width: 1024px) {
@@ -533,4 +533,67 @@
     padding: 2rem 1rem;
   }
 }
+
+/* ===== Make all section backgrounds pure white ===== */
+.landing-page,
+
+.band-stage,
+.features-section,
+.stats-container,
+.featured-songs-section
+ {
+  background-color: #ffffff !important;
+}
+
+/* Optional: keep smooth transitions if there were gradients or tints */
+body {
+  background-color: #ffffff;
+}
+
+/* ===== Subtle dividers between sections ===== */
+
+.features-section,
+.featured-songs-section,
+.stats-container,
+.band-stage,
+.header {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+/* Remove line below the footer (optional) */
+.footer {
+  border-top: 1px solid #e5e5e5;
+  border-bottom: none;
+}
+
+/* ===== Animal hover hop animation ===== */
+.animal-member img {
+  height: 10rem;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.animal-member:hover img {
+  animation: hop 0.6s ease;
+}
+
+@keyframes hop {
+  0% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+
 

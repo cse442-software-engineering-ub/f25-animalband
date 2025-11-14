@@ -126,6 +126,8 @@ export default function DesktopProfile() {
         <aside className="sidebar">
           <h3>Menu</h3>
           <ul>
+          <li><button onClick={() => navigate("/")}>Home</button></li>
+          <li><button onClick={() => navigate("/forum")}>Forum</button></li>
             <li><button onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
             <li><button onClick={() => navigate("/playlists")}>My Playlists</button></li>
             <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>

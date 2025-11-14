@@ -511,3 +511,27 @@
         min-height: 44px;
     }
 }
+
+
+/* Header layout: title can shrink/wrap; badge won’t squish it */
+.mobile-playlist-header {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+}
+
+/* Make long names wrap across lines */
+.mobile-playlist-title {
+  flex: 1;
+  min-width: 0;               /* CRITICAL for wrapping inside flex */
+  white-space: normal;         /* allow wrapping */
+  overflow-wrap: anywhere;     /* break long unbroken strings */
+  word-break: break-word;      /* fallback for older engines */
+  line-height: 1.25;
+  text-align: left;
+}
+
+/* Keep the badge compact */
+.mobile-playlist-badge {
+  flex-shrink: 0;
+}
