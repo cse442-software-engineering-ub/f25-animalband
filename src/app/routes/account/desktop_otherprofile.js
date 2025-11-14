@@ -4,7 +4,7 @@ import "./desktop_profile.css";
 import "../playlists/desktop_playlists.css";
 
 
-const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/Gregs_temp/php";
+const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 export default function DesktopOtherProfile() {
   const navigate = useNavigate();
