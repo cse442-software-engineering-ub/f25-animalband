@@ -78,9 +78,10 @@ export default function RhythmGame() {
     localStorage.setItem("masterVolume", masterVolume);
   }, [masterVolume]);
 
-  /** MEASURE HIT ZONES **/
+  /** MEASURE HIT ZONES - Fixed to remeasure after countdown **/
   useEffect(() => {
     if (gameStarted && countdown === null) {
+      // Measure immediately
       const centers = {};
       Object.entries(hitZoneRefs.current).forEach(([key, el]) => {
         if (el) {
@@ -89,6 +90,20 @@ export default function RhythmGame() {
         }
       });
       setHitZoneCenters(centers);
+
+      // Also measure again after a delay to be safe
+      const timer = setTimeout(() => {
+        const centers = {};
+        Object.entries(hitZoneRefs.current).forEach(([key, el]) => {
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            centers[key] = rect.top + rect.height / 2;
+          }
+        });
+        setHitZoneCenters(centers);
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, [gameStarted, countdown]);
 
@@ -101,7 +116,6 @@ export default function RhythmGame() {
     setShowResults(false);
     setWinnerText("");
     setPressedKeys({});
-    setHitZoneCenters({});
     lastPlayerRef.current = null;
 
     setCountdown(3);
@@ -162,7 +176,7 @@ export default function RhythmGame() {
     });
   };
 
-  /** SPAWN NOTES **/
+  /** SPAWN NOTES - Alternating between players for fairness **/
   useEffect(() => {
     if (!gameStarted) return;
 
@@ -301,8 +315,8 @@ export default function RhythmGame() {
     setCountdown(null);
     setScores({ ostrich: 0, kangaroo: 0 });
     setTimeRemaining(GAME_DURATION);
-    setHitZoneCenters({});
     lastPlayerRef.current = null;
+    // Don't clear hitZoneCenters here - let the useEffect handle it
   };
 
   const returnToStart = () => {
