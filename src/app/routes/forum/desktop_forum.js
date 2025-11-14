@@ -453,14 +453,14 @@ export default function DesktopForum() {
                     </div>
                     <nav className="sidebar-nav">
                         <ul>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
-          <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
-            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
-            <li><button className="df-sidebar-btn" onClick={() => navigate("/playlists")}>My Playlists</button></li>
-            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
-                                <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
-                                    Logout
-                                </button>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/playlists")}>My Playlists</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
+                            <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
+                                Logout
+                            </button>
                             </li>
                         </ul>
                     </nav>
@@ -567,19 +567,16 @@ export default function DesktopForum() {
                                     <div className="post-author">
                                         <div>
                                             <h3 className="post-title">{truncate30(post.title)}</h3>
-                                            <span className="author-name">by {truncate30(post.author)}</span>
+                                            <span
+                                                className="author-name clickable-author"
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // don't open the post modal
+                                                    navigate(`/account/${encodeURIComponent(post.authorId)}`);
+                                                }}
+                                            >
+                                                by {truncate30(post.author)}
+                                            </span>
                                         </div>
-                                        {/* Time since posted */}
-                                        {post.created_at && (
-                                            (() => {
-                                                const ta = timeAgo(post.created_at, nowTick);
-                                                return (
-                                                    <span className="post-time">
-                                                        Created {ta === "just now" ? ta : `${ta} ago`}
-                                                    </span>
-                                                );
-                                            })()
-                                        )}
                                     </div>
                                     {/* Time since posted */}
                                     {post.created_at && (

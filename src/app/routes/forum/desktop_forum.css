@@ -1052,3 +1052,13 @@
 body.popup-open {
   overflow: hidden;
 }
+
+.clickable-author {
+  cursor: pointer;
+  color: #0077cc;
+  text-decoration: underline;
+}
+
+.clickable-author:hover {
+  color: #005999;
+}

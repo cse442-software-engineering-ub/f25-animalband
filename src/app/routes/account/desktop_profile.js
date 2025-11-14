@@ -179,10 +179,6 @@ export default function DesktopProfile() {
                     <span className="info-label">Email:</span>
                     <div className="info-value">{user.email || "Not provided"}</div>
                   </div>
-                  <div className="info-item">
-                    <span className="info-label">Member Since:</span>
-                    <div className="info-value">{user.joinDate || "Recently joined"}</div>
-                  </div>
                 </div>
               </div>
 
