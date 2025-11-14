@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import "./mobile_profile.css";
 
-export default function MobileProfile() {
+export default function MobileOtherProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -44,7 +44,7 @@ export default function MobileProfile() {
 
     try {
       const res = await fetch(
-        "https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
         {
           method: "POST",
           body: formData,
@@ -86,7 +86,13 @@ export default function MobileProfile() {
   };
 
   return (
+
     <div className="mobile-profile-page">
+            {/* Material Icons Font */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
       {/* Mobile Header */}
       <header className="mobile-header">
         <div className="mobile-header-left">
@@ -105,7 +111,7 @@ export default function MobileProfile() {
         <div className="mobile-header-right">
           {user ? (
             <img
-              src={`https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
               alt="Profile"
               className="mobile-profile-pic"
               onClick={handleAccountClick}
@@ -208,7 +214,7 @@ export default function MobileProfile() {
           <>
             <div className="mobile-profile-pic-container" onClick={handleProfilePicClick}>
               <img
-                src={`https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
                 alt="Profile"
                 className="mobile-profile-pic-large"
               />
@@ -297,11 +303,7 @@ export default function MobileProfile() {
         </Link>
       </nav>
 
-      {/* Material Icons Font */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-        rel="stylesheet"
-      />
+
     </div>
   );
 }
