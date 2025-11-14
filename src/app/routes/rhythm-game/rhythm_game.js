@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useLayoutEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
 import {
   loadSound,
@@ -23,7 +23,6 @@ export default function RhythmGame() {
   const [masterVolume, setMasterVol] = useState(1);
   const [scores, setScores] = useState({ ostrich: 0, kangaroo: 0 });
 
-  /** TIMER **/
   const GAME_DURATION = 30;
   const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
   const [showResults, setShowResults] = useState(false);
@@ -32,10 +31,10 @@ export default function RhythmGame() {
   const NOTE_SPEED = 1;
   const SPAWN_INTERVAL = 1200;
   const NOTE_SIZE = 55;
+  const MIN_LANE_SPACING = 80;
 
-  // ★ FIX — multiple refs instead of one
   const hitZoneRefs = useRef({});
-  const [hitZonesY, setHitZonesY] = useState({});
+  const [hitZoneCenters, setHitZoneCenters] = useState({});
 
   const OSTRICH_KEYS = ["h", "j", "k", "l"];
   const KANGAROO_KEYS = ["u", "i", "o", "p"];
@@ -46,6 +45,11 @@ export default function RhythmGame() {
   const audioContextRef = useRef(null);
   const timerRef = useRef(null);
 
+  const notesRef = useRef([]);
+  notesRef.current = notes;
+
+  const lastPlayerRef = useRef(null);
+
   /** LOAD SOUNDS **/
   useEffect(() => {
     if (!audioContextRef.current) {
@@ -53,36 +57,38 @@ export default function RhythmGame() {
         window.webkitAudioContext)();
     }
 
-    const loadAll = async () => {
+    const loadAllSounds = async () => {
       const loaded = {};
-      for (const s of SOUND_CONFIG) loaded[s.key] = await loadSound(s.file);
+      for (const sound of SOUND_CONFIG) {
+        loaded[sound.key] = await loadSound(sound.file);
+      }
       setSounds(loaded);
     };
-    loadAll();
+    loadAllSounds();
   }, []);
 
   /** LOAD VOLUME **/
   useEffect(() => {
-    const saved = parseFloat(localStorage.getItem("masterVolume") || "1");
-    setMasterVol(saved);
-    setMasterVolume(saved);
+    const savedVol = parseFloat(localStorage.getItem("masterVolume") || "1");
+    setMasterVol(savedVol);
+    setMasterVolume(savedVol);
   }, []);
 
   useEffect(() => {
     localStorage.setItem("masterVolume", masterVolume);
   }, [masterVolume]);
 
-  /** Measure all hit zones */
-  useLayoutEffect(() => {
+  /** MEASURE HIT ZONES **/
+  useEffect(() => {
     if (gameStarted && countdown === null) {
-      const zones = {};
-      for (const key in hitZoneRefs.current) {
-        const el = hitZoneRefs.current[key];
-        if (!el) continue;
-        const rect = el.getBoundingClientRect();
-        zones[key] = rect.top + rect.height / 2;
-      }
-      setHitZonesY(zones);
+      const centers = {};
+      Object.entries(hitZoneRefs.current).forEach(([key, el]) => {
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          centers[key] = rect.top + rect.height / 2;
+        }
+      });
+      setHitZoneCenters(centers);
     }
   }, [gameStarted, countdown]);
 
@@ -95,10 +101,10 @@ export default function RhythmGame() {
     setShowResults(false);
     setWinnerText("");
     setPressedKeys({});
-    setHitZonesY({});
+    setHitZoneCenters({});
+    lastPlayerRef.current = null;
 
     setCountdown(3);
-
     const countInterval = setInterval(() => {
       setCountdown((prev) => {
         if (prev === 1) {
@@ -112,7 +118,7 @@ export default function RhythmGame() {
     }, 1000);
   };
 
-  /** TIMER **/
+  /** TIMER COUNTDOWN **/
   useEffect(() => {
     if (!gameStarted || countdown !== null) return;
 
@@ -127,7 +133,9 @@ export default function RhythmGame() {
       });
     }, 1000);
 
-    return () => timerRef.current && clearInterval(timerRef.current);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [gameStarted, countdown]);
 
   /** END GAME **/
@@ -135,16 +143,22 @@ export default function RhythmGame() {
     setGameStarted(false);
     cancelAnimationFrame(gameLoopRef.current);
     clearInterval(spawnIntervalRef.current);
-    clearInterval(timerRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
 
-    setScores((current) => {
-      let winner = "It's a Tie!";
-      if (current.ostrich > current.kangaroo) winner = "Ostrich Wins!";
-      else if (current.kangaroo > current.ostrich) winner = "Kangaroo Wins!";
+    setScores((currentScores) => {
+      let winner = "";
+      if (currentScores.ostrich > currentScores.kangaroo) {
+        winner = "Ostrich Wins!";
+      } else if (currentScores.kangaroo > currentScores.ostrich) {
+        winner = "Kangaroo Wins!";
+      } else {
+        winner = "It's a Tie!";
+      }
 
       setWinnerText(winner);
       setShowResults(true);
-      return current;
+
+      return currentScores;
     });
   };
 
@@ -153,14 +167,38 @@ export default function RhythmGame() {
     if (!gameStarted) return;
 
     spawnIntervalRef.current = setInterval(() => {
-      const player = Math.random() > 0.5 ? "ostrich" : "kangaroo";
-      const keys = player === "ostrich" ? OSTRICH_KEYS : KANGAROO_KEYS;
-      const key = keys[Math.floor(Math.random() * keys.length)];
+      const player =
+        lastPlayerRef.current === "ostrich" ? "kangaroo" : "ostrich";
+      lastPlayerRef.current = player;
 
-      setNotes((prev) => [
-        ...prev,
-        { id: noteIdRef.current++, player, key, y: -50, hit: false },
-      ]);
+      const keys = player === "ostrich" ? OSTRICH_KEYS : KANGAROO_KEYS;
+
+      let key = keys[Math.floor(Math.random() * keys.length)];
+
+      const recentNotes = notesRef.current.filter(
+        (n) => n.player === player && n.key === key
+      );
+      if (recentNotes.length > 0) {
+        const lastNote = recentNotes[recentNotes.length - 1];
+        if (lastNote.y < MIN_LANE_SPACING) {
+          const alternativeKeys = keys.filter((k) => k !== key);
+          if (alternativeKeys.length > 0) {
+            key =
+              alternativeKeys[
+                Math.floor(Math.random() * alternativeKeys.length)
+              ];
+          }
+        }
+      }
+
+      const newNote = {
+        id: noteIdRef.current++,
+        player,
+        key,
+        y: -50,
+        hit: false,
+      };
+      setNotes((prev) => [...prev, newNote]);
     }, SPAWN_INTERVAL);
 
     return () => clearInterval(spawnIntervalRef.current);
@@ -173,9 +211,10 @@ export default function RhythmGame() {
     const loop = () => {
       setNotes((prev) =>
         prev
-          .map((n) => ({ ...n, y: n.y + NOTE_SPEED }))
-          .filter((n) => n.y < window.innerHeight + 50)
+          .map((note) => ({ ...note, y: note.y + NOTE_SPEED }))
+          .filter((note) => note.y < window.innerHeight + 50)
       );
+
       gameLoopRef.current = requestAnimationFrame(loop);
     };
 
@@ -183,7 +222,7 @@ export default function RhythmGame() {
     return () => cancelAnimationFrame(gameLoopRef.current);
   }, [gameStarted]);
 
-  /** KEY HANDLING + SCORING **/
+  /** KEYS + SCORING **/
   useEffect(() => {
     const HIT_TOLERANCE = 150;
     const MAX_POINTS = 100;
@@ -193,39 +232,28 @@ export default function RhythmGame() {
       if (!OSTRICH_KEYS.includes(key) && !KANGAROO_KEYS.includes(key)) return;
 
       setPressedKeys((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
-
       if (sounds[key]) playSound(sounds[key], masterVolume);
 
-      if (!gameStarted) return;
-
       const player = OSTRICH_KEYS.includes(key) ? "ostrich" : "kangaroo";
-      const hitY = hitZonesY[key];
-      if (!hitY) return;
+
+      if (!hitZoneCenters[key] || !gameStarted) return;
 
       setNotes((prevNotes) => {
-        let bestIndex = -1;
+        let index = -1;
         let best = Infinity;
 
-        // find closest matching note
         prevNotes.forEach((note, i) => {
           if (note.key === key && note.player === player && !note.hit) {
-            // ★ FIX — convert note y to screen space
-            const laneEl = hitZoneRefs.current[key]?.parentElement;
-            if (!laneEl) return;
-
-            const laneRect = laneEl.getBoundingClientRect();
-            const noteScreenY = laneRect.top + note.y + NOTE_SIZE / 2;
-
-            const dist = Math.abs(noteScreenY - hitY);
+            const noteCenter = note.y + NOTE_SIZE / 2;
+            const dist = Math.abs(noteCenter - hitZoneCenters[key]);
             if (dist < best) {
               best = dist;
-              bestIndex = i;
+              index = i;
             }
           }
         });
 
-        // If good hit
-        if (bestIndex !== -1 && best <= HIT_TOLERANCE) {
+        if (index !== -1 && best <= HIT_TOLERANCE) {
           const ratio = best / HIT_TOLERANCE;
           const points = Math.round(
             MAX_POINTS * Math.cos((ratio * Math.PI) / 2)
@@ -237,7 +265,7 @@ export default function RhythmGame() {
           }));
 
           const arr = [...prevNotes];
-          arr[bestIndex].hit = true;
+          arr[index].hit = true;
           return arr;
         }
 
@@ -256,7 +284,7 @@ export default function RhythmGame() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [sounds, masterVolume, hitZonesY, gameStarted]);
+  }, [sounds, masterVolume, hitZoneCenters, gameStarted]);
 
   const isOstrichPlaying = OSTRICH_KEYS.some((k) => pressedKeys[k]);
   const isKangarooPlaying = KANGAROO_KEYS.some((k) => pressedKeys[k]);
@@ -273,7 +301,8 @@ export default function RhythmGame() {
     setCountdown(null);
     setScores({ ostrich: 0, kangaroo: 0 });
     setTimeRemaining(GAME_DURATION);
-    setHitZonesY({});
+    setHitZoneCenters({});
+    lastPlayerRef.current = null;
   };
 
   const returnToStart = () => {
@@ -284,7 +313,7 @@ export default function RhythmGame() {
 
   return (
     <div className="rhythm-container">
-      {/* RESULTS */}
+      {/* RESULTS POPUP */}
       {showResults && (
         <div className="results-overlay">
           <div className="results-box">
@@ -314,13 +343,13 @@ export default function RhythmGame() {
         <div className="game-area">
           <div className="game-timer">⏱ {timeRemaining}s</div>
 
+          {/* Ostrich Section */}
           <div className="player-section">
             <div className="score-display">Score: {scores.ostrich}</div>
             <img
               src={isOstrichPlaying ? OstrichPlaying : Ostrich}
               className="animal-icon"
             />
-
             <div className="lanes-group">
               {OSTRICH_KEYS.map((key) => (
                 <div
@@ -338,7 +367,6 @@ export default function RhythmGame() {
                         style={{ top: note.y }}
                       />
                     ))}
-
                   <div
                     className={`hit-zone ${
                       pressedKeys[key] ? "hit-zone-active" : ""
@@ -352,14 +380,13 @@ export default function RhythmGame() {
             </div>
           </div>
 
-          {/* Kangaroo */}
+          {/* Kangaroo Section */}
           <div className="player-section">
             <div className="score-display">Score: {scores.kangaroo}</div>
             <img
               src={isKangarooPlaying ? KangarooPlaying : Kangaroo}
               className="animal-icon"
             />
-
             <div className="lanes-group">
               {KANGAROO_KEYS.map((key) => (
                 <div
@@ -377,7 +404,6 @@ export default function RhythmGame() {
                         style={{ top: note.y }}
                       />
                     ))}
-
                   <div
                     className={`hit-zone ${
                       pressedKeys[key] ? "hit-zone-active" : ""
@@ -395,7 +421,6 @@ export default function RhythmGame() {
             RESET
           </button>
 
-          {/* VOLUME */}
           <input
             type="range"
             min="0"
