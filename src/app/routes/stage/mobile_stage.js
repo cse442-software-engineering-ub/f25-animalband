@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { SOUND_CONFIG } from "./stage_soundsConfig";
 import { loadSound, playSound, setMasterVolume } from "./stage_audioUtil";
 import "./mobile_stage.css";
@@ -17,6 +17,7 @@ import SnakePlaying from "../../../assets/snake_playing.jpeg";
 
 export default function MobileStage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [sounds, setSounds] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
@@ -44,6 +45,14 @@ export default function MobileStage() {
   const [recordingTitle, setRecordingTitle] = useState("");
   const [recordingDescription, setRecordingDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Edit mode state
+  const [editingRecordingId, setEditingRecordingId] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [initialTrackCount, setInitialTrackCount] = useState(0);
 
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
@@ -156,6 +165,126 @@ export default function MobileStage() {
     };
     checkUser();
   }, []);
+
+  // Load recording for editing from URL parameter
+  useEffect(() => {
+    const loadRecordingForEdit = async () => {
+      const params = new URLSearchParams(location.search);
+      const recordingId = params.get('edit');
+      
+      if (!recordingId) return;
+      
+      const cookies = document.cookie.split("; ");
+      const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
+      const authCookie = cookieObj["auth_token"] || "";
+      
+      if (!authCookie) {
+        alert("You must be logged in to edit recordings.");
+        navigate("/my-recordings");
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getLocalRecordings.php",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ auth_token: authCookie }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.recordings) {
+            const recording = data.recordings.find(
+              (r) => r.id === parseInt(recordingId)
+            );
+            
+            if (recording) {
+              setEditingRecordingId(recording.id);
+              setRecordingTitle(recording.title);
+              setRecordingDescription(recording.description);
+              
+              const loadableTracks = recording.recording.filter(track => {
+                if (!Array.isArray(track)) return false;
+                return !track.some(note => note.isImported);
+              });
+              
+              const importedTrackCount = recording.recording.length - loadableTracks.length;
+              
+              setRecordedTracks(loadableTracks);
+              setIsEditMode(true);
+              setInitialTrackCount(loadableTracks.length);
+              
+              const settings = loadableTracks.map((track, idx) => ({
+                name: `Track ${idx + 1}`,
+                muted: false,
+                solo: false,
+                volume: 1,
+              }));
+              setTrackSettings(settings);
+              setTrackCounter(loadableTracks.length + 1);
+              
+              let message = `Loaded recording: ${recording.title}\nLoaded ${loadableTracks.length} track(s)`;
+              
+              if (importedTrackCount > 0) {
+                message += `\n\nNote: ${importedTrackCount} imported audio track(s) were skipped (imported audio cannot be restored from saved recordings).`;
+              }
+              
+              if (loadableTracks.length === 0) {
+                message += "\n\nNo keyboard tracks found. You can record new tracks or import audio.";
+              }
+              
+              alert(message);
+            } else {
+              alert("Recording not found.");
+              navigate("/my-recordings");
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading recording for edit:", error);
+        alert("Failed to load recording. Please try again.");
+        navigate("/my-recordings");
+      }
+    };
+
+    loadRecordingForEdit();
+  }, [navigate, location]);
+
+  // Track changes to recorded tracks
+  useEffect(() => {
+    if (isEditMode && recordedTracks.length !== initialTrackCount) {
+      setHasUnsavedChanges(true);
+    }
+  }, [recordedTracks, isEditMode, initialTrackCount]);
+
+  // Warn before leaving if there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Custom navigation handler with warning
+  const handleNavigateAway = useCallback((path) => {
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm(
+        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+      );
+      if (!confirmLeave) {
+        return;
+      }
+    }
+    navigate(path);
+  }, [hasUnsavedChanges, navigate]);
 
   // Performance: Initialize AudioContext with optimal settings
   useEffect(() => {
@@ -689,28 +818,43 @@ export default function MobileStage() {
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            recording: recordedTracks,
-            title: sanitizedTitle,
-            description: sanitizedDescription,
-            userToken: authCookie,
-          }),
-          signal: controller.signal,
-        }
-      );
+      const endpoint = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php";
+
+      const payload = {
+        recording: recordedTracks,
+        title: sanitizedTitle,
+        description: sanitizedDescription,
+        userToken: authCookie,
+      };
+
+      if (isEditMode && editingRecordingId) {
+        payload.recordingId = editingRecordingId;
+      }
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        alert("Recording saved successfully!");
+        alert(
+          isEditMode
+            ? "Recording updated successfully!"
+            : "Recording saved successfully!"
+        );
         setShowSaveForm(false);
-        setRecordingTitle("");
-        setRecordingDescription("");
+        setHasUnsavedChanges(false);
+        
+        if (!isEditMode) {
+          setRecordingTitle("");
+          setRecordingDescription("");
+        } else {
+          setInitialTrackCount(recordedTracks.length);
+        }
       } else {
         const errorText = await response.text();
         console.error("Save failed:", errorText);
@@ -833,6 +977,19 @@ export default function MobileStage() {
         </div>
       </header>
 
+      {isEditMode && (
+        <div style={{
+          backgroundColor: '#15803d',
+          color: 'white',
+          padding: '12px',
+          textAlign: 'center',
+          fontWeight: 'bold',
+          fontSize: '14px'
+        }}>
+          Editing: {recordingTitle || 'Untitled Recording'}
+        </div>
+      )}
+
       <section className="m-band-stage">
         <h2 className="main-heading">Stage</h2>
         <p className="subtitle">Tap on the animals in different quadrants!</p>
@@ -881,7 +1038,7 @@ export default function MobileStage() {
                 width: 20px;
                 height: 20px;
                 border-radius: 50%;
-                background: #4CAF50;
+                background: #15803d;
                 cursor: pointer;
                 border: 2px solid white;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -890,7 +1047,7 @@ export default function MobileStage() {
                 width: 20px;
                 height: 20px;
                 border-radius: 50%;
-                background: #4CAF50;
+                background: #15803d;
                 cursor: pointer;
                 border: 2px solid white;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -916,7 +1073,7 @@ export default function MobileStage() {
               height: "8px",
               borderRadius: "4px",
               outline: "none",
-              background: `linear-gradient(to right, #4CAF50 0%, #4CAF50 ${
+              background: `linear-gradient(to right, #15803d 0%, #15803d ${
                 masterVolume * 100
               }%, #ddd ${masterVolume * 100}%, #ddd 100%)`,
               WebkitAppearance: "none",
@@ -997,7 +1154,7 @@ export default function MobileStage() {
               fontWeight: "600",
               border: "none",
               borderRadius: "8px",
-              backgroundColor: recordedTracks.length === 0 ? "#ccc" : "#4CAF50",
+              backgroundColor: recordedTracks.length === 0 ? "#ccc" : "#15803d",
               color: "white",
               cursor: recordedTracks.length === 0 ? "not-allowed" : "pointer",
               display: "flex",
@@ -1022,7 +1179,7 @@ export default function MobileStage() {
               fontWeight: "600",
               border: "none",
               borderRadius: "8px",
-              backgroundColor: recordedTracks.length === 0 ? "#ccc" : "#4CAF50",
+              backgroundColor: recordedTracks.length === 0 ? "#ccc" : "#15803d",
               color: "white",
               cursor: recordedTracks.length === 0 ? "not-allowed" : "pointer",
               display: "flex",
@@ -1066,7 +1223,7 @@ export default function MobileStage() {
         {showSaveForm && (
           <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
             <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-              <h3>Save Your Recording</h3>
+              <h3>{isEditMode ? 'Update Your Recording' : 'Save Your Recording'}</h3>
               <label>
                 Title:
                 <input
@@ -1097,7 +1254,11 @@ export default function MobileStage() {
                   Cancel
                 </button>
                 <button onClick={saveRecordingLocally} disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving 
+                    ? "Saving..." 
+                    : isEditMode 
+                      ? "Update Recording" 
+                      : "Save Recording"}
                 </button>
               </div>
             </div>
@@ -1154,7 +1315,7 @@ export default function MobileStage() {
                       padding: "6px",
                       fontSize: "14px",
                       fontWeight: "600",
-                      border: "2px solid #4CAF50",
+                      border: "2px solid #15803d",
                       borderRadius: "4px",
                       outline: "none",
                     }}
@@ -1191,7 +1352,7 @@ export default function MobileStage() {
                       height: "6px",
                       borderRadius: "3px",
                       outline: "none",
-                      background: `linear-gradient(to right, #4CAF50 0%, #4CAF50 ${
+                      background: `linear-gradient(to right, #15803d 0%, #15803d ${
                         (trackSettings[index]?.volume ?? 1) * 100
                       }%, #ddd ${
                         (trackSettings[index]?.volume ?? 1) * 100
@@ -1252,7 +1413,7 @@ export default function MobileStage() {
                     border: "none",
                     borderRadius: "6px",
                     backgroundColor: trackSettings[index]?.solo
-                      ? "#4CAF50"
+                      ? "#15803d"
                       : "#e0e0e0",
                     color: trackSettings[index]?.solo ? "white" : "#333",
                     cursor: "pointer",
