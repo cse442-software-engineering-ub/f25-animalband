@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { SOUND_CONFIG } from "./stage_soundsConfig";
 import { loadSound, playSound, setMasterVolume } from "./stage_audioUtil";
 import "./stage.css";
@@ -17,6 +17,7 @@ import SnakePlaying from "../../../assets/snakerockin.png";
 
 export default function DesktopStage() {
   const navigate = useNavigate();
+  const location = useLocation(); // Add this to access hash routing params
   const [user, setUser] = useState(null);
   const [sounds, setSounds] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
@@ -44,6 +45,10 @@ export default function DesktopStage() {
   const [recordingTitle, setRecordingTitle] = useState("");
   const [recordingDescription, setRecordingDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Edit mode state
+  const [editingRecordingId, setEditingRecordingId] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
@@ -152,18 +157,145 @@ export default function DesktopStage() {
     checkUser();
   }, []);
 
+  // Load recording for editing from URL parameter - FIXED FOR HASH ROUTING
+  useEffect(() => {
+    const loadRecordingForEdit = async () => {
+      // Use location.search for hash routing
+      const params = new URLSearchParams(location.search);
+      const recordingId = params.get('edit');
+      
+      console.log("Edit mode - Location:", location);
+      console.log("Edit mode - Search params:", location.search);
+      console.log("Edit mode - Recording ID from URL:", recordingId);
+      
+      if (!recordingId) {
+        console.log("No recording ID found in URL, skipping load");
+        return;
+      }
+      
+      const cookies = document.cookie.split("; ");
+      const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
+      const authCookie = cookieObj["auth_token"] || "";
+      
+      if (!authCookie) {
+        alert("You must be logged in to edit recordings.");
+        navigate("/my-recordings");
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getLocalRecordings.php",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ auth_token: authCookie }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Full response data:", data);
+          
+          if (data.success && data.recordings) {
+            console.log("All recordings:", data.recordings);
+            
+            const recording = data.recordings.find(
+              (r) => r.id === parseInt(recordingId)
+            );
+            
+            console.log("Found recording:", recording);
+            
+            if (recording) {
+              console.log("Recording structure:", recording.recording);
+              console.log("Number of tracks in recording:", recording.recording?.length);
+              
+              setEditingRecordingId(recording.id);
+              setRecordingTitle(recording.title);
+              setRecordingDescription(recording.description);
+              
+              // Check if recording.recording exists and is an array
+              if (!Array.isArray(recording.recording)) {
+                console.error("Recording data is not an array:", recording.recording);
+                alert("Invalid recording format. Cannot load tracks.");
+                return;
+              }
+              
+              // Filter out imported tracks (they can't be restored from JSON)
+              // Only load keyboard-based tracks
+              const loadableTracks = recording.recording.filter(track => {
+                if (!Array.isArray(track)) {
+                  console.warn("Track is not an array:", track);
+                  return false;
+                }
+                // Check if this track contains any imported audio
+                const hasImported = track.some(note => note.isImported);
+                console.log("Track has imported audio:", hasImported, "Track:", track);
+                return !hasImported;
+              });
+              
+              console.log("Loadable tracks count:", loadableTracks.length);
+              console.log("Loadable tracks:", loadableTracks);
+              
+              const importedTrackCount = recording.recording.length - loadableTracks.length;
+              
+              setRecordedTracks(loadableTracks);
+              setIsEditMode(true);
+              
+              // Initialize track settings for loaded tracks
+              const settings = loadableTracks.map((track, idx) => ({
+                name: `Track ${idx + 1}`,
+                muted: false,
+                solo: false,
+                volume: 1,
+              }));
+              setTrackSettings(settings);
+              setTrackCounter(loadableTracks.length + 1);
+              
+              console.log("Track settings initialized:", settings);
+              console.log("State updated - recordedTracks should now have", loadableTracks.length, "tracks");
+              
+              let message = `Loaded recording: ${recording.title}\n`;
+              message += `Total tracks: ${recording.recording.length}\n`;
+              message += `Keyboard tracks loaded: ${loadableTracks.length}\n`;
+              
+              if (importedTrackCount > 0) {
+                message += `Imported tracks skipped: ${importedTrackCount}\n\n`;
+                message += "Note: Imported audio cannot be restored from saved recordings. You can re-import them if needed.";
+              }
+              
+              if (loadableTracks.length === 0) {
+                message += "\nNo keyboard tracks found. You can record new tracks or import audio.";
+              }
+              
+              alert(message);
+            } else {
+              alert("Recording not found.");
+              navigate("/my-recordings");
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading recording for edit:", error);
+        alert("Failed to load recording. Please try again.");
+        navigate("/my-recordings");
+      }
+    };
+
+    loadRecordingForEdit();
+  }, [navigate, location]);
+
   // Performance: Initialize AudioContext with optimal settings
   useEffect(() => {
     if (!audioContextRef.current || audioContextRef.current.state === "closed") {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       audioContextRef.current = new AudioContextClass({
-        latencyHint: 'interactive', // Optimize for low latency
+        latencyHint: 'interactive',
         sampleRate: 44100
       });
     }
 
     return () => {
-      // Clean up animation timers
       animationTimersRef.current.forEach(timer => clearTimeout(timer));
       animationTimersRef.current.clear();
     };
@@ -184,9 +316,7 @@ export default function DesktopStage() {
     loadAllSounds();
   }, []);
 
-  // Performance: Optimized animation handling with batching
   const triggerAnimalAnimation = useCallback((animal) => {
-    // Clear existing timer for this animal if it exists
     const existingTimer = animationTimersRef.current.get(animal);
     if (existingTimer) {
       clearTimeout(existingTimer);
@@ -202,7 +332,6 @@ export default function DesktopStage() {
     animationTimersRef.current.set(animal, timer);
   }, []);
 
-  // Performance: Memoized key handler to reduce recreation
   const handleKeyDown = useCallback((e) => {
     if (
       e.target.tagName === "INPUT" ||
@@ -294,7 +423,6 @@ export default function DesktopStage() {
     }
   };
 
-  // Performance: Optimized playback with reusable gain nodes
   const playTracksDuringRecording = useCallback(() => {
     if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
@@ -353,7 +481,6 @@ export default function DesktopStage() {
     setActiveAudioSources({ sources, timeouts });
   }, [recordedTracks, trackSettings, sounds, masterVolume, triggerAnimalAnimation]);
 
-  // Performance: Optimized track playback
   const playAllTracks = useCallback(() => {
     if (recordedTracks.length === 0) return;
     
@@ -466,6 +593,22 @@ export default function DesktopStage() {
     setTrackSettings((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const clearAllTracks = () => {
+    if (
+      recordedTracks.length > 0 &&
+      !window.confirm(
+        "Are you sure you want to clear all tracks? This cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setRecordedTracks([]);
+    setTrackSettings([]);
+    setTrackCounter(1);
+    stopPlayback();
+  };
+
   const exportRecording = async () => {
     if (!audioContextRef.current || recordedTracks.length === 0) return;
 
@@ -567,28 +710,45 @@ export default function DesktopStage() {
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      const response = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            recording: recordedTracks,
-            title: sanitizedTitle,
-            description: sanitizedDescription,
-            userToken: authCookie,
-          }),
-          signal: controller.signal,
-        }
-      );
+      // Determine if we're updating or creating new
+      const endpoint = isEditMode
+        ? "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateRecording.php"
+        : "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php";
+
+      const payload = {
+        recording: recordedTracks,
+        title: sanitizedTitle,
+        description: sanitizedDescription,
+        userToken: authCookie,
+      };
+
+      // Add recordingId if we're editing
+      if (isEditMode && editingRecordingId) {
+        payload.recordingId = editingRecordingId;
+      }
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        alert("Recording saved successfully!");
+        alert(
+          isEditMode
+            ? "Recording updated successfully!"
+            : "Recording saved successfully!"
+        );
         setShowSaveForm(false);
-        setRecordingTitle("");
-        setRecordingDescription("");
+        
+        // If we just saved a new recording, clear the form
+        if (!isEditMode) {
+          setRecordingTitle("");
+          setRecordingDescription("");
+        }
       } else {
         const errorText = await response.text();
         console.error("Save failed:", errorText);
@@ -841,6 +1001,49 @@ export default function DesktopStage() {
           </div>
         </header>
 
+        {isEditMode && (
+          <div className="edit-mode-banner" style={{
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            padding: '10px',
+            textAlign: 'center',
+            fontWeight: 'bold',
+            marginTop: '10px'
+          }}>
+            Editing: {recordingTitle || 'Untitled Recording'}
+            <button
+              onClick={clearAllTracks}
+              style={{
+                marginLeft: '20px',
+                padding: '5px 15px',
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Clear All Tracks
+            </button>
+            <button
+              onClick={() => navigate('/my-recordings')}
+              style={{
+                marginLeft: '10px',
+                padding: '5px 15px',
+                backgroundColor: '#2196F3',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Back to My Recordings
+            </button>
+          </div>
+        )}
+
         <section className="band-stage">
           <div className="animals-container">
             {Object.keys(ANIMAL_IMAGES).map((animal) => (
@@ -947,7 +1150,7 @@ export default function DesktopStage() {
         {showSaveForm && (
           <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
             <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-              <h3>Save Your Recording</h3>
+              <h3>{isEditMode ? 'Update Your Recording' : 'Save Your Recording'}</h3>
               <label>
                 Title:
                 <input
@@ -978,7 +1181,11 @@ export default function DesktopStage() {
                   Cancel
                 </button>
                 <button onClick={saveRecordingLocally} disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving 
+                    ? "Saving..." 
+                    : isEditMode 
+                      ? "Update Recording" 
+                      : "Save Recording"}
                 </button>
               </div>
             </div>
