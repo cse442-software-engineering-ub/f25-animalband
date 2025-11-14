@@ -49,6 +49,10 @@ export default function DesktopStage() {
   // Edit mode state
   const [editingRecordingId, setEditingRecordingId] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [initialTrackCount, setInitialTrackCount] = useState(0);
 
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
@@ -241,6 +245,7 @@ export default function DesktopStage() {
               
               setRecordedTracks(loadableTracks);
               setIsEditMode(true);
+              setInitialTrackCount(loadableTracks.length); // Track initial count
               
               // Initialize track settings for loaded tracks
               const settings = loadableTracks.map((track, idx) => ({
@@ -255,17 +260,15 @@ export default function DesktopStage() {
               console.log("Track settings initialized:", settings);
               console.log("State updated - recordedTracks should now have", loadableTracks.length, "tracks");
               
-              let message = `Loaded recording: ${recording.title}\n`;
-              message += `Total tracks: ${recording.recording.length}\n`;
-              message += `Keyboard tracks loaded: ${loadableTracks.length}\n`;
+              // Simplified message - just show loaded tracks
+              let message = `Loaded recording: ${recording.title}\nLoaded ${loadableTracks.length} track(s)`;
               
               if (importedTrackCount > 0) {
-                message += `Imported tracks skipped: ${importedTrackCount}\n\n`;
-                message += "Note: Imported audio cannot be restored from saved recordings. You can re-import them if needed.";
+                message += `\n\nNote: ${importedTrackCount} imported audio track(s) were skipped (imported audio cannot be restored from saved recordings).`;
               }
               
               if (loadableTracks.length === 0) {
-                message += "\nNo keyboard tracks found. You can record new tracks or import audio.";
+                message += "\n\nNo keyboard tracks found. You can record new tracks or import audio.";
               }
               
               alert(message);
@@ -284,6 +287,39 @@ export default function DesktopStage() {
 
     loadRecordingForEdit();
   }, [navigate, location]);
+
+  // Track changes to recorded tracks
+  useEffect(() => {
+    if (isEditMode && recordedTracks.length !== initialTrackCount) {
+      setHasUnsavedChanges(true);
+    }
+  }, [recordedTracks, isEditMode, initialTrackCount]);
+
+  // Warn before leaving if there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Custom navigation handler with warning
+  const handleNavigateAway = useCallback((path) => {
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm(
+        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+      );
+      if (!confirmLeave) {
+        return;
+      }
+    }
+    navigate(path);
+  }, [hasUnsavedChanges, navigate]);
 
   // Performance: Initialize AudioContext with optimal settings
   useEffect(() => {
@@ -710,10 +746,8 @@ export default function DesktopStage() {
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      // Determine if we're updating or creating new
-      const endpoint = isEditMode
-        ? "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateRecording.php"
-        : "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php";
+      // Use the same endpoint for both create and update
+      const endpoint = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php";
 
       const payload = {
         recording: recordedTracks,
@@ -722,7 +756,7 @@ export default function DesktopStage() {
         userToken: authCookie,
       };
 
-      // Add recordingId if we're editing
+      // Add recordingId if we're editing (this tells the PHP to update instead of insert)
       if (isEditMode && editingRecordingId) {
         payload.recordingId = editingRecordingId;
       }
@@ -743,11 +777,15 @@ export default function DesktopStage() {
             : "Recording saved successfully!"
         );
         setShowSaveForm(false);
+        setHasUnsavedChanges(false); // Reset unsaved changes flag
         
         // If we just saved a new recording, clear the form
         if (!isEditMode) {
           setRecordingTitle("");
           setRecordingDescription("");
+        } else {
+          // If editing, update the initial count
+          setInitialTrackCount(recordedTracks.length);
         }
       } else {
         const errorText = await response.text();
@@ -1003,7 +1041,7 @@ export default function DesktopStage() {
 
         {isEditMode && (
           <div className="edit-mode-banner" style={{
-            backgroundColor: '#4CAF50',
+            backgroundColor: '#15803d',
             color: 'white',
             padding: '10px',
             textAlign: 'center',
@@ -1011,36 +1049,7 @@ export default function DesktopStage() {
             marginTop: '10px'
           }}>
             Editing: {recordingTitle || 'Untitled Recording'}
-            <button
-              onClick={clearAllTracks}
-              style={{
-                marginLeft: '20px',
-                padding: '5px 15px',
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              Clear All Tracks
-            </button>
-            <button
-              onClick={() => navigate('/my-recordings')}
-              style={{
-                marginLeft: '10px',
-                padding: '5px 15px',
-                backgroundColor: '#2196F3',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              Back to My Recordings
-            </button>
+            {hasUnsavedChanges && <span style={{ marginLeft: '10px', fontSize: '14px' }}>• Unsaved Changes</span>}
           </div>
         )}
 

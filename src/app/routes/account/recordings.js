@@ -59,7 +59,7 @@ export default function MyRecordings() {
             loadedCount++;
             if (loadedCount === allImages.length) {
               setImagesLoaded(true);
-              console.log("All animal images fully preloaded");
+              //console.log("All animal images fully preloaded");
             }
           };
           img.onerror = () => console.warn("Failed to preload:", src);
@@ -388,7 +388,7 @@ export default function MyRecordings() {
                       width: '60px',
                       height: '60px',
                       borderRadius: '50%',
-                      backgroundColor: isPlaying ? '#666' : '#4CAF50',
+                      backgroundColor: isPlaying ? '#666' : '#15803d',
                       color: 'white',
                       border: 'none',
                       cursor: isPlaying ? 'not-allowed' : 'pointer',
@@ -408,7 +408,7 @@ export default function MyRecordings() {
                       width: '60px',
                       height: '60px',
                       borderRadius: '50%',
-                      backgroundColor: '#2196F3',
+                      backgroundColor: '#15803d',
                       color: 'white',
                       border: 'none',
                       cursor: 'pointer',
