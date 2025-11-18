@@ -68,7 +68,7 @@
   gap: 140px;
   width: 100%;
   height: 100vh;
-  padding-top: 40px; /* less padding to keep all visible */
+  padding-top: 40px;
   position: relative;
 }
 
@@ -90,7 +90,7 @@
   display: flex;
   gap: 16px;
   position: relative;
-  height: calc(60vh); /* fits comfortably on screen */
+  height: calc(60vh);
   justify-content: center;
 }
 
@@ -133,7 +133,7 @@
 /* --- Hit Zones --- */
 .hit-zone {
   position: absolute;
-  bottom: 10px; /* closer to bottom but visible */
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
   width: 55px;
@@ -145,6 +145,37 @@
   align-items: center;
   justify-content: center;
   transition: all 0.1s;
+  
+  /* Bright outline to mark the center target */
+  box-shadow: 0 0 0 3px #00ff00;
+}
+
+/* HITBOX VISUALIZATION - Shows the 150px tolerance radius */
+.hit-zone::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 55px;
+  height: 300px; /* 150px above center + 150px below center = 300px total hitbox */
+  border: 3px dashed #ff00ff; /* Magenta to stand out */
+  background: rgba(255, 0, 255, 0.15);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Yellow line to mark the exact center point where max points are awarded */
+.hit-zone::after {
+  content: '';
+  position: absolute;
+  left: -5px;
+  right: -5px;
+  top: 50%;
+  height: 3px;
+  background: #ffff00;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .hit-zone-active {
@@ -179,7 +210,7 @@
   color: white;
 }
 
-/* TIMER — fixed in bottom-right above reset button */
+/* TIMER */
 .game-timer {
   position: fixed;
   bottom: 80px;
@@ -236,6 +267,12 @@
 
 .play-again-btn:hover {
   background: #fff56a;
+}
+
+.score-display {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
 }
 
 @keyframes popIn {

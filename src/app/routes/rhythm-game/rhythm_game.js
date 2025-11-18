@@ -87,7 +87,12 @@ export default function RhythmGame() {
       Object.entries(hitZoneRefs.current).forEach(([key, el]) => {
         if (el) {
           const rect = el.getBoundingClientRect();
-          centers[key] = rect.top + rect.height / 2;
+          const parent = el.closest(".lane");
+          const parentRect = parent
+            ? parent.getBoundingClientRect()
+            : { top: 0 };
+          // Calculate position relative to parent lane, not viewport
+          centers[key] = rect.top - parentRect.top + rect.height / 2;
         }
       });
       setHitZoneCenters(centers);
@@ -98,7 +103,11 @@ export default function RhythmGame() {
         Object.entries(hitZoneRefs.current).forEach(([key, el]) => {
           if (el) {
             const rect = el.getBoundingClientRect();
-            centers[key] = rect.top + rect.height / 2;
+            const parent = el.closest(".lane");
+            const parentRect = parent
+              ? parent.getBoundingClientRect()
+              : { top: 0 };
+            centers[key] = rect.top - parentRect.top + rect.height / 2;
           }
         });
         setHitZoneCenters(centers);
@@ -253,7 +262,7 @@ export default function RhythmGame() {
     return () => cancelAnimationFrame(gameLoopRef.current);
   }, [gameStarted]);
 
-  /** KEYS + SCORING **/
+  /** KEYS + SCORING - FIXED **/
   useEffect(() => {
     const HIT_TOLERANCE = 150;
     const MAX_POINTS = 100;
@@ -275,8 +284,11 @@ export default function RhythmGame() {
 
         prevNotes.forEach((note, i) => {
           if (note.key === key && note.player === player && !note.hit) {
+            // FIXED: Calculate note center position correctly
             const noteCenter = note.y + NOTE_SIZE / 2;
-            const dist = Math.abs(noteCenter - hitZoneCenters[key]);
+            const hitZoneCenter = hitZoneCenters[key];
+            const dist = Math.abs(noteCenter - hitZoneCenter);
+
             if (dist < best) {
               best = dist;
               index = i;
