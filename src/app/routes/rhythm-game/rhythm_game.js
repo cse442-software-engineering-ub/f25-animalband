@@ -12,7 +12,6 @@ import Kangaroo from "../../../assets/kangaroo.png";
 import KangarooPlaying from "../../../assets/kangaroorockin.png";
 
 import "./rhythm.css";
-import "./timer.css";
 
 export default function RhythmGame() {
   const [gameStarted, setGameStarted] = useState(false);
@@ -22,6 +21,8 @@ export default function RhythmGame() {
   const [sounds, setSounds] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
   const [scores, setScores] = useState({ ostrich: 0, kangaroo: 0 });
+  const scoresRef = useRef({ ostrich: 0, kangaroo: 0 });
+  scoresRef.current = scores; // keep it in sync
 
   const GAME_DURATION = 30;
   const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
@@ -112,6 +113,7 @@ export default function RhythmGame() {
     setNotes([]);
     noteIdRef.current = 0;
     setScores({ ostrich: 0, kangaroo: 0 });
+    scoresRef.current = { ostrich: 0, kangaroo: 0 }; // reset ref
     setTimeRemaining(GAME_DURATION);
     setShowResults(false);
     setWinnerText("");
@@ -130,6 +132,21 @@ export default function RhythmGame() {
         return prev - 1;
       });
     }, 1000);
+  };
+
+  const resetGame = () => {
+    cancelAnimationFrame(gameLoopRef.current);
+    clearInterval(spawnIntervalRef.current);
+    clearInterval(timerRef.current);
+
+    setGameStarted(false);
+    setNotes([]);
+    setPressedKeys({});
+    setCountdown(null);
+    setScores({ ostrich: 0, kangaroo: 0 });
+    scoresRef.current = { ostrich: 0, kangaroo: 0 }; // reset ref
+    setTimeRemaining(GAME_DURATION);
+    lastPlayerRef.current = null;
   };
 
   /** TIMER COUNTDOWN **/
@@ -273,10 +290,15 @@ export default function RhythmGame() {
             MAX_POINTS * Math.cos((ratio * Math.PI) / 2)
           );
 
-          setScores((prev) => ({
-            ...prev,
-            [player]: prev[player] + points,
-          }));
+          // Update both ref and state to avoid stale closure issues
+          setScores((prev) => {
+            const newScores = {
+              ...prev,
+              [player]: prev[player] + points,
+            };
+            scoresRef.current = newScores;
+            return newScores;
+          });
 
           const arr = [...prevNotes];
           arr[index].hit = true;
@@ -294,6 +316,7 @@ export default function RhythmGame() {
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
@@ -302,22 +325,6 @@ export default function RhythmGame() {
 
   const isOstrichPlaying = OSTRICH_KEYS.some((k) => pressedKeys[k]);
   const isKangarooPlaying = KANGAROO_KEYS.some((k) => pressedKeys[k]);
-
-  /** RESET **/
-  const resetGame = () => {
-    cancelAnimationFrame(gameLoopRef.current);
-    clearInterval(spawnIntervalRef.current);
-    clearInterval(timerRef.current);
-
-    setGameStarted(false);
-    setNotes([]);
-    setPressedKeys({});
-    setCountdown(null);
-    setScores({ ostrich: 0, kangaroo: 0 });
-    setTimeRemaining(GAME_DURATION);
-    lastPlayerRef.current = null;
-    // Don't clear hitZoneCenters here - let the useEffect handle it
-  };
 
   const returnToStart = () => {
     resetGame();

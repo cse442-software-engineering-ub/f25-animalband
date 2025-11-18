@@ -178,3 +178,73 @@
   background: #388e3c;
   color: white;
 }
+
+/* TIMER — fixed in bottom-right above reset button */
+.game-timer {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffffff;
+  background: rgba(0,0,0,0.6);
+  padding: 10px 18px;
+  border-radius: 10px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* RESULTS POPUP */
+.results-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+.results-box {
+  background: #222;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  border: 3px solid #fff;
+  animation: popIn 0.3s ease-out;
+}
+
+.results-box h2 {
+  font-size: 40px;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.play-again-btn {
+  padding: 12px 30px;
+  font-size: 20px;
+  border: none;
+  background: #ffea00;
+  color: #000;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.play-again-btn:hover {
+  background: #fff56a;
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
