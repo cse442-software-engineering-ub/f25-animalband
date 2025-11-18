@@ -542,7 +542,7 @@
 .stats-container,
 .featured-songs-section
  {
-  background-color: #ffffff !important;
+  background-color: #ffffff;
 }
 
 /* Optional: keep smooth transitions if there were gradients or tints */
