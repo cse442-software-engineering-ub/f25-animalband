@@ -152,8 +152,12 @@ html, body, #root {
 }
 
 .stats-container {
-  background-color: #F2F2F2;
-  color: #F2F2F2;
+  background-color: #f2f2f2 !important;
+}
+
+.stat-card {
+  background-color: white !important;
+  color: white !important;
 }
 
 /* ========== PROFILE PICTURE ========== */
