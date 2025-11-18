@@ -230,10 +230,10 @@ export default function Landing() {
             <h3>Stage</h3>
             <p>Play instruments with your favorite animals.</p>
           </Link>
-          <Link to="/looping" className="feature-card">
+          <Link to="/rhythm-game" className="feature-card">
             <span className="material-symbols-outlined feature-icon">instant_mix</span>
-            <h3>Looping</h3>
-            <p>Layer beats & notes with a visual mixer.</p>
+            <h3>Rhythm Game</h3>
+            <p>Two-player competitive mode to test your rhythm.</p>
           </Link>
           <Link to="/forum" className="feature-card">
             <span className="material-symbols-outlined feature-icon">chat</span>

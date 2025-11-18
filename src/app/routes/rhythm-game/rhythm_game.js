@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { SOUND_CONFIG } from "../stage/stage_soundsConfig";
 import {
   loadSound,
@@ -14,6 +15,8 @@ import KangarooPlaying from "../../../assets/kangaroorockin.png";
 import "./rhythm.css";
 
 export default function RhythmGame() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [notes, setNotes] = useState([]);
@@ -22,7 +25,7 @@ export default function RhythmGame() {
   const [masterVolume, setMasterVol] = useState(1);
   const [scores, setScores] = useState({ ostrich: 0, kangaroo: 0 });
   const scoresRef = useRef({ ostrich: 0, kangaroo: 0 });
-  scoresRef.current = scores; // keep it in sync
+  scoresRef.current = scores;
 
   const GAME_DURATION = 30;
   const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
@@ -50,6 +53,28 @@ export default function RhythmGame() {
   notesRef.current = notes;
 
   const lastPlayerRef = useRef(null);
+
+  /** FETCH USER **/
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+          { credentials: "include" }
+        );
+        const data = await res.json();
+        if (data.loggedIn) setUser(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handleAccountClick = () => {
+    if (user) navigate("/account");
+    else navigate("/login");
+  };
 
   /** LOAD SOUNDS **/
   useEffect(() => {
@@ -82,7 +107,6 @@ export default function RhythmGame() {
   /** MEASURE HIT ZONES - Fixed to remeasure after countdown **/
   useEffect(() => {
     if (gameStarted && countdown === null) {
-      // Measure immediately
       const centers = {};
       Object.entries(hitZoneRefs.current).forEach(([key, el]) => {
         if (el) {
@@ -91,13 +115,11 @@ export default function RhythmGame() {
           const parentRect = parent
             ? parent.getBoundingClientRect()
             : { top: 0 };
-          // Calculate position relative to parent lane, not viewport
           centers[key] = rect.top - parentRect.top + rect.height / 2;
         }
       });
       setHitZoneCenters(centers);
 
-      // Also measure again after a delay to be safe
       const timer = setTimeout(() => {
         const centers = {};
         Object.entries(hitZoneRefs.current).forEach(([key, el]) => {
@@ -122,7 +144,7 @@ export default function RhythmGame() {
     setNotes([]);
     noteIdRef.current = 0;
     setScores({ ostrich: 0, kangaroo: 0 });
-    scoresRef.current = { ostrich: 0, kangaroo: 0 }; // reset ref
+    scoresRef.current = { ostrich: 0, kangaroo: 0 };
     setTimeRemaining(GAME_DURATION);
     setShowResults(false);
     setWinnerText("");
@@ -153,7 +175,7 @@ export default function RhythmGame() {
     setPressedKeys({});
     setCountdown(null);
     setScores({ ostrich: 0, kangaroo: 0 });
-    scoresRef.current = { ostrich: 0, kangaroo: 0 }; // reset ref
+    scoresRef.current = { ostrich: 0, kangaroo: 0 };
     setTimeRemaining(GAME_DURATION);
     lastPlayerRef.current = null;
   };
@@ -202,7 +224,7 @@ export default function RhythmGame() {
     });
   };
 
-  /** SPAWN NOTES - Alternating between players for fairness **/
+  /** SPAWN NOTES **/
   useEffect(() => {
     if (!gameStarted) return;
 
@@ -212,7 +234,6 @@ export default function RhythmGame() {
       lastPlayerRef.current = player;
 
       const keys = player === "ostrich" ? OSTRICH_KEYS : KANGAROO_KEYS;
-
       let key = keys[Math.floor(Math.random() * keys.length)];
 
       const recentNotes = notesRef.current.filter(
@@ -262,9 +283,9 @@ export default function RhythmGame() {
     return () => cancelAnimationFrame(gameLoopRef.current);
   }, [gameStarted]);
 
-  /** KEYS + SCORING - FIXED **/
+  /** KEYS + SCORING **/
   useEffect(() => {
-    const HIT_TOLERANCE = 150;
+    const HIT_TOLERANCE = 100;
     const MAX_POINTS = 100;
 
     const handleKeyDown = (e) => {
@@ -284,7 +305,6 @@ export default function RhythmGame() {
 
         prevNotes.forEach((note, i) => {
           if (note.key === key && note.player === player && !note.hit) {
-            // FIXED: Calculate note center position correctly
             const noteCenter = note.y + NOTE_SIZE / 2;
             const hitZoneCenter = hitZoneCenters[key];
             const dist = Math.abs(noteCenter - hitZoneCenter);
@@ -302,7 +322,6 @@ export default function RhythmGame() {
             MAX_POINTS * Math.cos((ratio * Math.PI) / 2)
           );
 
-          // Update both ref and state to avoid stale closure issues
           setScores((prev) => {
             const newScores = {
               ...prev,
@@ -346,6 +365,41 @@ export default function RhythmGame() {
 
   return (
     <div className="rhythm-container">
+      {/* HEADER */}
+      <header className="rhythm-header">
+        <Link to="/" className="rhythm-logo-section">
+          <span className="material-symbols-outlined rhythm-paw-icon">
+            pets
+          </span>
+          <h1 className="rhythm-site-title">ANIMALBAND</h1>
+        </Link>
+        <div className="rhythm-header-buttons">
+          {!user ? (
+            <>
+              <button
+                className="rhythm-btn-login"
+                onClick={() => navigate("/login")}
+              >
+                Login
+              </button>
+              <button
+                className="rhythm-btn-register"
+                onClick={() => navigate("/register")}
+              >
+                Register
+              </button>
+            </>
+          ) : (
+            <img
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              alt="Profile"
+              className="rhythm-profile-pic"
+              onClick={handleAccountClick}
+            />
+          )}
+        </div>
+      </header>
+
       {/* RESULTS POPUP */}
       {showResults && (
         <div className="results-overlay">
@@ -475,6 +529,11 @@ export default function RhythmGame() {
           />
         </div>
       )}
+
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
     </div>
   );
 }

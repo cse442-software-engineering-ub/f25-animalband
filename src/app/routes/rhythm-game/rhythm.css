@@ -15,13 +15,101 @@
   overflow: hidden;
 }
 
+/* --- Header --- */
+.rhythm-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem 2rem;
+  background-color: #D9D9D9;
+  position: relative;
+  z-index: 100;
+}
+
+.rhythm-logo-section {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rhythm-paw-icon {
+  font-size: 5rem !important;
+  color: #735442;
+}
+
+.rhythm-site-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #000;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.rhythm-header-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.rhythm-btn-login {
+  padding: 0.75rem 2rem;
+  background-color: #178C3A;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rhythm-btn-login:hover {
+  background-color: #15803d;
+}
+
+.rhythm-btn-register {
+  padding: 0.75rem 2rem;
+  background-color: transparent;
+  color: #178C3A;
+  border: 2px solid #178C3A;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rhythm-btn-register:hover {
+  background-color: #afd6bb;
+}
+
+.rhythm-profile-pic {
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+  cursor: pointer;
+  object-fit: cover;
+  border: 3px solid #178C3A;
+  transition: transform 0.2s;
+}
+
+.rhythm-profile-pic:hover {
+  transform: scale(1.05);
+}
+
 /* --- Start Screen --- */
 .start-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  height: calc(100vh - 120px);
   color: white;
 }
 
@@ -67,7 +155,7 @@
   align-items: flex-start;
   gap: 140px;
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 120px);
   padding-top: 40px;
   position: relative;
 }
@@ -146,11 +234,10 @@
   justify-content: center;
   transition: all 0.1s;
   
-  /* Bright outline to mark the center target */
-  box-shadow: 0 0 0 3px #00ff00;
+  /* box-shadow: 0 0 0 3px #00ff00; */
 }
 
-/* HITBOX VISUALIZATION - Shows the 150px tolerance radius */
+/* HITBOX VISUALIZATION */
 .hit-zone::before {
   content: '';
   position: absolute;
@@ -158,14 +245,13 @@
   top: 50%;
   transform: translate(-50%, -50%);
   width: 55px;
-  height: 300px; /* 150px above center + 150px below center = 300px total hitbox */
-  border: 3px dashed #ff00ff; /* Magenta to stand out */
-  background: rgba(255, 0, 255, 0.15);
+  height: 300px;
+  /* border: 3px dashed #ff00ff; */
+  /* background: rgba(255, 0, 255, 0.15); */
   pointer-events: none;
   z-index: -1;
 }
 
-/* Yellow line to mark the exact center point where max points are awarded */
 .hit-zone::after {
   content: '';
   position: absolute;
@@ -173,7 +259,7 @@
   right: -5px;
   top: 50%;
   height: 3px;
-  background: #ffff00;
+  /* background: #ffff00; */
   pointer-events: none;
   z-index: 1;
 }
