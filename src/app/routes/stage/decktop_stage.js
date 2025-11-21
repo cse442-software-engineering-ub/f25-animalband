@@ -58,6 +58,15 @@ export default function DesktopStage() {
   const [saveOption, setSaveOption] = useState("overwrite");
   const [originalTitle, setOriginalTitle] = useState("");
 
+  // Custom modal state
+  const [showModal, setShowModal] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: "", message: "", type: "info" });
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmModalData, setConfirmModalData] = useState({ title: "", message: "", onConfirm: null });
+  
+  // Tutorial state
+  const [showTutorial, setShowTutorial] = useState(false);
+
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
   
@@ -127,6 +136,32 @@ export default function DesktopStage() {
     );
   };
 
+  // Custom modal functions
+  const showAlertModal = (title, message, type = "info") => {
+    setModalContent({ title, message, type });
+    setShowModal(true);
+  };
+
+  const showConfirm = (title, message, onConfirm) => {
+    setConfirmModalData({ title, message, onConfirm });
+    setShowConfirmModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+  };
+
+  const closeConfirmModal = () => {
+    setShowConfirmModal(false);
+  };
+
+  const handleConfirm = () => {
+    if (confirmModalData.onConfirm) {
+      confirmModalData.onConfirm();
+    }
+    closeConfirmModal();
+  };
+
   useEffect(() => {
     const checkUser = async () => {
       if (requestInProgressRef.current) return;
@@ -185,7 +220,7 @@ export default function DesktopStage() {
       const authCookie = cookieObj["auth_token"] || "";
       
       if (!authCookie) {
-        alert("You must be logged in to edit recordings.");
+        showAlertModal("Login Required", "You must be logged in to edit recordings.", "warning");
         navigate("/my-recordings");
         return;
       }
@@ -224,7 +259,7 @@ export default function DesktopStage() {
               
               if (!Array.isArray(recording.recording)) {
                 console.error("Recording data is not an array:", recording.recording);
-                alert("Invalid recording format. Cannot load tracks.");
+                showAlertModal("Invalid Format", "Invalid recording format. Cannot load tracks.", "error");
                 return;
               }
               
@@ -269,16 +304,16 @@ export default function DesktopStage() {
                 message += "\n\nNo keyboard tracks found. You can record new tracks or import audio.";
               }
               
-              alert(message);
+              showAlertModal("Recording Loaded", message, "success");
             } else {
-              alert("Recording not found.");
+              showAlertModal("Not Found", "Recording not found.", "error");
               navigate("/my-recordings");
             }
           }
         }
       } catch (error) {
         console.error("Error loading recording for edit:", error);
-        alert("Failed to load recording. Please try again.");
+        showAlertModal("Load Failed", "Failed to load recording. Please try again.", "error");
         navigate("/my-recordings");
       }
     };
@@ -301,7 +336,7 @@ export default function DesktopStage() {
       
       if (!remixDataStr) {
         console.error("No remix data found");
-        alert("Remix data not found. Please try again.");
+        showAlertModal("Remix Error", "Remix data not found. Please try again.", "error");
         navigate("/");
         return;
       }
@@ -316,7 +351,7 @@ export default function DesktopStage() {
         
         if (!Array.isArray(remixData.recording)) {
           console.error("Invalid recording format in remix data");
-          alert("Invalid recording format. Cannot load remix.");
+          showAlertModal("Invalid Format", "Invalid recording format. Cannot load remix.", "error");
           return;
         }
         
@@ -369,11 +404,11 @@ export default function DesktopStage() {
           message += "\n\n📝 No keyboard tracks found in the original. You can start recording from scratch or import audio.";
         }
         
-        alert(message);
+        showAlertModal("🎵 Remix Ready!", message, "success");
         
       } catch (error) {
         console.error("Error parsing remix data:", error);
-        alert("Failed to load remix data. Please try again.");
+        showAlertModal("Remix Error", "Failed to load remix data. Please try again.", "error");
         navigate("/");
       }
     };
@@ -404,12 +439,12 @@ export default function DesktopStage() {
   // Custom navigation handler with warning
   const handleNavigateAway = useCallback((path) => {
     if (hasUnsavedChanges) {
-      const confirmLeave = window.confirm(
-        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+      showConfirm(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.',
+        () => navigate(path)
       );
-      if (!confirmLeave) {
-        return;
-      }
+      return;
     }
     navigate(path);
   }, [hasUnsavedChanges, navigate]);
@@ -481,7 +516,7 @@ export default function DesktopStage() {
       const timeSinceStart = performance.now() - recordStartTime;
 
       if (timeSinceStart > MAX_AUDIO_DURATION * 1000) {
-        alert("Recording limit reached (10 minutes). Please stop recording.");
+        showAlertModal("Recording Limit", "Recording limit reached (10 minutes). Please stop recording.", "warning");
         return;
       }
 
@@ -522,8 +557,10 @@ export default function DesktopStage() {
 
   const toggleRecording = () => {
     if (!isRecording && recordedTracks.length >= MAX_TRACKS) {
-      alert(
-        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
+      showAlertModal(
+        "Maximum Tracks Reached",
+        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`,
+        "warning"
       );
       return;
     }
@@ -535,7 +572,7 @@ export default function DesktopStage() {
       if (recordedTracks.length > 0) playTracksDuringRecording();
     } else {
       if (currentTrack.length === 0) {
-        alert("Cannot save empty track.");
+        showAlertModal("Empty Track", "Cannot save empty track.", "warning");
         setIsRecording(false);
         return;
       }
@@ -723,19 +760,19 @@ export default function DesktopStage() {
   };
 
   const clearAllTracks = () => {
-    if (
-      recordedTracks.length > 0 &&
-      !window.confirm(
-        "Are you sure you want to clear all tracks? This cannot be undone."
-      )
-    ) {
+    if (recordedTracks.length > 0) {
+      showConfirm(
+        "Clear All Tracks",
+        "Are you sure you want to clear all tracks? This cannot be undone.",
+        () => {
+          setRecordedTracks([]);
+          setTrackSettings([]);
+          setTrackCounter(1);
+          stopPlayback();
+        }
+      );
       return;
     }
-
-    setRecordedTracks([]);
-    setTrackSettings([]);
-    setTrackCounter(1);
-    stopPlayback();
   };
 
   const exportRecording = async () => {
@@ -800,7 +837,7 @@ export default function DesktopStage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed:", err);
-      alert("Failed to export recording. Please try again.");
+      showAlertModal("Export Failed", "Failed to export recording. Please try again.", "error");
     }
   };
 
@@ -814,12 +851,12 @@ export default function DesktopStage() {
     );
 
     if (!sanitizedTitle) {
-      alert("Please enter a valid title.");
+      showAlertModal("Title Required", "Please enter a valid title.", "warning");
       return;
     }
 
     if (recordedTracks.length === 0) {
-      alert("No tracks to save.");
+      showAlertModal("No Tracks", "No tracks to save.", "warning");
       return;
     }
 
@@ -830,7 +867,7 @@ export default function DesktopStage() {
     const authCookie = cookieObj["auth_token"] || "";
 
     if (!authCookie) {
-      alert("You must be logged in to save recordings.");
+      showAlertModal("Login Required", "You must be logged in to save recordings.", "warning");
       setIsSaving(false);
       return;
     }
@@ -865,16 +902,16 @@ export default function DesktopStage() {
 
       if (response.ok) {
         if (isEditMode && saveOption === "overwrite") {
-          alert("Recording updated successfully!");
+          showAlertModal("Success", "Recording updated successfully!", "success");
           setHasUnsavedChanges(false);
           setInitialTrackCount(recordedTracks.length);
         } else if (isEditMode && saveOption === "remix") {
-          alert("Remix saved as a new recording!");
+          showAlertModal("Success", "Remix saved as a new recording!", "success");
           setIsEditMode(false);
           setEditingRecordingId(null);
           setHasUnsavedChanges(false);
         } else {
-          alert("Recording saved successfully!");
+          showAlertModal("Success", "Recording saved successfully!", "success");
         }
         
         setShowSaveForm(false);
@@ -886,15 +923,15 @@ export default function DesktopStage() {
       } else {
         const errorText = await response.text();
         console.error("Save failed:", errorText);
-        alert("Failed to save recording. Please try again.");
+        showAlertModal("Save Failed", "Failed to save recording. Please try again.", "error");
       }
     } catch (err) {
       clearTimeout(timeoutId);
       if (err.name === "AbortError") {
-        alert("Request timeout. Please try again.");
+        showAlertModal("Timeout", "Request timeout. Please try again.", "error");
       } else {
         console.error("Save error:", err);
-        alert("Error saving recording. Please try again.");
+        showAlertModal("Error", "Error saving recording. Please try again.", "error");
       }
     } finally {
       setIsSaving(false);
@@ -1004,8 +1041,10 @@ export default function DesktopStage() {
 
   const importAudioTrack = () => {
     if (recordedTracks.length >= MAX_TRACKS) {
-      alert(
-        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
+      showAlertModal(
+        "Maximum Tracks Reached",
+        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`,
+        "warning"
       );
       return;
     }
@@ -1018,10 +1057,10 @@ export default function DesktopStage() {
       if (!file) return;
 
       if (file.size > MAX_FILE_SIZE) {
-        alert(
-          `File is too large. Maximum size is ${
-            MAX_FILE_SIZE / (1024 * 1024)
-          }MB.`
+        showAlertModal(
+          "File Too Large",
+          `File is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`,
+          "error"
         );
         return;
       }
@@ -1040,8 +1079,10 @@ export default function DesktopStage() {
         !allowedTypes.includes(file.type) &&
         !file.name.match(/\.(mp3|wav|ogg|webm|m4a)$/i)
       ) {
-        alert(
-          "Invalid file type. Please upload a valid audio file (MP3, WAV, OGG, WebM, M4A)."
+        showAlertModal(
+          "Invalid File Type",
+          "Invalid file type. Please upload a valid audio file (MP3, WAV, OGG, WebM, M4A).",
+          "error"
         );
         return;
       }
@@ -1053,10 +1094,10 @@ export default function DesktopStage() {
         );
 
         if (audioBuffer.duration > MAX_AUDIO_DURATION) {
-          alert(
-            `Audio file is too long. Maximum duration is ${
-              MAX_AUDIO_DURATION / 60
-            } minutes.`
+          showAlertModal(
+            "Audio Too Long",
+            `Audio file is too long. Maximum duration is ${MAX_AUDIO_DURATION / 60} minutes.`,
+            "error"
           );
           return;
         }
@@ -1081,11 +1122,13 @@ export default function DesktopStage() {
         setTrackCounter((c) => c + 1);
         setImportedAudioBuffers((prev) => [...prev, audioBuffer]);
 
-        alert(`Successfully imported: ${sanitizedFileName}`);
+        showAlertModal("Success", `Successfully imported: ${sanitizedFileName}`, "success");
       } catch (err) {
         console.error("Error importing audio:", err);
-        alert(
-          "Failed to import audio file. Make sure it's a valid audio format and not corrupted."
+        showAlertModal(
+          "Import Failed",
+          "Failed to import audio file. Make sure it's a valid audio format and not corrupted.",
+          "error"
         );
       }
     };
@@ -1249,6 +1292,15 @@ export default function DesktopStage() {
                 upload
               </span>
             </button>
+            
+            <button
+              onClick={() => setShowTutorial(true)}
+              className="circle-btn tutorial"
+              title="Tutorial"
+              aria-label="Show Tutorial"
+            >
+              ?
+            </button>
           </div>
         </div>
 
@@ -1325,6 +1377,102 @@ export default function DesktopStage() {
                       ? (saveOption === "overwrite" ? "Update Recording" : "Save as Remix")
                       : "Save Recording"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Alert Modal */}
+        {showModal && (
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-box alert-modal" onClick={(e) => e.stopPropagation()}>
+              <div className={`modal-header ${modalContent.type}`}>
+                <h3>{modalContent.title}</h3>
+              </div>
+              <div className="modal-content">
+                <p style={{ whiteSpace: 'pre-line' }}>{modalContent.message}</p>
+              </div>
+              <div className="form-buttons">
+                <button onClick={closeModal} className="btn-primary">OK</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Confirm Modal */}
+        {showConfirmModal && (
+          <div className="modal-overlay" onClick={closeConfirmModal}>
+            <div className="modal-box confirm-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header warning">
+                <h3>{confirmModalData.title}</h3>
+              </div>
+              <div className="modal-content">
+                <p style={{ whiteSpace: 'pre-line' }}>{confirmModalData.message}</p>
+              </div>
+              <div className="form-buttons">
+                <button onClick={closeConfirmModal}>Cancel</button>
+                <button onClick={handleConfirm} className="btn-danger">Confirm</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tutorial Modal */}
+        {showTutorial && (
+          <div className="modal-overlay" onClick={() => setShowTutorial(false)}>
+            <div className="modal-box tutorial-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header info">
+                <h3>How to Use ANIMALBAND</h3>
+              </div>
+              <div className="modal-content tutorial-content">
+                <section>
+                  <h4>Keyboard Controls</h4>
+                  <ul>
+                    <li><strong>Hamster (Drums):</strong> Press A, S, D, or F</li>
+                    <li><strong>Bird (Vocal):</strong> Press C, V, B, or N</li>
+                    <li><strong>Ostrich (Keys):</strong> Press H, J, K, or L</li>
+                    <li><strong>Kangaroo (Guitar):</strong> Press U, I, O, or P</li>
+                    <li><strong>Snake (Bass):</strong> Press Q, W, E, or R</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h4>Control Buttons</h4>
+                  <ul>
+                    <li><strong>● (Red Circle):</strong> Start/Stop recording a new track</li>
+                    <li><strong>► (Play):</strong> Play all recorded tracks</li>
+                    <li><strong>⬇ (Download):</strong> Export your recording as a WAV file</li>
+                    <li><strong>💾 (Save):</strong> Save your recording to your account</li>
+                    <li><strong>⬆ (Upload):</strong> Import an audio file as a track</li>
+                    <li><strong>? (Help):</strong> Show this tutorial</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h4>Track Management</h4>
+                  <ul>
+                    <li><strong>Volume Slider:</strong> Adjust the master volume (top) or individual track volumes</li>
+                    <li><strong>Mute:</strong> Temporarily silence a track</li>
+                    <li><strong>Solo:</strong> Play only this track (mutes all others)</li>
+                    <li><strong>Rename:</strong> Double-click a track name or use the Rename button</li>
+                    <li><strong>Delete:</strong> Remove a track permanently</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h4>💡 Tips</h4>
+                  <ul>
+                    <li>Record up to {MAX_TRACKS} tracks total</li>
+                    <li>While recording, existing tracks will play along</li>
+                    <li>You can import audio files (MP3, WAV, OGG, WebM, M4A)</li>
+                    <li>Maximum recording length: {MAX_AUDIO_DURATION / 60} minutes per track</li>
+                    <li>Save your creations to access them later from "My Recordings"</li>
+                    <li>Edit saved recordings by clicking the edit button in "My Recordings"</li>
+                  </ul>
+                </section>
+              </div>
+              <div className="form-buttons">
+                <button onClick={() => setShowTutorial(false)} className="btn-primary">Got It!</button>
               </div>
             </div>
           </div>
