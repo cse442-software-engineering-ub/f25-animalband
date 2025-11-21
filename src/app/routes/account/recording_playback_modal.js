@@ -217,6 +217,11 @@ export default function RecordingPlaybackModal({ recording, recordedNotes, onClo
   return (
     <div
       className="modal-overlay recording-playback-overlay"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 2000,      // force above .m-post-overlay (1000)
+      }}
       onClick={() => {
         stopAllSounds();
         onClose?.();

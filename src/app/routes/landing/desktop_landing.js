@@ -1,8 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
-import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
+import { useEffect, useState } from "react";
+import { preloadLandingSounds } from "./landing_player.js";
 import AddToPlaylistButton from "../../../components/desktop_add_to_playlist_button.js";
 import "./desktop_landing.css";
+
+import RecordingPlaybackModal from "../account/recording_playback_modal.js";
 
 import Ostrich from "../../../assets/ostrich.png";
 import Bird from "../../../assets/bird.png";
@@ -18,30 +20,12 @@ export default function Landing() {
   const [loopCount, setLoopCount] = useState(null);
 
   const [featuredSongs, setFeaturedSongs] = useState([]);
-  const [buffers, setBuffers] = useState(null);
-  const [playingIndex, setPlayingIndex] = useState(-1);
-  const stopRef = useRef(null);
+  const [buffers, setBuffers] = useState(null); // still needed for WAV download
 
-  const togglePlay = (idx) => {
-    if (!buffers) return;
-    if (playingIndex === idx) {
-      stopAll();
-      setPlayingIndex(-1);
-      return;
-    }
-    stopAll();
-    const song = featuredSongs[idx];
-    if (!song) return;
-    stopRef.current = schedulePlayback(buffers, song.recording, () => {
-      setPlayingIndex(-1);
-      stopRef.current = null;
-    });
-    setPlayingIndex(idx);
-  };
-
-  const stopAll = () => {
-    if (stopRef.current) { stopRef.current(); stopRef.current = null; }
-  };
+  // 🔹 State for playback modal (reuse same component as account/forum)
+  const [showRecModal, setShowRecModal] = useState(false);
+  const [activeRecording, setActiveRecording] = useState(null); // {id,title,description}
+  const [activeNotes, setActiveNotes] = useState([]);           // song.recording
 
   const handleAccountClick = () => {
     if (user) navigate("/account");
@@ -86,6 +70,7 @@ export default function Landing() {
     );
   }, []);
 
+  // Preload sounds for WAV export
   useEffect(() => {
     (async () => {
       try { setBuffers(await preloadLandingSounds()); }
@@ -93,6 +78,7 @@ export default function Landing() {
     })();
   }, []);
 
+  // Fetch featured songs
   useEffect(() => {
     (async () => {
       try {
@@ -105,18 +91,65 @@ export default function Landing() {
     })();
   }, []);
 
-  useEffect(() => () => stopAll(), []);
+  // 🔹 Open/close modal using same props as ForumPostModal/MyRecordings
+  const openRecordingModal = (song) => {
+    if (!song || !Array.isArray(song.recording) || song.recording.length === 0) return;
+
+    setActiveRecording({
+      id: song.id,
+      title: song.title || `Song #${song.id}`,
+      description: song.description || "",
+    });
+    setActiveNotes(song.recording); // this is what RecordingPlaybackModal expects as recordedNotes
+    setShowRecModal(true);
+  };
+
+  const closeRecordingModal = () => {
+    setShowRecModal(false);
+    setActiveRecording(null);
+    setActiveNotes([]);
+  };
+
+  // Helper: normalize flat vs tracks-of-notes into a single note array
+  const normalizeRecordingNotes = (rec) => {
+    if (!Array.isArray(rec) || rec.length === 0) return [];
+
+    const first = rec[0];
+    // Flat: [{ key, time }, ...]
+    if (first && typeof first === "object" && "key" in first && "time" in first) {
+      return rec;
+    }
+    // Tracks: [ [ {key,time}, ... ], [ ... ], ... ]
+    return rec
+      .flat()
+      .filter((n) => n && typeof n === "object" && "key" in n && "time" in n);
+  };
 
   // WAV download helper
   const downloadWav = async (song) => {
-    if (!buffers || !song.recording) return;
-    const allNotes = song.recording;
-    const duration = (allNotes.length ? allNotes[allNotes.length - 1].time + 1000 : 0) / 1000;
-    const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
+    if (!buffers || !song?.recording) return;
 
-    allNotes.forEach(({ key, time }) => {
+    const notes = normalizeRecordingNotes(song.recording);
+    if (notes.length === 0) return;
+
+    // Find latest note time
+    const maxTimeMs = notes.reduce(
+      (max, n) => (typeof n.time === "number" && n.time > max ? n.time : max),
+      0
+    );
+
+    // +1000 ms tail; ensure at least 1 second
+    const durationSec = Math.max(1, (maxTimeMs + 1000) / 1000);
+    const sampleRate = 44100;
+    const frameCount = Math.max(1, Math.floor(sampleRate * durationSec));
+
+    const offlineCtx = new OfflineAudioContext(2, frameCount, sampleRate);
+
+    // Schedule all notes
+    notes.forEach(({ key, time }) => {
       const buffer = buffers[key];
       if (!buffer) return;
+
       const source = offlineCtx.createBufferSource();
       source.buffer = buffer;
       source.connect(offlineCtx.destination);
@@ -175,6 +208,7 @@ export default function Landing() {
 
     return new Blob([view], { type: "audio/wav" });
   };
+
 
   return (
     <div className="landing-page">
@@ -256,14 +290,18 @@ export default function Landing() {
           {featuredSongs.length === 0 && [0, 1, 2].map(i => (
             <div className="song-card" key={`sk-${i}`}>Loading…</div>
           ))}
-          {featuredSongs.map((song, index) => (
+          {featuredSongs.map((song) => (
             <div className="song-card" key={song.id}>
               <h3 className="song-title">{song.title || `Untitled #${song.id}`}</h3>
               <p className="song-author">by {song.author}</p>
               {song.description && <p className="song-desc">{song.description}</p>}
               <div className="song-button-group">
-                <button className="song-play-btn" onClick={() => togglePlay(index)}>
-                  <span className="material-symbols-outlined">{playingIndex === index ? "stop" : "play_arrow"}</span>
+                {/* 🔹 Opens animal playback modal, same component as forum/account */}
+                <button
+                  className="song-play-btn"
+                  onClick={() => openRecordingModal(song)}
+                >
+                  <span className="material-symbols-outlined">play_arrow</span>
                 </button>
                 <button className="song-download-btn" onClick={() => downloadWav(song)}>
                   <span className="material-symbols-outlined">download</span>
@@ -305,16 +343,16 @@ export default function Landing() {
         <h3>Register for free and rock out with your animals today!</h3>
       </footer>
 
+      {/* 🔹 Shared playback modal for Featured Songs */}
+      {showRecModal && activeRecording && (
+        <RecordingPlaybackModal
+          recording={activeRecording}
+          recordedNotes={activeNotes}
+          onClose={closeRecordingModal}
+        />
+      )}
+
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     </div>
   );
 }
-
-
-
-
-
-
-
-
-

@@ -106,3 +106,24 @@
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+.m-post-overlay{
+    position: fixed;
+  inset: 0;
+  z-index: 1000; /* or whatever it is now */
+}
+
+
+/* Mobile post modal */
+.m-post-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000 !important;
+}
+
+/* Shared recording modal – sits above both */
+.modal-overlay.recording-playback-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000 !important;
+}
