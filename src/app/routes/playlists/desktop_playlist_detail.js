@@ -330,7 +330,7 @@ export default function DesktopPlaylistDetail() {
                                     onDragOver={canEdit ? onDragOver : undefined}
                                     onDrop={canEdit ? (e) => onDrop(e, i) : undefined}
                                 >
-                                    {canEdit && <span className="plf-drag" title="Drag to reorder">⋮⋮</span>}
+                                    {canEdit && <span className="plf-drag" aria-label="Drag to reorder" title="Drag to reorder">⋮⋮</span>}
 
                                     <div className="plf-track-meta">
                                         <div className="plf-track-title">{t.title || `Song #${t.id}`}</div>
@@ -345,6 +345,7 @@ export default function DesktopPlaylistDetail() {
                                             className="song-play-btn"
                                             title={playingIndex === i ? "Stop" : "Play"}
                                             onClick={() => togglePlay(i)}
+                                            aria-label="Play Song"
                                         >
                                             <span className="material-symbols-outlined">
                                                 {playingIndex === i ? "stop" : "play_arrow"}
@@ -354,6 +355,7 @@ export default function DesktopPlaylistDetail() {
                                         <button
                                             className="song-download-btn"
                                             title="Download WAV"
+                                            aria-label="Download Song"
                                             onClick={() => downloadWav(t)}
                                         >
                                             <span className="material-symbols-outlined">download</span>

@@ -122,6 +122,7 @@ export default function AddToPlaylistButton({ songId, compact = false, onAdded }
                 onClick={() => setOpen(true)}
                 disabled={loading}
                 title="Add to playlist"
+                aria-label="Add to playlist"
             >
                 <span className="material-symbols-outlined">playlist_add</span>
             </button>

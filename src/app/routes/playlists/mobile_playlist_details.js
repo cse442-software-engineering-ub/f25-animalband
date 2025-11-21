@@ -421,6 +421,7 @@ export default function MobilePlaylistDetail() {
                                     <div className="mobile-track-actions">
                                         <button
                                             className="mobile-song-btn play"
+                                            aria-label={playingIndex === i ? "Stop" : "Play"}
                                             title={playingIndex === i ? "Stop" : "Play"}
                                             onClick={() => togglePlay(i)}
                                         >
@@ -432,6 +433,7 @@ export default function MobilePlaylistDetail() {
                                         <button
                                             className="mobile-song-btn download"
                                             title="Download WAV"
+                                            aria-label="Download WAV"
                                             onClick={() => downloadWav(t)}
                                         >
                                             <span className="material-symbols-outlined">download</span>
@@ -442,6 +444,7 @@ export default function MobilePlaylistDetail() {
                                                 className="mobile-song-btn danger"
                                                 onClick={() => handleRemove(t.id, t.title || `Song #${t.id}`)}
                                                 title="Remove from playlist"
+                                                aria-label="Remove from playlist"
                                             >
                                                 <span className="material-symbols-outlined">delete</span>
                                             </button>

@@ -301,6 +301,7 @@ export default function RecordingPlaybackModal({ recording, recordedNotes, onClo
               justifyContent: "center",
             }}
             title="Play Recording"
+            aria-label="Play Recording"
           >
             {isPlaying ? "■" : "▶"}
           </button>
@@ -324,6 +325,7 @@ export default function RecordingPlaybackModal({ recording, recordedNotes, onClo
               justifyContent: "center",
             }}
             title="Close"
+            aria-label="Close"
           >
             ✕
           </button>
