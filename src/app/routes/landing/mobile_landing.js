@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
 import MobileAddToPlaylistButton from "../../../components/mobile_add_to_playlist_button.js";
 
-
 import "./mobile_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
 import Bird from "../../../assets/bird.jpeg";
@@ -21,15 +20,11 @@ export default function MobileLanding() {
   const [active, setActive] = useState(0);
 
   // Songs
-  const topSongs = [
-    { title: "Animal Jam", author: "DJ Owl" },
-    { title: "Paws and Beats", author: "Cat Band" },
-    { title: "Roar Remix", author: "Lion Orchestra" },
-  ];
   const [featuredSongs, setFeaturedSongs] = useState([]);
   const [buffers, setBuffers] = useState(null);
   const [playingIndex, setPlayingIndex] = useState(-1);
   const stopRef = useRef(null);
+
   useEffect(() => {
     (async () => {
       try {
@@ -40,6 +35,7 @@ export default function MobileLanding() {
       }
     })();
   }, []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -76,6 +72,7 @@ export default function MobileLanding() {
   const handleNavigation = (path) => {
     navigate(path);
   };
+
   const stopAll = () => {
     if (stopRef.current) {
       stopRef.current();
@@ -98,6 +95,27 @@ export default function MobileLanding() {
       stopRef.current = null;
     });
     setPlayingIndex(index);
+  };
+
+  // NEW: Handle remix button click
+  const handleRemix = (song) => {
+    // Stop any playing audio first
+    stopAll();
+    
+    // Store the song data in sessionStorage so the stage can access it
+    const remixData = {
+      songId: song.id,
+      title: song.title,
+      author: song.author,
+      description: song.description,
+      recording: song.recording,
+      isRemix: true
+    };
+    
+    sessionStorage.setItem('remixData', JSON.stringify(remixData));
+    
+    // Navigate to stage with remix parameter
+    navigate(`/stage?remix=${song.id}`);
   };
 
   useEffect(() => {
@@ -234,7 +252,8 @@ export default function MobileLanding() {
                   <div className="m-song-author">by {song.author}</div>
                 </div>
 
-                <div className="m-song-actions" style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                {/* FIXED: Removed inline styles that were overriding CSS */}
+                <div className="m-song-actions">
                   <button
                     className="m-play-btn"
                     disabled={!buffers}
@@ -246,23 +265,30 @@ export default function MobileLanding() {
                     </span>
                   </button>
 
+                  {/* Remix Button */}
+                  <button
+                    className="m-remix-btn"
+                    onClick={() => handleRemix(song)}
+                    title="Remix this song"
+                  >
+                    <span className="material-symbols-outlined">
+                      edit_note
+                    </span>
+                  </button>
+
                   <MobileAddToPlaylistButton
                     songId={song.id}
                     compact
                     user={user}
                     onAdded={() => {
-                      // optional toast or haptic feedback
                       console.log("Added to playlist!");
                     }}
                   />
                 </div>
               </div>
             ))}
-
           </div>
         </section>
-
-
 
         {/* Stats */}
         <section className="m-stats">

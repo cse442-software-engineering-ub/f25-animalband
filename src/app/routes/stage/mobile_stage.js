@@ -54,6 +54,10 @@ export default function MobileStage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [initialTrackCount, setInitialTrackCount] = useState(0);
 
+  // Save option state
+  const [saveOption, setSaveOption] = useState("overwrite");
+  const [originalTitle, setOriginalTitle] = useState("");
+
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
   
@@ -204,6 +208,7 @@ export default function MobileStage() {
             if (recording) {
               setEditingRecordingId(recording.id);
               setRecordingTitle(recording.title);
+              setOriginalTitle(recording.title);
               setRecordingDescription(recording.description);
               
               const loadableTracks = recording.recording.filter(track => {
@@ -253,6 +258,100 @@ export default function MobileStage() {
     loadRecordingForEdit();
   }, [navigate, location]);
 
+  // NEW: Load remix data from featured songs
+  useEffect(() => {
+    const loadRemixData = () => {
+      const params = new URLSearchParams(location.search);
+      const remixId = params.get('remix');
+      
+      if (!remixId) {
+        return;
+      }
+      
+      // Get remix data from sessionStorage
+      const remixDataStr = sessionStorage.getItem('remixData');
+      
+      if (!remixDataStr) {
+        console.error("No remix data found");
+        alert("Remix data not found. Please try again.");
+        navigate("/");
+        return;
+      }
+      
+      try {
+        const remixData = JSON.parse(remixDataStr);
+        
+        // Clear the sessionStorage after reading
+        sessionStorage.removeItem('remixData');
+        
+        console.log("Loading remix data:", remixData);
+        
+        if (!Array.isArray(remixData.recording)) {
+          console.error("Invalid recording format in remix data");
+          alert("Invalid recording format. Cannot load remix.");
+          return;
+        }
+        
+        // Filter out imported audio tracks
+        const loadableTracks = remixData.recording.filter(track => {
+          if (!Array.isArray(track)) {
+            console.warn("Track is not an array:", track);
+            return false;
+          }
+          const hasImported = track.some(note => note.isImported);
+          return !hasImported;
+        });
+        
+        console.log("Loadable tracks for remix:", loadableTracks.length);
+        
+        const importedTrackCount = remixData.recording.length - loadableTracks.length;
+        
+        // Set up the remix
+        setRecordedTracks(loadableTracks);
+        setRecordingTitle(`Remix of ${remixData.title || 'Untitled'}`);
+        setRecordingDescription(
+          `Remixed from "${remixData.title || 'Untitled'}" by ${remixData.author || 'Unknown'}\n\n${remixData.description || ''}`
+        );
+        
+        // Initialize track settings
+        const settings = loadableTracks.map((track, idx) => ({
+          name: `Track ${idx + 1}`,
+          muted: false,
+          solo: false,
+          volume: 1,
+        }));
+        setTrackSettings(settings);
+        setTrackCounter(loadableTracks.length + 1);
+        
+        // Set flags - remix is NOT edit mode, it's a new recording
+        setIsEditMode(false);
+        setEditingRecordingId(null);
+        setHasUnsavedChanges(false);
+        setInitialTrackCount(0);
+        
+        // Show message
+        let message = `🎵 Remix loaded: ${loadableTracks.length} track(s) ready to edit!\n\nFeel free to add, remove, or modify tracks, then save as your own creation.`;
+        
+        if (importedTrackCount > 0) {
+          message += `\n\n⚠️ Note: ${importedTrackCount} imported audio track(s) were skipped (imported audio cannot be included in remixes).`;
+        }
+        
+        if (loadableTracks.length === 0) {
+          message += "\n\n📝 No keyboard tracks found in the original. You can start recording from scratch or import audio.";
+        }
+        
+        alert(message);
+        
+      } catch (error) {
+        console.error("Error parsing remix data:", error);
+        alert("Failed to load remix data. Please try again.");
+        navigate("/");
+      }
+    };
+    
+    loadRemixData();
+  }, [navigate, location]);
+
   // Track changes to recorded tracks
   useEffect(() => {
     if (isEditMode && recordedTracks.length !== initialTrackCount) {
@@ -297,7 +396,6 @@ export default function MobileStage() {
     }
 
     return () => {
-      // Clean up animation timers
       animationTimersRef.current.forEach(timer => clearTimeout(timer));
       animationTimersRef.current.clear();
     };
@@ -318,7 +416,6 @@ export default function MobileStage() {
     loadAllSounds();
   }, []);
 
-  // Performance: Optimized animation handling
   const triggerAnimalAnimation = useCallback((animal) => {
     const existingTimer = animationTimersRef.current.get(animal);
     if (existingTimer) {
@@ -335,7 +432,6 @@ export default function MobileStage() {
     animationTimersRef.current.set(animal, timer);
   }, []);
 
-  // Performance: Memoized tap handler
   const handleTap = useCallback((key) => {
     if (showSaveForm) return;
     if (!animalKeyMap[key]) return;
@@ -412,7 +508,6 @@ export default function MobileStage() {
     }
   };
 
-  // Performance: Optimized playback with pre-calculated timing
   const playTracksDuringRecording = useCallback(() => {
     if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
@@ -479,7 +574,6 @@ export default function MobileStage() {
     setActiveAudioSources({ sources, timeouts });
   }, [recordedTracks, trackSettings, sounds, masterVolume, triggerAnimalAnimation]);
 
-  // Performance: Optimized track playback
   const playAllTracks = useCallback(() => {
     if (recordedTracks.length === 0) return;
     
@@ -755,15 +849,6 @@ export default function MobileStage() {
             gainNode.gain.value = masterVolume * trackVolume;
             source.connect(gainNode).connect(offlineCtx.destination);
             source.start(time / 1000);
-          } else {
-            const buffer = sounds[key];
-            if (!buffer) return;
-            const source = offlineCtx.createBufferSource();
-            source.buffer = buffer;
-            const gainNode = offlineCtx.createGain();
-            gainNode.gain.value = masterVolume * trackVolume;
-            source.connect(gainNode).connect(offlineCtx.destination);
-            source.start(time / 1000);
           }
         });
       });
@@ -827,7 +912,8 @@ export default function MobileStage() {
         userToken: authCookie,
       };
 
-      if (isEditMode && editingRecordingId) {
+      // ONLY include recordingId if in edit mode AND overwriting
+      if (isEditMode && saveOption === "overwrite" && editingRecordingId) {
         payload.recordingId = editingRecordingId;
       }
 
@@ -841,19 +927,24 @@ export default function MobileStage() {
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        alert(
-          isEditMode
-            ? "Recording updated successfully!"
-            : "Recording saved successfully!"
-        );
-        setShowSaveForm(false);
-        setHasUnsavedChanges(false);
+        if (isEditMode && saveOption === "overwrite") {
+          alert("Recording updated successfully!");
+          setHasUnsavedChanges(false);
+          setInitialTrackCount(recordedTracks.length);
+        } else if (isEditMode && saveOption === "remix") {
+          alert("Remix saved as a new recording!");
+          setIsEditMode(false);
+          setEditingRecordingId(null);
+          setHasUnsavedChanges(false);
+        } else {
+          alert("Recording saved successfully!");
+        }
         
-        if (!isEditMode) {
+        setShowSaveForm(false);
+        
+        if (!isEditMode || saveOption === "remix") {
           setRecordingTitle("");
           setRecordingDescription("");
-        } else {
-          setInitialTrackCount(recordedTracks.length);
         }
       } else {
         const errorText = await response.text();
@@ -987,6 +1078,7 @@ export default function MobileStage() {
           fontSize: '14px'
         }}>
           Editing: {recordingTitle || 'Untitled Recording'}
+          {hasUnsavedChanges && <span style={{ marginLeft: '10px' }}>• Unsaved Changes</span>}
         </div>
       )}
 
@@ -1223,7 +1315,40 @@ export default function MobileStage() {
         {showSaveForm && (
           <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
             <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-              <h3>{isEditMode ? 'Update Your Recording' : 'Save Your Recording'}</h3>
+              <h3>{isEditMode ? 'Save Your Changes' : 'Save Your Recording'}</h3>
+              
+              {isEditMode && (
+                <div style={{ marginBottom: '15px', padding: '12px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
+                  <p style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '14px' }}>Save Options:</p>
+                  <label style={{ display: 'block', marginBottom: '10px', cursor: 'pointer', fontSize: '13px' }}>
+                    <input
+                      type="radio"
+                      value="overwrite"
+                      checked={saveOption === "overwrite"}
+                      onChange={(e) => {
+                        setSaveOption(e.target.value);
+                        setRecordingTitle(originalTitle);
+                      }}
+                      style={{ marginRight: '8px' }}
+                    />
+                    Overwrite Original - Update the existing recording
+                  </label>
+                  <label style={{ display: 'block', cursor: 'pointer', fontSize: '13px' }}>
+                    <input
+                      type="radio"
+                      value="remix"
+                      checked={saveOption === "remix"}
+                      onChange={(e) => {
+                        setSaveOption(e.target.value);
+                        setRecordingTitle(`Copy of ${originalTitle}`);
+                      }}
+                      style={{ marginRight: '8px' }}
+                    />
+                    Save as Remix - Create a new copy
+                  </label>
+                </div>
+              )}
+              
               <label>
                 Title:
                 <input
@@ -1257,7 +1382,7 @@ export default function MobileStage() {
                   {isSaving 
                     ? "Saving..." 
                     : isEditMode 
-                      ? "Update Recording" 
+                      ? (saveOption === "overwrite" ? "Update Recording" : "Save as Remix")
                       : "Save Recording"}
                 </button>
               </div>

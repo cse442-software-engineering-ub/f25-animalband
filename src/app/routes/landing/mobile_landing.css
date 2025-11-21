@@ -252,7 +252,7 @@
 
 .m-card-icon {
   color: #000000;
-  font-size: 50px !important; /* Fixed the syntax error */
+  font-size: 50px !important;
 }
 
 .m-card-text {
@@ -347,10 +347,11 @@
   min-width: 100px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* ensures button is at the bottom */
+  justify-content: space-between;
   align-items: center;
-  gap: 6px;
-  height: 120px; /* fixed height to accommodate 2-line titles */
+  gap: 8px;
+  height: auto;
+  min-height: 160px;
 }
 
 .m-song-info {
@@ -361,8 +362,14 @@
 
 .m-song-title {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   color: #0b0d0c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .m-song-author {
@@ -382,9 +389,54 @@
   justify-content: center;
   align-items: center;
   cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
 }
 
-.m-play-btn:hover {
+.m-play-btn:hover:not(:disabled) {
   background: #126c2e;
 }
 
+.m-play-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mobile Remix Button Styles */
+.m-remix-btn {
+  background-color: #178C3A;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.m-remix-btn:hover {
+  background-color: #126c2e;
+}
+
+.m-remix-btn:active {
+  transform: scale(0.95);
+}
+
+.m-remix-btn .material-symbols-outlined {
+  color: white;
+  font-size: 20px;
+}
+
+/* CRITICAL: Ensure song actions stack vertically */
+.m-song-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+  width: 100%;
+}
