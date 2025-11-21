@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player";
+import "./desktop_post_modal.css";
+import RecordingPlaybackModal from "../account/recording_playback_modal.js";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -23,6 +26,12 @@ function timeAgoTS(ts) {
     if (day === 1) return "yesterday";
     if (day < 7) return `${day}d`;
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+function formatCreated(ts) {
+    const t = timeAgoTS(ts);
+    if (!t) return "";
+    const noAgo = t === "just now" || t === "yesterday";
+    return `Created ${t}${noAgo ? "" : " ago"}`;
 }
 
 function buildTree(rows) {
@@ -141,7 +150,90 @@ export default function ForumPostModal({
     const firstLoadRef = useRef(true);
     const [postError, setPostError] = useState("");
 
+    // ==== Attached recording (mini player) ====
+    const [buffers, setBuffers] = useState(null);        // SOUND_CONFIG buffers
+    const [recLoading, setRecLoading] = useState(false);
+    const [recErr, setRecErr] = useState("");
+    const [recMeta, setRecMeta] = useState(null);        // { id, title, description }
+    const [recNotes, setRecNotes] = useState([]);        // array of notes OR tracks-of-notes
+    const [isPlaying, setIsPlaying] = useState(false);
+    const stopRef = useRef(null);
+    const [showRecModal, setShowRecModal] = useState(false); // ⬅️ NEW
 
+    useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                const b = await preloadLandingSounds();
+                console.log("[mini-player] preloadLandingSounds resolved:", b); if (mounted) setBuffers(b);
+            } catch (e) {
+                console.error("preloadLandingSounds failed:", e);
+            }
+        })();
+        return () => { mounted = false; };
+    }, []);
+    const fetchRecordingById = useCallback(async (id) => {
+        if (id == null || Number.isNaN(id)) return;
+        try {
+            setRecLoading(true);
+            setRecErr("");
+            const res = await fetch(
+                `${PHP_URL}/getLocalRecordingById.php?id=${encodeURIComponent(id)}`, // <- change to ...ById.php if you rename
+                { credentials: "include", cache: "no-store" }
+            );
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            console.log("[getLocalRecordingById] parsed JSON:", data);  // <-- log it            if (!data?.success || !data?.recording) throw new Error("Bad recording payload");
+
+            setRecMeta({
+                id: data.id,
+                title: data.title ?? `Recording #${data.id}`,
+                description: data.description ?? ""
+            });
+            setRecNotes(data.recording); // landing_player handles flat or track-of-notes
+        } catch (e) {
+            console.error("fetchRecordingById failed:", e);
+            setRecMeta(null);
+            setRecNotes([]);
+            setRecErr("Failed to load attached recording.");
+        } finally {
+            setRecLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (post?.recording_id != null && !Number.isNaN(post.recording_id)) {
+            fetchRecordingById(post.recording_id);
+        } else {
+            setRecMeta(null);
+            setRecNotes([]);
+            setRecErr("");
+        }
+    }, [post?.recording_id, fetchRecordingById]);
+    const stopAll = useCallback(() => {
+        if (stopRef.current) {
+            try { stopRef.current(); } catch { }
+            stopRef.current = null;
+        }
+        setIsPlaying(false);
+    }, []);
+
+    const onPlay = useCallback(() => {
+        if (!buffers || !recNotes || (Array.isArray(recNotes) && recNotes.length === 0)) return;
+        stopAll();
+        stopRef.current = schedulePlayback(buffers, recNotes, () => {
+            setIsPlaying(false);
+            stopRef.current = null;
+        });
+        setIsPlaying(true);
+    }, [buffers, recNotes, stopAll]);
+    useEffect(() => {
+        document.body.classList.add("popup-open");
+        return () => {
+            document.body.classList.remove("popup-open");
+            stopAll();
+        };
+    }, [stopAll]);
 
     const tree = useMemo(() => buildTree(commentsFlat), [commentsFlat]);
 
@@ -322,93 +414,159 @@ export default function ForumPostModal({
 
     if (!post) return null;
 
-    return (
-        <div className="post-modal-overlay" onMouseDown={onClose}>
-            <div className="post-modal" onMouseDown={(e) => e.stopPropagation()}>
-                <div className="post-modal-header">
-                    <h2 className="post-modal-title">{post.title}</h2>
-                    <button className="close-btn" onClick={onClose}>×</button>
-                </div>
+    if (!post) return null;
 
-                <div className="post-modal-body">
-                    <div className="post-modal-post">
-                        <div className="pmp-author-line">
-                            <span className="author-name">by {post.author}</span>
-                            {!!post.created_at && (
-                                <>
-                                    <span className="ab-comment-dot">•</span>
-                                    <span className="post-time">Created {timeAgoTS(post.created_at)} ago</span>
-                                </>
-                            )}
-                        </div>
-                        <div className="pmp-content">{post.content}</div>
-                        <div className="pmp-tags">
-                            {post.tags?.map(t => <span key={t} className="post-tag">{t}</span>)}
-                        </div>
-                        <div className="pmp-stats">
-                            <span>{post.likes ?? 0} likes</span>
-                            <span>{post.comments ?? 0} comments</span>
-                        </div>
+    return (
+        <>
+            <div className="post-modal-overlay" onMouseDown={onClose}>
+                <div className="post-modal" onMouseDown={(e) => e.stopPropagation()}>
+                    <div className="post-modal-header">
+                        <h2 className="post-modal-title">{post.title}</h2>
+                        <button className="close-btn" onClick={onClose}>×</button>
                     </div>
-                    {postError && (
-                        <div className="ab-error" role="alert" aria-live="assertive">
-                            {postError}
+
+                    <div className="post-modal-body">
+                        <div className="post-modal-post">
+                            <div className="pmp-author-line">
+                                <span className="author-name">by {post.author}</span>
+                                {!!post.created_at && (
+                                    <>
+                                        <span className="ab-comment-dot">•</span>
+                                        <span className="post-time">{formatCreated(post.created_at)}</span>
+                                    </>
+                                )}
+                            </div>
+                            <div className="pmp-content">{post.content}</div>
+                            <div className="pmp-tags">
+                                {post.tags?.map((t) => (
+                                    <span key={t} className="post-tag">
+                                        {t}
+                                    </span>
+                                ))}
+                            </div>
+                            <div className="pmp-stats">
+                                <span>{post.likes ?? 0} likes</span>
+                                <span>{post.comments ?? 0} comments</span>
+                            </div>
+
+                            <div className="pmp-attached-recording">
+                                {recLoading && <div className="ab-loading">Loading recording…</div>}
+                                {!recLoading && recErr && (
+                                    <div className="ab-error" role="alert">
+                                        {recErr}
+                                    </div>
+                                )}
+                                {!recLoading &&
+                                    !recErr &&
+                                    recMeta &&
+                                    Array.isArray(recNotes) &&
+                                    recNotes.length > 0 && (
+                                        <div className="ab-mini-player">
+                                            <div className="ab-mini-player-meta">
+                                                <strong>{recMeta.title}</strong>
+                                                {recMeta.description ? (
+                                                    <span className="ab-mini-desc"> — {recMeta.description}</span>
+                                                ) : null}
+                                            </div>
+                                            <div className="ab-mini-player-controls">
+                                                <button
+                                                    type="button"
+                                                    className="ab-mini-play"
+                                                    onClick={() => setShowRecModal(true)} // ⬅️ open full playback modal
+                                                >
+                                                    ▶ Play
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                            </div>
                         </div>
-                    )}
-                    <form className="ab-new-comment" onSubmit={submitComment}>
-                        <textarea
-                            placeholder={user ? "Write a comment…" : "Login to comment"}
-                            value={draft}
-                            onChange={(e) => {
-                                const v = e.target.value;
-                                if (v.length <= 500) setDraft(v);
-                            }}
-                            disabled={!user || submitting}
-                            rows={replyTo ? 3 : 4}
-                        />
-                        <div className="ab-new-comment-meta">
-                            <span className={`char-count ${draft.length >= 500 ? "limit-reached" : ""}`}>
-                                {draft.length}/500
-                            </span>
-                        </div>
-                        <div className="ab-new-comment-actions">
-                            {replyTo && (
-                                <div className="ab-replying-to">
-                                    Replying to <b>{replyTo.author}</b>
-                                    <button type="button" className="ab-cancel-reply" onClick={() => setReplyTo(null)}>Cancel</button>
-                                </div>
-                            )}
-                            <button
-                                className="submit-btn"
-                                type="submit"
-                                disabled={!user || submitting || !draft.trim()}
-                            >
-                                {submitting ? "Posting…" : "Post"}
-                            </button>
-                        </div>
-                    </form>
-                    <div className="ab-comments-list" ref={listRef}>
-                        {loading ? (
-                            <div className="ab-loading">Loading comments…</div>
-                        ) : tree.length === 0 ? (
-                            <div className="ab-empty">Be the first to comment!</div>
-                        ) : (
-                            tree.map(node => (
-                                <CommentNode
-                                    key={node.id}
-                                    node={node}
-                                    depth={0}
-                                    onReply={onReply}
-                                    onLike={onLike}
-                                    currentUser={user}
-                                    collapsedSet={collapsed}
-                                    toggleCollapsed={toggleCollapsed}
-                                />
-                            ))
+
+                        {postError && (
+                            <div className="ab-error" role="alert" aria-live="assertive">
+                                {postError}
+                            </div>
                         )}
+
+                        <form className="ab-new-comment" onSubmit={submitComment}>
+                            <textarea
+                                placeholder={user ? "Write a comment…" : "Login to comment"}
+                                value={draft}
+                                onChange={(e) => {
+                                    const v = e.target.value;
+                                    if (v.length <= 500) setDraft(v);
+                                }}
+                                disabled={!user || submitting}
+                                rows={replyTo ? 3 : 4}
+                            />
+                            <div className="ab-new-comment-meta">
+                                <span
+                                    className={`char-count ${draft.length >= 500 ? "limit-reached" : ""
+                                        }`}
+                                >
+                                    {draft.length}/500
+                                </span>
+                            </div>
+                            <div className="ab-new-comment-actions">
+                                {replyTo && (
+                                    <div className="ab-replying-to">
+                                        Replying to <b>{replyTo.author}</b>
+                                        <button
+                                            type="button"
+                                            className="ab-cancel-reply"
+                                            onClick={() => setReplyTo(null)}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                )}
+                                <button
+                                    className="submit-btn"
+                                    type="submit"
+                                    disabled={!user || submitting || !draft.trim()}
+                                >
+                                    {submitting ? "Posting…" : "Post"}
+                                </button>
+                            </div>
+                        </form>
+
+                        <div className="ab-comments-list" ref={listRef}>
+                            {loading ? (
+                                <div className="ab-loading">Loading comments…</div>
+                            ) : tree.length === 0 ? (
+                                <div className="ab-empty">Be the first to comment!</div>
+                            ) : (
+                                tree.map((node) => (
+                                    <CommentNode
+                                        key={node.id}
+                                        node={node}
+                                        depth={0}
+                                        onReply={onReply}
+                                        onLike={onLike}
+                                        currentUser={user}
+                                        collapsedSet={collapsed}
+                                        toggleCollapsed={toggleCollapsed}
+                                    />
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            {/* 🔹 Shared playback modal (same UX as MyRecordings) */}
+            {showRecModal && recMeta && (
+                <RecordingPlaybackModal
+                    recording={{
+                        id: recMeta.id,
+                        title: recMeta.title,
+                        description: recMeta.description,
+                    }}
+                    recordedNotes={recNotes}
+                    onClose={() => setShowRecModal(false)}
+                />
+            )}
+        </>
     );
+
 }

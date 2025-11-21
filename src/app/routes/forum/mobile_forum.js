@@ -20,12 +20,19 @@ export default function MobileForum() {
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [openPost, setOpenPost] = useState(null);
     const location = useLocation();
+    const [myRecordings, setMyRecordings] = useState([]);
+    const [recsLoading, setRecsLoading] = useState(false);
+    const [selectedRecordingId, setSelectedRecordingId] = useState(null);
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
     const [newPostTitle, setNewPostTitle] = useState("");
     const [newPostContent, setNewPostContent] = useState("");
     const [newPostTags, setNewPostTags] = useState([]);
+    const [postError, setPostError] = useState("");
+
+    const [currentPage, setCurrentPage] = useState(1);   // <-- add this
+    const POSTS_PER_PAGE = 20;
 
     // ========== Tags and sorting stuff ==========
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
@@ -40,6 +47,41 @@ export default function MobileForum() {
         const d = new Date(iso);
         return isNaN(d.getTime()) ? null : d;
     }
+    function truncate20(s) {
+        if (!s) return "";
+        return s.length > 20 ? s.slice(0, 20) + "..." : s;
+    }
+
+    const fetchMyRecordings = useCallback(async () => {
+        if (!user?.id) return;
+        try {
+            setRecsLoading(true);
+            // same cookie trick you used on desktop
+            const cookiePairs = document.cookie.split("; ").map(c => c.split("="));
+            const cookieMap = Object.fromEntries(cookiePairs);
+            const authCookie = cookieMap["auth_token"] || "";
+
+            const res = await fetch(`${PHP_URL}/getLocalRecordings.php`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ auth_token: authCookie }),
+                cache: "no-store",
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const data = await res.json();
+            const list = (data?.recordings || []).map(r => ({
+                id: Number(r.id),
+                title: r.title ?? `Recording #${r.id}`,
+            }));
+            setMyRecordings(list);
+        } catch (e) {
+            console.error("Failed to load recordings:", e);
+            setMyRecordings([]);
+        } finally {
+            setRecsLoading(false);
+        }
+    }, [user?.id]);
 
     function timeAgo(createdAt, now = Date.now()) {
         const d = typeof createdAt === 'string' ? parseDbTimestamp(createdAt) :
@@ -96,6 +138,10 @@ export default function MobileForum() {
                         comments: Number(p.comments ?? 0),
                         created_at: p.created_at || null,
                         likesFrom,
+                        recording_id:
+                            p.recording_id === null || p.recording_id === undefined
+                                ? null
+                                : Number(p.recording_id),
                     };
 
                     const prevLiked = prevById.get(base.id)?.liked ?? false;
@@ -249,8 +295,10 @@ export default function MobileForum() {
     };
 
     // ========== New Post ==========
-    const handleNewPost = () => {
+    const handleNewPost = async () => {
         setShowNewPostPopup(true);
+        setSelectedRecordingId(null);
+        await fetchMyRecordings();
     };
 
     const handleClosePopup = () => {
@@ -258,7 +306,10 @@ export default function MobileForum() {
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostTags([]);
+        setSelectedRecordingId(null);
+        setPostError("");
     };
+
 
     const handleTagSelect = (tag) => {
         setNewPostTags(prev =>
@@ -285,6 +336,8 @@ export default function MobileForum() {
             author: user.username,
             authorId: user.id,
             likes: 1,
+            recording_id: selectedRecordingId ?? null,
+
         };
 
         const tempId = Date.now();
@@ -300,6 +353,8 @@ export default function MobileForum() {
             created_at: new Date().toISOString(),
             likesFrom: [user.username],
             liked: true,
+            recording_id: selectedRecordingId ?? null,
+
         };
         setPosts(prev => [optimistic, ...prev]);
         try {
@@ -355,6 +410,14 @@ export default function MobileForum() {
                 return (b.id || 0) - (a.id || 0);
         }
     }) : [];
+    const totalPages = Math.max(1, Math.ceil(sortedPosts.length / POSTS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedTags, sortBy, activeView]);
 
     const getViewTitle = () => {
         switch (activeView) {
@@ -579,7 +642,7 @@ export default function MobileForum() {
                             </button>
                         </div>
                     ) : (
-                        sortedPosts.map((post) => (
+                        paginatedPosts.map((post) => (
                             <div
                                 key={post.id}
                                 className="mobile-post-card"
@@ -589,14 +652,16 @@ export default function MobileForum() {
                             >
                                 <div className="mobile-post-header">
                                     <div className="mobile-post-author">
-                                        <h3 className="mobile-post-title">{post.title}</h3>
-                                        <span className="mobile-author-name">by {post.author}</span>
+                                        <h3 className="mobile-post-title">{truncate20(post.title)}</h3>
+                                        <span className="mobile-author-name">by {truncate20(post.author)}</span>
                                         {post.created_at && (
-                                            <span className="mobile-post-time">{timeAgo(post.created_at, nowTick)}</span>
+                                            <span className="mobile-post-time">{
+                                                timeAgo(post.created_at, nowTick)}</span>
                                         )}
                                     </div>
                                     <button
                                         className={`mobile-like-btn ${post.liked ? "liked" : ""}`}
+                                        aria-label="Like post"
                                         onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onKeyDown={(e) => e.stopPropagation()}
@@ -606,7 +671,7 @@ export default function MobileForum() {
                                     </button>
                                 </div>
 
-                                <p className="mobile-post-content">{post.content}</p>
+                                <p className="mobile-post-content">{truncate20(post.content)}</p>
 
                                 <div className="mobile-post-tags">
                                     {post.tags && post.tags.map(tag => (
@@ -626,18 +691,56 @@ export default function MobileForum() {
                                         {post.created_at && (
                                             (() => {
                                                 const ta = timeAgo(post.created_at, nowTick);
-                                                return (
-                                                    <span className="post-time">
-                                                        Created {ta === "just now" ? ta : `${ta} ago`}
-                                                    </span>
-                                                );
+
+                                                if (ta === "just now") {
+                                                    return <span className="post-time">Created just now</span>;
+                                                }
+
+                                                if (ta === "yesterday") {
+                                                    return <span className="post-time">Created yesterday</span>;
+                                                }
+
+                                                // Relative times: 5m, 3h, 2d, etc.
+                                                if (["m", "h", "d"].some((s) => ta.endsWith(s))) {
+                                                    return <span className="post-time">Created {ta} ago</span>;
+                                                }
+
+                                                // Absolute dates like "Nov 12"
+                                                return <span className="post-time">Created {ta}</span>;
                                             })()
                                         )}
+
                                     </div>
                                 </div>
                             </div>
                         ))
                     )}
+                    {sortedPosts.length > 0 && totalPages > 1 && (
+                        <div className="mobile-pagination">
+                            <button
+                                className="mobile-page-btn"
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                disabled={safePage === 1}
+                                aria-label="Previous page"
+                            >
+                                ‹ Prev
+                            </button>
+
+                            <span className="mobile-page-info">
+                                Page {safePage} of {totalPages}
+                            </span>
+
+                            <button
+                                className="mobile-page-btn"
+                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={safePage === totalPages}
+                                aria-label="Next page"
+                            >
+                                Next ›
+                            </button>
+                        </div>
+                    )}
+
                 </div>
             </main>
 
@@ -683,11 +786,35 @@ export default function MobileForum() {
                                 <label>Content:</label>
                                 <textarea
                                     value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 300) {
+                                            setPostError("Content cannot exceed 300 characters.");
+                                        } else {
+                                            setPostError("");
+                                        }
+                                        setNewPostContent(v);
+                                    }}
                                     placeholder="Enter post content"
                                     rows="4"
                                 />
+                                {/* optional live counter */}
+                                <div
+                                    style={{
+                                        fontSize: "0.8rem",
+                                        marginTop: "4px",
+                                        color: newPostContent.length > 300 ? "red" : "#666",
+                                    }}
+                                >
+                                    {newPostContent.length}/300
+                                </div>
+                                {postError && (
+                                    <p style={{ color: "red", marginTop: "4px" }}>
+                                        {postError}
+                                    </p>
+                                )}
                             </div>
+
                             <div className="mobile-form-group">
                                 <label>Tags:</label>
                                 <div className="mobile-tag-selection">
@@ -711,6 +838,27 @@ export default function MobileForum() {
                                     ))}
                                 </div>
                             </div>
+                            <div className="mobile-form-group">
+                                <label>Attach Recording (optional):</label>
+                                <div className="m-recording-select-wrap">
+                                    <select
+                                        className="m-recording-select"
+                                        value={selectedRecordingId ?? ""}
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            setSelectedRecordingId(v === "" ? null : Number(v));
+                                        }}
+                                        disabled={recsLoading || !user}
+                                    >
+                                        <option value="">None</option>
+                                        {myRecordings.map(r => (
+                                            <option key={r.id} value={r.id}>{r.title}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {recsLoading && <small className="m-recording-select-hint">Loading your recordings…</small>}
+                            </div>
+
                         </div>
                         <div className="mobile-popup-footer">
                             <button className="mobile-cancel-btn" onClick={handleClosePopup}>Cancel</button>
@@ -718,7 +866,13 @@ export default function MobileForum() {
                                 type="button"
                                 className="mobile-submit-btn"
                                 onClick={handleSubmitPost}
-                                disabled={!user?.id || !newPostTitle.trim() || !newPostContent.trim()}
+                                disabled={
+                                    !user?.id ||
+                                    !newPostTitle.trim() ||
+                                    !newPostContent.trim() ||
+                                    newPostContent.length > 300
+                                }
+
                             >
                                 Create Post
                             </button>

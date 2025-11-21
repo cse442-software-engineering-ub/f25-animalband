@@ -44,7 +44,7 @@ export default function MobileProfile() {
 
     try {
       const res = await fetch(
-        "https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
         {
           method: "POST",
           body: formData,
@@ -90,7 +90,7 @@ export default function MobileProfile() {
       {/* Mobile Header */}
       <header className="mobile-header">
         <div className="mobile-header-left">
-          <button 
+          <button
             className="mobile-menu-btn"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
           >
@@ -105,13 +105,13 @@ export default function MobileProfile() {
         <div className="mobile-header-right">
           {user ? (
             <img
-              src={`https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
               alt="Profile"
               className="mobile-profile-pic"
               onClick={handleAccountClick}
             />
           ) : (
-            <button 
+            <button
               className="mobile-login-btn"
               onClick={() => navigate("/login")}
             >
@@ -126,7 +126,7 @@ export default function MobileProfile() {
         <div className="mobile-nav-menu">
           <div className="mobile-nav-header">
             <h3>Menu</h3>
-            <button 
+            <button
               className="mobile-close-btn"
               onClick={() => setShowMobileMenu(false)}
             >
@@ -134,42 +134,49 @@ export default function MobileProfile() {
             </button>
           </div>
           <nav className="mobile-nav">
-            <button 
+            <button
               className="mobile-nav-btn"
               onClick={() => { navigate("/"); setShowMobileMenu(false); }}
             >
               <span className="material-symbols-outlined">home</span>
               Home
             </button>
-            <button 
+            <button
               className="mobile-nav-btn"
               onClick={() => navigateToForum("community")}
             >
               <span className="material-symbols-outlined">forum</span>
               Forum
             </button>
-            <button 
+            <button
               className="mobile-nav-btn"
               onClick={() => navigateToForum("my-posts")}
             >
               <span className="material-symbols-outlined">article</span>
               My Posts
             </button>
-            <button 
+            <button
               className="mobile-nav-btn"
               onClick={() => navigateToForum("my-likes")}
             >
               <span className="material-symbols-outlined">favorite</span>
               My Likes
             </button>
-            <button 
+            <button
               className="mobile-nav-btn"
               onClick={() => { navigate("/my-recordings"); setShowMobileMenu(false); }}
             >
               <span className="material-symbols-outlined">mic</span>
               My Recordings
             </button>
-            <button 
+            <button
+              className="mobile-nav-btn"
+              onClick={() => { navigate("/playlists"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">playlist_play</span>
+              My Playlists
+            </button>
+            <button
               className="mobile-nav-btn active"
               onClick={() => { navigate("/account"); setShowMobileMenu(false); }}
             >
@@ -177,14 +184,14 @@ export default function MobileProfile() {
               My Profile
             </button>
             {/* NEW: Edit Profile option in mobile menu */}
-            <button 
+            <button
               className="mobile-nav-btn"
               onClick={() => { navigate("/account/edit"); setShowMobileMenu(false); }}
             >
               <span className="material-symbols-outlined">edit</span>
               Edit Profile
             </button>
-            <button 
+            <button
               className="mobile-nav-btn logout"
               onClick={() => { navigate("/login"); setShowMobileMenu(false); }}
             >
@@ -201,7 +208,7 @@ export default function MobileProfile() {
           <>
             <div className="mobile-profile-pic-container" onClick={handleProfilePicClick}>
               <img
-                src={`https://cattle.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
                 alt="Profile"
                 className="mobile-profile-pic-large"
               />
@@ -215,16 +222,16 @@ export default function MobileProfile() {
               />
             </div>
             <h2>{user.username}</h2>
-            
+
             {/* NEW: Edit Profile Button */}
-            <button 
+            <button
               className="mobile-edit-profile-btn"
               onClick={handleEditProfile}
             >
               <span className="material-symbols-outlined">edit</span>
               Edit Profile
             </button>
-            
+
             {/* Profile Information */}
             <div className="mobile-profile-info">
               <h3>Profile Information</h3>
@@ -236,10 +243,6 @@ export default function MobileProfile() {
                 <div className="mobile-info-item">
                   <div className="mobile-info-label">Email</div>
                   <div className="mobile-info-value">{user.email || "Not provided"}</div>
-                </div>
-                <div className="mobile-info-item">
-                  <div className="mobile-info-label">Member Since</div>
-                  <div className="mobile-info-value">{user.joinDate || "Recently joined"}</div>
                 </div>
               </div>
             </div>

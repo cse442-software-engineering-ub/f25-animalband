@@ -7,7 +7,7 @@
 
 .landing-page {
   min-height: 100vh;
-  background-color: #E4E2E2;
+  background-color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -19,7 +19,7 @@
   align-items: center;
   justify-content: flex-end;
   padding: 1rem 2rem;
-  background-color: #D9D9D9;
+  background-color: #ffffff;
   position: relative;
 }
 
@@ -44,7 +44,7 @@
   font-size: 2.5rem;
   font-weight: bold;
   color: #000;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.25);
 }
 
 .header-buttons {
@@ -173,7 +173,7 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(255, 255, 255, 0.1);
   transition: background-color 0.2s;
   z-index: 10;
   text-decoration: none;
@@ -185,7 +185,7 @@
 
 /* ==========Feature Cards========== */
 .features-section {
-  background-color: #F2F2F2;
+  background-color: #ffffff;
   padding: 2rem 0.5rem .5rem;
 }
 
@@ -368,6 +368,69 @@
 .song-download-btn:hover {
   background-color: #15803d;
 }
+/* ---- Modal (shared) ---- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.35);
+  display: grid;
+  place-items: center;
+  z-index: 1000; /* above everything on landing */
+}
+.modal-card {
+  width: min(520px, 92vw);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 15px 40px rgba(0,0,0,.25);
+  overflow: hidden;
+  font-family: inherit;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid #ffffff;
+}
+.modal-body {
+  padding: 1rem;
+}
+.icon-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.list { list-style: none; padding: 0; margin: 0; }
+.list-item {
+  width: 100%;
+  text-align: left;
+  padding: .625rem .75rem;
+  background: #f7f7f7;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  margin-bottom: .5rem;
+  cursor: pointer;
+}
+.list-item:hover { background: #efefef; }
+.field { display: grid; gap: .25rem; margin-top: .5rem; text-align: left; }
+.field input {
+  padding: .5rem .6rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.btn.primary {
+  margin-top: .5rem;
+  padding: .55rem .9rem;
+  border: none;
+  border-radius: 9999px;
+  background: #178C3A;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn.primary:disabled { opacity: .6; cursor: not-allowed; }
+.divider { height: 1px; background: #ffffff; margin: .75rem 0; }
 
 /* ==========Formatting========== */
 @media (max-width: 1024px) {
@@ -468,4 +531,115 @@
   .band-stage {
     padding: 2rem 1rem;
   }
+}
+
+/* ===== Make all section backgrounds pure white ===== */
+.landing-page,
+
+.band-stage,
+.features-section,
+.stats-container,
+.featured-songs-section
+ {
+  background-color: #ffffff;
+}
+
+/* Optional: keep smooth transitions if there were gradients or tints */
+body {
+  background-color: #ffffff;
+}
+
+/* ===== Subtle dividers between sections ===== */
+
+.features-section,
+.featured-songs-section,
+.stats-container,
+.band-stage,
+.header {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+/* Remove line below the footer (optional) */
+.footer {
+  border-top: 1px solid #e5e5e5;
+  border-bottom: none;
+}
+
+/* ===== Animal hover hop animation ===== */
+.animal-member img {
+  height: 10rem;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.animal-member:hover img {
+  animation: hop 0.6s ease;
+}
+
+@keyframes hop {
+  0% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Remix Button Styles */
+.song-remix-btn {
+  background-color: #178C3A;;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.song-remix-btn:hover {
+  background-color: #15803d;
+  transform: scale(1.1);
+}
+
+.song-remix-btn:active {
+  transform: scale(0.95);
+}
+
+.song-remix-btn .material-symbols-outlined {
+  color: white;
+  font-size: 20px;
+}
+
+.song-remix-btn:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.song-remix-btn:disabled:hover {
+  background-color: #d1d5db;
+  transform: none;
+}
+
+/* Ensure button group has proper spacing */
+.song-button-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
 }

@@ -1,8 +1,10 @@
 import { useNavigate, Link } from "react-router-dom";
+import { useState } from "react";
 import "./desktop_register.css";
 
 export default function Register() {
   const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
 
     const handleRegister = async (e) => {
         e.preventDefault();
@@ -14,10 +16,38 @@ export default function Register() {
         const passwordConf = form["password-conf"].value;
         const profilePic = form["profilePic"].files[0];
 
-        if (password !== passwordConf) {
-            alert("Passwords do not match.");
+        // Reset errors
+        const newErrors = {};
+
+        // Validate empty fields
+        if (!username) newErrors.username = true;
+        if (!email) newErrors.email = true;
+        if (!password) newErrors.password = true;
+        if (!passwordConf) newErrors.passwordConf = true;
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (email && !emailRegex.test(email)) {
+            newErrors.email = true;
+            alert("Please enter a valid email address.");
+            setErrors(newErrors);
             return;
         }
+
+        // Check if there are any errors
+        if (Object.keys(newErrors).length > 0) {
+            alert("Please fill in all required fields.");
+            setErrors(newErrors);
+            return;
+        }
+
+        if (password !== passwordConf) {
+            alert("Passwords do not match.");
+            setErrors({ password: true, passwordConf: true });
+            return;
+        }
+
+        setErrors({});
 
         const formData = new FormData();
         formData.append("username", username);
@@ -59,19 +89,39 @@ export default function Register() {
       <form onSubmit={handleRegister}>
         <label>
           Name
-          <input type="text" name="username" placeholder="Name" />
+          <input 
+            type="text" 
+            name="username" 
+            placeholder="Name"
+            style={errors.username ? { border: '2px solid red' } : {}}
+          />
         </label>
         <label>
           Email
-          <input type="text" name="email" placeholder="Email" />
+          <input 
+            type="text" 
+            name="email" 
+            placeholder="Email"
+            style={errors.email ? { border: '2px solid red' } : {}}
+          />
         </label>
         <label>
           Password
-          <input type="password" name="password" placeholder="Create a Password" />
+          <input 
+            type="password" 
+            name="password" 
+            placeholder="Create a Password"
+            style={errors.password ? { border: '2px solid red' } : {}}
+          />
         </label>
         <label>
           Confirm Password
-          <input type="password" name="password-conf" placeholder="Confirm Password" />
+          <input 
+            type="password" 
+            name="password-conf" 
+            placeholder="Confirm Password"
+            style={errors.passwordConf ? { border: '2px solid red' } : {}}
+          />
         </label>
         <label>
           Profile Picture

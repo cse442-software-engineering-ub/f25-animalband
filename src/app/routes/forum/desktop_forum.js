@@ -16,6 +16,14 @@ export default function DesktopForum() {
     const [user, setUser] = useState(null);
     const [activeView, setActiveView] = useState("community");
     const [openPost, setOpenPost] = useState(null);
+    const [myRecordings, setMyRecordings] = useState([]);
+    const [recsLoading, setRecsLoading] = useState(false);
+    const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+    const [postError, setPostError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);   // <-- add this
+
+    const POSTS_PER_PAGE = 20;
+
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -62,6 +70,44 @@ export default function DesktopForum() {
         return () => clearInterval(id);
     }, []);
 
+    function truncate30(s) {
+        if (!s) return "";
+        return s.length > 30 ? s.slice(0, 30) + "..." : s;
+    }
+
+
+    const fetchMyRecordings = useCallback(async () => {
+        if (!user?.id) return;
+        try {
+            setRecsLoading(true);
+
+            // get auth_token cookie (same as your MyRecordings page)
+            const cookiePairs = document.cookie.split("; ").map(c => c.split("="));
+            const cookieMap = Object.fromEntries(cookiePairs);
+            const authCookie = cookieMap["auth_token"] || "";
+
+            const res = await fetch(`${PHP_URL}/getLocalRecordings.php`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ auth_token: authCookie }),
+                cache: "no-store",
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const data = await res.json();
+            // Expecting: { success: true, recordings: [{ id, title, description, recording: [...] }, ...] }
+            const list = (data?.recordings || []).map(r => ({
+                id: Number(r.id),
+                title: r.title ?? `Recording #${r.id}`,
+            }));
+            setMyRecordings(list);
+        } catch (e) {
+            console.error("Failed to load recordings:", e);
+            setMyRecordings([]);
+        } finally {
+            setRecsLoading(false);
+        }
+    }, [user?.id]);
 
 
 
@@ -95,6 +141,10 @@ export default function DesktopForum() {
                         comments: Number(p.comments ?? 0),
                         created_at: p.created_at || null,
                         likesFrom,
+                        recording_id:
+                            p.recording_id === null || p.recording_id === undefined
+                                ? null
+                                : Number(p.recording_id),
                     };
 
                     const prevLiked = prevById.get(base.id)?.liked ?? false;
@@ -245,8 +295,10 @@ export default function DesktopForum() {
     };
 
     // ========== New Post ==========
-    const handleNewPost = () => {
+    const handleNewPost = async () => {
         setShowNewPostPopup(true);
+        setSelectedRecordingId(null);
+        await fetchMyRecordings();
     };
 
     const handleClosePopup = () => {
@@ -254,6 +306,7 @@ export default function DesktopForum() {
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostTags([]);
+        setPostError("");
     };
 
     const handleTagSelect = (tag) => {
@@ -280,6 +333,7 @@ export default function DesktopForum() {
             author: user.username,
             authorId: user.id,
             likes: 1,
+            recording_id: selectedRecordingId ?? null,
 
         };
 
@@ -296,6 +350,7 @@ export default function DesktopForum() {
             created_at: new Date().toISOString(),
             likesFrom: [user.username],
             liked: true,
+            recording_id: selectedRecordingId ?? null,
         };
         setPosts(prev => [optimistic, ...prev]);
         try {
@@ -352,6 +407,13 @@ export default function DesktopForum() {
         }
     }) : [];
 
+    const totalPages = Math.max(1, Math.ceil(sortedPosts.length / POSTS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+
+
     const getViewTitle = () => {
         switch (activeView) {
             case "my-posts":
@@ -364,104 +426,99 @@ export default function DesktopForum() {
         }
     };
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedTags, sortBy, activeView]);
 
     return (
         <div className="forum-page">
-            {/* Sidebar */}
-            <aside className="forum-sidebar">
-                <div className="sidebar-header">
-                    <Link to="/">
-                        <span className="material-symbols-outlined paw-icon">pets</span>
-                        <span className="forum-site-title">ANIMALBAND</span>
-                    </Link>
-                </div>
-
-                <nav className="sidebar-nav">
-                    <ul>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
-                        <li>
-                            <button
-                                className={`df-sidebar-btn ${activeView === "community" ? "active" : ""}`}
-                                onClick={() => setActiveView("community")}
-                            >
-                                Forum
+            {/* Header - Matching Profile Page */}
+            <header className="forum-header">
+                <Link to="/" className="logo-section">
+                    <span className="material-symbols-outlined paw-icon">pets</span>
+                    <h1 className="site-title">ANIMALBAND</h1>
+                </Link>
+                <div className="header-buttons">
+                    {!user ? (
+                        <>
+                            <button className="btn-login" onClick={() => navigate("/login")}>
+                                Login
                             </button>
-                        </li>
-                        <li>
-                            <button
-                                className={`df-sidebar-btn ${activeView === "my-posts" ? "active" : ""}`}
-                                onClick={() => setActiveView("my-posts")}
-                            >
-                                My Posts
+                            <button className="btn-register" onClick={() => navigate("/register")}>
+                                Register
                             </button>
-                        </li>
-                        <li>
-                            <button
-                                className={`df-sidebar-btn ${activeView === "my-likes" ? "active" : ""}`}
-                                onClick={() => setActiveView("my-likes")}
-                            >
-                                My Likes
-                            </button>
-                        </li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/account")}>My Profile</button></li>
-                        <button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
-                            Log Out
-                        </button>
-                    </ul>
-                </nav>
-            </aside>
-
-            {/* Main Content */}
-            <div className="forum-main">
-                {/* Header */}
-                <header className="forum-header">
-                    <div className="header-left">
-                        <h1 className="forum-title">{getViewTitle()}</h1>
-                        <span className="post-count">{sortedPosts.length} posts</span>
-                    </div>
-
-                    <div className="header-search">
-                        <input
-                            type="text"
-                            placeholder="Search post or users"
-                            className="search-bar"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                        </>
+                    ) : (
+                        <img
+                            src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                            alt="Profile"
+                            className="profile-pic"
+                            onClick={handleAccountClick}
                         />
-                        <span className="material-symbols-outlined search-icon">search</span>
-                    </div>
+                    )}
+                </div>
+            </header>
 
-                    <div className="header-right">
-                        {/* Profile */}
-                        {!user ? (
-                            <div className="header-auth-buttons">
+            {/* Main Layout */}
+            <div className="forum-layout">
+                {/* Sidebar - Matching Profile Page */}
+                <aside className="forum-sidebar">
+                    <div className="sidebar-header">
+                        <h3>Menu</h3>
+                    </div>
+                    <nav className="sidebar-nav">
+                        <ul>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/playlists")}>My Playlists</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
+                            <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
+                                Logout
+                            </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                {/* Main Content */}
+                <main className="forum-main">
+                    {/* Content Header */}
+                    <div className="content-header">
+                        <div>
+                            <h1>{getViewTitle()}</h1>
+                            <span className="post-count">{sortedPosts.length} posts</span>
+                        </div>
+
+                        <div className="header-controls">
+                            <div className="view-buttons">
                                 <button
-                                    className="btn-login"
-                                    onClick={() => navigate("/login")}
+                                    className={`nav-btn ${activeView === "my-posts" ? "active" : ""}`}
+                                    onClick={() => setActiveView("my-posts")}
                                 >
-                                    Login
+                                    My Posts
                                 </button>
                                 <button
-                                    className="btn-register"
-                                    onClick={() => navigate("/register")}
+                                    className={`nav-btn ${activeView === "my-likes" ? "active" : ""}`}
+                                    onClick={() => setActiveView("my-likes")}
                                 >
-                                    Register
+                                    My Likes
                                 </button>
                             </div>
-                        ) : (
-                            <img
-                                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
-                                alt="Profile"
-                                className="profile-pic"
-                                onClick={handleAccountClick}
-                            />
-                        )}
-                    </div>
-                </header>
 
-                {/* Posts Section */}
-                <main className="forum-content">
+                            <div className="header-search">
+                                <input
+                                    type="text"
+                                    placeholder="Search post or users"
+                                    className="search-bar"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                <span className="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Filter bar */}
                     <div className="tag-filter-bar">
                         {/* Animals */}
@@ -520,12 +577,20 @@ export default function DesktopForum() {
                                 <p>No posts found.</p>
                             </div>
                         ) : (
-                            sortedPosts.map((post) => (
+                            paginatedPosts.map((post) => (
                                 <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
                                     <div className="post-author">
                                         <div>
-                                            <h3 className="post-title">{post.title}</h3>
-                                            <span className="author-name">by {post.author}</span>
+                                            <h3 className="post-title">{truncate30(post.title)}</h3>
+                                            <span
+                                                className="author-name clickable-author"
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // don't open the post modal
+                                                    navigate(`/account/${encodeURIComponent(post.authorId)}`);
+                                                }}
+                                            >
+                                                by {truncate30(post.author)}
+                                            </span>
                                         </div>
                                     </div>
                                     {/* Time since posted */}
@@ -534,13 +599,20 @@ export default function DesktopForum() {
                                             const ta = timeAgo(post.created_at, nowTick);
                                             return (
                                                 <span className="post-time">
-                                                    Created {ta === "just now" ? ta : `${ta} ago`}
+                                                    {ta === "just now"
+                                                        ? "Created just now"
+                                                        : ta === "yesterday"
+                                                            ? "Created yesterday"
+                                                            : ["m", "h", "d"].some(s => ta.endsWith(s))
+                                                                ? `Created ${ta} ago`
+                                                                : `Created ${ta}`}
                                                 </span>
+
                                             );
                                         })()
                                     )}
                                 </div>
-                                    <p className="post-content">{post.content}</p>
+                                    <p className="post-content">{truncate30(post.content)}</p>
                                     <div className="post-tags">
                                         {post.tags && post.tags.map(tag => (
                                             <span key={tag} className="post-tag">{tag}</span>
@@ -563,6 +635,31 @@ export default function DesktopForum() {
                                     </div>
                                 </div>
                             ))
+                        )}
+                        {totalPages > 1 && (
+                            <div className="pagination-controls">
+                                <button
+                                    className="page-btn"
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={safePage === 1}
+                                    aria-label="Previous page"
+                                >
+                                    ‹ Prev
+                                </button>
+
+                                <span className="page-info">
+                                    Page {safePage} of {totalPages}
+                                </span>
+
+                                <button
+                                    className="page-btn"
+                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={safePage === totalPages}
+                                    aria-label="Next page"
+                                >
+                                    Next ›
+                                </button>
+                            </div>
                         )}
                     </div>
                 </main>
@@ -590,10 +687,27 @@ export default function DesktopForum() {
                                 <label>Content:</label>
                                 <textarea
                                     value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 300) {
+                                            setPostError("Content cannot exceed 300 characters.");
+                                        } else {
+                                            setPostError("");
+                                        }
+                                        setNewPostContent(v);
+                                    }}
                                     placeholder="Enter post content"
                                     rows="4"
                                 />
+                                {postError && (
+                                    <p className="error-text" style={{ color: "red", marginTop: "5px" }}>
+                                        {postError}
+                                    </p>
+                                )}
+                                <div style={{ fontSize: "0.85rem", color: newPostContent.length > 300 ? "red" : "#555" }}>
+                                    {newPostContent.length}/300
+                                </div>
+
                             </div>
                             <div className="form-group">
                                 <label>Tags:</label>
@@ -618,6 +732,30 @@ export default function DesktopForum() {
                                     ))}
                                 </div>
                             </div>
+                            <div className="form-group">
+                                <label>Attach Recording (optional):</label>
+
+                                <div className="recording-select-wrap">
+                                    <select
+                                        className="recording-select"
+                                        value={selectedRecordingId ?? ""}
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            setSelectedRecordingId(v === "" ? null : Number(v));
+                                        }}
+                                        disabled={recsLoading || !user}
+                                    >
+                                        <option value="">None</option>
+                                        {myRecordings.map(r => (
+                                            <option key={r.id} value={r.id}>
+                                                {r.title}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {recsLoading && <small className="recording-select-hint">Loading your recordings…</small>}
+                            </div>
                         </div>
                         <div className="popup-footer">
                             <button className="cancel-btn" onClick={handleClosePopup}>Cancel</button>
@@ -625,7 +763,13 @@ export default function DesktopForum() {
                                 type="button"
                                 className="submit-btn"
                                 onClick={handleSubmitPost}
-                                disabled={!user?.id || !newPostTitle.trim() || !newPostContent.trim()}
+                                disabled={
+                                    !user?.id ||
+                                    !newPostTitle.trim() ||
+                                    !newPostContent.trim() ||
+                                    newPostContent.length > 300
+                                }
+
                             >
                                 Create Post
                             </button>

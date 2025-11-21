@@ -1,0 +1,188 @@
+/* mini player container */
+.pmp-attached-recording {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f7f7f7;
+    border-radius: 8px;
+    border: 1px solid #e2e2e2;
+}
+
+/* text line with title */
+.ab-mini-player-meta {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+/* description fade-down */
+.ab-mini-desc {
+    color: #666;
+    font-weight: normal;
+}
+
+/* buttons row */
+.ab-mini-player-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* the play button in mini player */
+.ab-mini-play {
+    padding: 6px 12px;
+    border: none;
+    background-color: #178c3a;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.ab-mini-play:hover {
+    background-color: #178c3a;
+}
+
+/* disabled state */
+.ab-mini-play:disabled {
+    background-color: #ccc;
+    cursor: default;
+}
+
+/* allow long recording descriptions to wrap */
+.ab-mini-desc {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    display: inline; /* or inline-block if you want */
+}
+
+.ab-mini-player-meta {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 6px;
+
+    /* NEW */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+/* 1) Make sure the modal itself doesn't force overflow */
+.post-modal {
+  max-width: 900px;
+  width: min(92vw, 900px);
+  max-height: 90vh;
+  overflow: auto;           /* scroll if needed */
+}
+
+/* 2) Header: allow the title to shrink and wrap */
+.post-modal-header {
+  display: flex;            /* if you already have flex, keep it */
+  align-items: center;
+  gap: 8px;
+}
+
+.post-modal-title {
+  flex: 1 1 auto;           /* title can shrink/grow */
+  min-width: 0;             /* CRITICAL: allow wrapping in flex */
+  white-space: pre-wrap;    /* keep user newlines */
+  overflow-wrap: anywhere;  /* wrap long words/URLs */
+  word-break: break-word;   /* legacy support */
+}
+
+/* 3) Body + post container: allow wrapping inside flex layouts */
+.post-modal-body,
+.post-modal-post {
+  min-width: 0;             /* CRITICAL if these are flex children */
+  max-width: 100%;
+}
+
+/* 4) Post content text wrapping */
+.pmp-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* 5) Links inside content should also break */
+.pmp-content a {
+  word-break: break-all;    /* URLs without spaces */
+}
+
+
+/* lock background when modal is open (you already toggle this class) */
+body.popup-open { overflow: hidden; }
+
+/* overlay fills screen */
+.post-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;         /* center modal */
+  justify-content: center;
+  padding: 24px;               /* space for small screens */
+  z-index: 9999;
+}
+
+/* modal = flex column so the body can scroll */
+.post-modal {
+  width: min(92vw, 900px);
+  max-height: 90vh;            /* cap height */
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.25);
+  display: flex;               /* KEY */
+  flex-direction: column;      /* header + body vertical */
+  overflow: hidden;            /* round corners + hide overflow */
+}
+
+/* header stays fixed; text wraps */
+.post-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+.post-modal-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* body scrolls */
+.post-modal-body {
+  flex: 1 1 auto;              /* take remaining space */
+  min-height: 0;               /* CRITICAL for flex children to allow scroll */
+  overflow-y: auto;            /* SCROLL HERE */
+  padding: 16px 20px;
+}
+
+/* if your inner container is flex, allow wrap + no overflow */
+.post-modal-post { min-width: 0; }
+
+/* content wrap (you already added) */
+.pmp-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* comments list can just flow; no separate cap needed */
+.ab-comments-list { margin-top: 12px; }
+
+/* Existing (or similar) */
+.post-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000; /* or whatever it is now */
+}
+
+/* Make sure the recording modal sits above it */
+.modal-overlay.recording-playback-overlay {
+  position: fixed;   /* if not already set globally */
+  inset: 0;          /* same full-screen coverage */
+  z-index: 2000 !important;
+}
