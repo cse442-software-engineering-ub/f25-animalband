@@ -25,7 +25,7 @@ export default function Landing() {
   // 🔹 State for playback modal (reuse same component as account/forum)
   const [showRecModal, setShowRecModal] = useState(false);
   const [activeRecording, setActiveRecording] = useState(null); // {id,title,description}
-  const [activeNotes, setActiveNotes] = useState([]);           // song.recording
+  const [activeNotes, setActiveNotes] = useState([]); // song.recording
 
   const handleAccountClick = () => {
     if (user) navigate("/account");
@@ -38,7 +38,7 @@ export default function Landing() {
   const handleRemix = (song) => {
     // Stop any playing audio first
     // stopAll();
-    
+
     // Store the song data in sessionStorage so the stage can access it
     const remixData = {
       songId: song.id,
@@ -46,11 +46,11 @@ export default function Landing() {
       author: song.author,
       description: song.description,
       recording: song.recording,
-      isRemix: true
+      isRemix: true,
     };
-    
-    sessionStorage.setItem('remixData', JSON.stringify(remixData));
-    
+
+    sessionStorage.setItem("remixData", JSON.stringify(remixData));
+
     // Navigate to stage with remix parameter
     navigate(`/stage?remix=${song.id}`);
   };
@@ -65,7 +65,9 @@ export default function Landing() {
         );
         const data = await res.json();
         if (data.loggedIn) setUser(data);
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error(err);
+      }
     };
 
     const fetchCount = async (url, setter) => {
@@ -73,7 +75,9 @@ export default function Landing() {
         const res = await fetch(url);
         const data = await res.json();
         setter(data[Object.keys(data)[0]]);
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error(err);
+      }
     };
 
     fetchUser();
@@ -94,8 +98,11 @@ export default function Landing() {
   // Preload sounds for WAV export
   useEffect(() => {
     (async () => {
-      try { setBuffers(await preloadLandingSounds()); }
-      catch (e) { console.error(e); }
+      try {
+        setBuffers(await preloadLandingSounds());
+      } catch (e) {
+        console.error(e);
+      }
     })();
   }, []);
 
@@ -108,13 +115,16 @@ export default function Landing() {
         );
         const d = await r.json();
         if (d?.success && Array.isArray(d.songs)) setFeaturedSongs(d.songs);
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     })();
   }, []);
 
   // 🔹 Open/close modal using same props as ForumPostModal/MyRecordings
   const openRecordingModal = (song) => {
-    if (!song || !Array.isArray(song.recording) || song.recording.length === 0) return;
+    if (!song || !Array.isArray(song.recording) || song.recording.length === 0)
+      return;
 
     setActiveRecording({
       id: song.id,
@@ -137,7 +147,12 @@ export default function Landing() {
 
     const first = rec[0];
     // Flat: [{ key, time }, ...]
-    if (first && typeof first === "object" && "key" in first && "time" in first) {
+    if (
+      first &&
+      typeof first === "object" &&
+      "key" in first &&
+      "time" in first
+    ) {
       return rec;
     }
     // Tracks: [ [ {key,time}, ... ], [ ... ], ... ]
@@ -196,25 +211,40 @@ export default function Landing() {
 
     let offset = 0;
     const writeString = (view, offset, string) => {
-      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+      for (let i = 0; i < string.length; i++)
+        view.setUint8(offset + i, string.charCodeAt(i));
     };
 
-    writeString(view, offset, "RIFF"); offset += 4;
-    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
-    writeString(view, offset, "WAVE"); offset += 4;
-    writeString(view, offset, "fmt "); offset += 4;
-    view.setUint32(offset, 16, true); offset += 4;
-    view.setUint16(offset, 1, true); offset += 2;
-    view.setUint16(offset, numOfChan, true); offset += 2;
-    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
-    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
-    view.setUint16(offset, numOfChan * 2, true); offset += 2;
-    view.setUint16(offset, 16, true); offset += 2;
-    writeString(view, offset, "data"); offset += 4;
-    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "RIFF");
+    offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true);
+    offset += 4;
+    writeString(view, offset, "WAVE");
+    offset += 4;
+    writeString(view, offset, "fmt ");
+    offset += 4;
+    view.setUint32(offset, 16, true);
+    offset += 4;
+    view.setUint16(offset, 1, true);
+    offset += 2;
+    view.setUint16(offset, numOfChan, true);
+    offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true);
+    offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
+    offset += 4;
+    view.setUint16(offset, numOfChan * 2, true);
+    offset += 2;
+    view.setUint16(offset, 16, true);
+    offset += 2;
+    writeString(view, offset, "data");
+    offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true);
+    offset += 4;
 
     const inputL = buffer.getChannelData(0);
-    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const inputR =
+      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
     const interleaved = new Float32Array(buffer.length * 2);
     for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
       interleaved[j] = inputL[i];
@@ -224,12 +254,15 @@ export default function Landing() {
     let index = 44;
     for (let i = 0; i < interleaved.length; i++, index += 2) {
       const sample = Math.max(-1, Math.min(1, interleaved[i]));
-      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      view.setInt16(
+        index,
+        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+        true
+      );
     }
 
     return new Blob([view], { type: "audio/wav" });
   };
-
 
   return (
     <div className="landing-page">
@@ -242,8 +275,18 @@ export default function Landing() {
         <div className="header-buttons">
           {!user ? (
             <>
-              <button className="btn-login" onClick={() => handleNavigation("/login")}>Login</button>
-              <button className="btn-register" onClick={() => handleNavigation("/register")}>Register</button>
+              <button
+                className="btn-login"
+                onClick={() => handleNavigation("/login")}
+              >
+                Login
+              </button>
+              <button
+                className="btn-register"
+                onClick={() => handleNavigation("/register")}
+              >
+                Register
+              </button>
             </>
           ) : (
             <img
@@ -251,7 +294,13 @@ export default function Landing() {
               alt="Profile"
               className="profile-pic"
               onClick={handleAccountClick}
-              style={{ width: "75px", height: "75px", borderRadius: "50%", cursor: "pointer", objectFit: "cover" }}
+              style={{
+                width: "75px",
+                height: "75px",
+                borderRadius: "50%",
+                cursor: "pointer",
+                objectFit: "cover",
+              }}
             />
           )}
         </div>
@@ -275,31 +324,34 @@ export default function Landing() {
             </div>
           ))}
         </div>
-        <Link to="/stage" className="btn-start-band">Start Your Band</Link>
+        <Link to="/stage" className="btn-start-band">
+          Start Your Band
+        </Link>
       </section>
 
       {/* Features */}
       <section className="features-section">
         <div className="features-grid">
           <Link to="/stage" className="feature-card">
-            <span className="material-symbols-outlined feature-icon">piano</span>
+            <span className="material-symbols-outlined feature-icon">
+              piano
+            </span>
             <h3>Stage</h3>
             <p>Play instruments with your favorite animals.</p>
           </Link>
+
           <Link to="/rhythm-game" className="feature-card">
-            <span className="material-symbols-outlined feature-icon">instant_mix</span>
+            <span className="material-symbols-outlined feature-icon">
+              instant_mix
+            </span>
             <h3>Rhythm Game</h3>
             <p>Test your musical gaming abilities!</p>
           </Link>
+
           <Link to="/forum" className="feature-card">
             <span className="material-symbols-outlined feature-icon">chat</span>
             <h3>Forum</h3>
             <p>Share your tracks, ask for help, and get feedback.</p>
-          </Link>
-          <Link to="/stage" className="feature-card">
-            <span className="material-symbols-outlined feature-icon">edit</span>
-            <h3>Customization</h3>
-            <p>Import sounds and personalize your animals.</p>
           </Link>
         </div>
       </section>
@@ -308,14 +360,21 @@ export default function Landing() {
       <section className="featured-songs-section">
         <h2 className="featured-songs-title">Today's Top Songs</h2>
         <div className="featured-songs-grid">
-          {featuredSongs.length === 0 && [0, 1, 2].map(i => (
-            <div className="song-card" key={`sk-${i}`}>Loading…</div>
-          ))}
+          {featuredSongs.length === 0 &&
+            [0, 1, 2].map((i) => (
+              <div className="song-card" key={`sk-${i}`}>
+                Loading…
+              </div>
+            ))}
           {featuredSongs.map((song) => (
             <div className="song-card" key={song.id}>
-              <h3 className="song-title">{song.title || `Untitled #${song.id}`}</h3>
+              <h3 className="song-title">
+                {song.title || `Untitled #${song.id}`}
+              </h3>
               <p className="song-author">by {song.author}</p>
-              {song.description && <p className="song-desc">{song.description}</p>}
+              {song.description && (
+                <p className="song-desc">{song.description}</p>
+              )}
               <div className="song-button-group">
                 {/* 🔹 Opens animal playback modal, same component as forum/account */}
                 <button
@@ -325,12 +384,16 @@ export default function Landing() {
                 >
                   <span className="material-symbols-outlined">play_arrow</span>
                 </button>
-                <button className="song-download-btn" aria-label="Download Song" onClick={() => downloadWav(song)}>
+                <button
+                  className="song-download-btn"
+                  aria-label="Download Song"
+                  onClick={() => downloadWav(song)}
+                >
                   <span className="material-symbols-outlined">download</span>
                 </button>
                 {/* NEW: Remix Button */}
-                <button 
-                  className="song-remix-btn" 
+                <button
+                  className="song-remix-btn"
                   aria-label="Remix Song"
                   onClick={() => handleRemix(song)}
                   title="Remix this song"
@@ -341,8 +404,14 @@ export default function Landing() {
                   songId={song.id}
                   compact
                   onAdded={() => {
-                    try { new AudioContext(); } catch (e) { }
-                    alert(`Added "${song.title || `song_${song.id}`}" to your playlist!`);
+                    try {
+                      new AudioContext();
+                    } catch (e) {}
+                    alert(
+                      `Added "${
+                        song.title || `song_${song.id}`
+                      }" to your playlist!`
+                    );
                   }}
                 />
               </div>
@@ -355,15 +424,23 @@ export default function Landing() {
       <section className="stats-section">
         <div className="stats-container">
           <div className="stat-card">
-            <p className="stat-number">{loopCount !== null ? loopCount.toLocaleString() : "Loading..."}</p>
+            <p className="stat-number">
+              {loopCount !== null ? loopCount.toLocaleString() : "Loading..."}
+            </p>
             <p className="stat-label">Loops Created</p>
           </div>
           <div className="stat-card">
-            <p className="stat-number">{memberCount !== null ? memberCount.toLocaleString() : "Loading..."}</p>
+            <p className="stat-number">
+              {memberCount !== null
+                ? memberCount.toLocaleString()
+                : "Loading..."}
+            </p>
             <p className="stat-label">Members</p>
           </div>
           <div className="stat-card">
-            <p className="stat-number">{postCount !== null ? postCount.toLocaleString() : "Loading..."}</p>
+            <p className="stat-number">
+              {postCount !== null ? postCount.toLocaleString() : "Loading..."}
+            </p>
             <p className="stat-label">Posts</p>
           </div>
         </div>
@@ -383,7 +460,10 @@ export default function Landing() {
         />
       )}
 
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
     </div>
   );
 }
