@@ -28,7 +28,7 @@ export default function MobileLanding() {
   // 🔹 Shared playback modal state (same behavior as desktop landing)
   const [showRecModal, setShowRecModal] = useState(false);
   const [activeRecording, setActiveRecording] = useState(null); // {id,title,description}
-  const [activeNotes, setActiveNotes] = useState([]);           // song.recording
+  const [activeNotes, setActiveNotes] = useState([]); // song.recording
   // const [buffers, setBuffers] = useState(null);
   const [playingIndex, setPlayingIndex] = useState(-1);
   const stopRef = useRef(null);
@@ -90,13 +90,11 @@ export default function MobileLanding() {
     }
   };
 
-
-
   // NEW: Handle remix button click
   const handleRemix = (song) => {
     // Stop any playing audio first
     stopAll();
-    
+
     // Store the song data in sessionStorage so the stage can access it
     const remixData = {
       songId: song.id,
@@ -104,11 +102,11 @@ export default function MobileLanding() {
       author: song.author,
       description: song.description,
       recording: song.recording,
-      isRemix: true
+      isRemix: true,
     };
-    
-    sessionStorage.setItem('remixData', JSON.stringify(remixData));
-    
+
+    sessionStorage.setItem("remixData", JSON.stringify(remixData));
+
     // Navigate to stage with remix parameter
     navigate(`/stage?remix=${song.id}`);
   };
@@ -140,7 +138,12 @@ export default function MobileLanding() {
     const first = rec[0];
 
     // Flat: [{ key, time }, ...]
-    if (first && typeof first === "object" && "key" in first && "time" in first) {
+    if (
+      first &&
+      typeof first === "object" &&
+      "key" in first &&
+      "time" in first
+    ) {
       return rec;
     }
 
@@ -221,25 +224,40 @@ export default function MobileLanding() {
 
     let offset = 0;
     const writeString = (view, offset, string) => {
-      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+      for (let i = 0; i < string.length; i++)
+        view.setUint8(offset + i, string.charCodeAt(i));
     };
 
-    writeString(view, offset, "RIFF"); offset += 4;
-    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
-    writeString(view, offset, "WAVE"); offset += 4;
-    writeString(view, offset, "fmt "); offset += 4;
-    view.setUint32(offset, 16, true); offset += 4;
-    view.setUint16(offset, 1, true); offset += 2;
-    view.setUint16(offset, numOfChan, true); offset += 2;
-    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
-    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
-    view.setUint16(offset, numOfChan * 2, true); offset += 2;
-    view.setUint16(offset, 16, true); offset += 2;
-    writeString(view, offset, "data"); offset += 4;
-    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "RIFF");
+    offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true);
+    offset += 4;
+    writeString(view, offset, "WAVE");
+    offset += 4;
+    writeString(view, offset, "fmt ");
+    offset += 4;
+    view.setUint32(offset, 16, true);
+    offset += 4;
+    view.setUint16(offset, 1, true);
+    offset += 2;
+    view.setUint16(offset, numOfChan, true);
+    offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true);
+    offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
+    offset += 4;
+    view.setUint16(offset, numOfChan * 2, true);
+    offset += 2;
+    view.setUint16(offset, 16, true);
+    offset += 2;
+    writeString(view, offset, "data");
+    offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true);
+    offset += 4;
 
     const inputL = buffer.getChannelData(0);
-    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const inputR =
+      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
     const interleaved = new Float32Array(buffer.length * 2);
     for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
       interleaved[j] = inputL[i];
@@ -249,7 +267,11 @@ export default function MobileLanding() {
     let index = 44;
     for (let i = 0; i < interleaved.length; i++, index += 2) {
       const sample = Math.max(-1, Math.min(1, interleaved[i]));
-      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      view.setInt16(
+        index,
+        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+        true
+      );
     }
 
     return new Blob([view], { type: "audio/wav" });
@@ -396,11 +418,7 @@ export default function MobileLanding() {
                     </span>
                   </button>
                 </div>
-                <button className="m-play-btn" aria-label="Play song" disabled>
-                  <span className="material-symbols-outlined">hourglass_top</span>
-                </button>
-              </div>
-            ))}
+              ))}
 
             {featuredSongs.map((song) => (
               <div key={song.id} className="m-song-card">
@@ -417,10 +435,15 @@ export default function MobileLanding() {
                     className="m-play-btn"
                     aria-label="Play song"
                     onClick={() => openRecordingModal(song)}
-                    disabled={!song.recording || !normalizeRecordingNotes(song.recording).length}
+                    disabled={
+                      !song.recording ||
+                      !normalizeRecordingNotes(song.recording).length
+                    }
                     title="Play with animals"
                   >
-                    <span className="material-symbols-outlined">play_arrow</span>
+                    <span className="material-symbols-outlined">
+                      play_arrow
+                    </span>
                   </button>
 
                   {/* Remix Button */}
@@ -430,9 +453,7 @@ export default function MobileLanding() {
                     aria-label="Remix this song"
                     title="Remix this song"
                   >
-                    <span className="material-symbols-outlined">
-                      edit_note
-                    </span>
+                    <span className="material-symbols-outlined">edit_note</span>
                   </button>
 
                   <MobileAddToPlaylistButton
