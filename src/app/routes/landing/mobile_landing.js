@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
+import { preloadLandingSounds } from "./landing_player.js";
 import MobileAddToPlaylistButton from "../../../components/mobile_add_to_playlist_button.js";
+
+import RecordingPlaybackModal from "../account/recording_playback_modal.js";
 
 import "./mobile_landing.css";
 import Ostrich from "../../../assets/ostrich.jpeg";
@@ -14,13 +16,19 @@ export default function MobileLanding() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
-  // Stuff for carousel
+  // Carousel
   const slides = [Ostrich, Bird, Hamster, Kangaroo, Snake];
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
 
   // Songs
   const [featuredSongs, setFeaturedSongs] = useState([]);
+  const [buffers, setBuffers] = useState(null); // for WAV download
+
+  // 🔹 Shared playback modal state (same behavior as desktop landing)
+  const [showRecModal, setShowRecModal] = useState(false);
+  const [activeRecording, setActiveRecording] = useState(null); // {id,title,description}
+  const [activeNotes, setActiveNotes] = useState([]);           // song.recording
   const [buffers, setBuffers] = useState(null);
   const [playingIndex, setPlayingIndex] = useState(-1);
   const stopRef = useRef(null);
@@ -39,7 +47,9 @@ export default function MobileLanding() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php");
+        const r = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php"
+        );
         const d = await r.json();
         if (d?.success && Array.isArray(d.songs)) setFeaturedSongs(d.songs);
       } catch (e) {
@@ -137,6 +147,127 @@ export default function MobileLanding() {
     const el = trackRef.current;
     if (!el) return;
     el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
+
+  // 🔹 Normalize flat vs tracks-of-notes into a single note array
+  const normalizeRecordingNotes = (rec) => {
+    if (!Array.isArray(rec) || rec.length === 0) return [];
+    const first = rec[0];
+
+    // Flat: [{ key, time }, ...]
+    if (first && typeof first === "object" && "key" in first && "time" in first) {
+      return rec;
+    }
+
+    // Tracks: [ [ {key,time}, ... ], [ ... ], ... ]
+    return rec
+      .flat()
+      .filter((n) => n && typeof n === "object" && "key" in n && "time" in n);
+  };
+
+  // 🔹 Open RecordingPlaybackModal for a song
+  const openRecordingModal = (song) => {
+    if (!song || !song.recording) return;
+    const notes = normalizeRecordingNotes(song.recording);
+    if (notes.length === 0) return;
+
+    setActiveRecording({
+      id: song.id,
+      title: song.title || `Song #${song.id}`,
+      description: song.description || "",
+    });
+    setActiveNotes(notes);
+    setShowRecModal(true);
+  };
+
+  const closeRecordingModal = () => {
+    setShowRecModal(false);
+    setActiveRecording(null);
+    setActiveNotes([]);
+  };
+
+  // 🔹 WAV download (same logic as desktop landing)
+  const downloadWav = async (song) => {
+    if (!buffers || !song?.recording) return;
+
+    const notes = normalizeRecordingNotes(song.recording);
+    if (notes.length === 0) return;
+
+    // Find latest note time
+    const maxTimeMs = notes.reduce(
+      (max, n) => (typeof n.time === "number" && n.time > max ? n.time : max),
+      0
+    );
+
+    // +1000 ms tail; ensure at least 1 second
+    const durationSec = Math.max(1, (maxTimeMs + 1000) / 1000);
+    const sampleRate = 44100;
+    const frameCount = Math.max(1, Math.floor(sampleRate * durationSec));
+
+    const offlineCtx = new OfflineAudioContext(2, frameCount, sampleRate);
+
+    // Schedule all notes
+    notes.forEach(({ key, time }) => {
+      const buffer = buffers[key];
+      if (!buffer) return;
+
+      const source = offlineCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(offlineCtx.destination);
+      source.start(time / 1000);
+    });
+
+    const renderedBuffer = await offlineCtx.startRendering();
+    const wavBlob = bufferToWav(renderedBuffer);
+
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${song.title || `song_${song.id}`}.wav`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const bufferToWav = (buffer) => {
+    const numOfChan = buffer.numberOfChannels;
+    const length = buffer.length * numOfChan * 2 + 44;
+    const bufferArray = new ArrayBuffer(length);
+    const view = new DataView(bufferArray);
+
+    let offset = 0;
+    const writeString = (view, offset, string) => {
+      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+    };
+
+    writeString(view, offset, "RIFF"); offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true); offset += 4;
+    writeString(view, offset, "WAVE"); offset += 4;
+    writeString(view, offset, "fmt "); offset += 4;
+    view.setUint32(offset, 16, true); offset += 4;
+    view.setUint16(offset, 1, true); offset += 2;
+    view.setUint16(offset, numOfChan, true); offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true); offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
+    view.setUint16(offset, numOfChan * 2, true); offset += 2;
+    view.setUint16(offset, 16, true); offset += 2;
+    writeString(view, offset, "data"); offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true); offset += 4;
+
+    const inputL = buffer.getChannelData(0);
+    const inputR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const interleaved = new Float32Array(buffer.length * 2);
+    for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
+      interleaved[j] = inputL[i];
+      interleaved[j + 1] = inputR[i];
+    }
+
+    let index = 44;
+    for (let i = 0; i < interleaved.length; i++, index += 2) {
+      const sample = Math.max(-1, Math.min(1, interleaved[i]));
+      view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+    }
+
+    return new Blob([view], { type: "audio/wav" });
   };
 
   return (
@@ -245,7 +376,7 @@ export default function MobileLanding() {
               </div>
             ))}
 
-            {featuredSongs.map((song, index) => (
+            {featuredSongs.map((song) => (
               <div key={song.id} className="m-song-card">
                 <div className="m-song-info">
                   <div className="m-song-title">{song.title || `Untitled #${song.id}`}</div>
@@ -256,13 +387,11 @@ export default function MobileLanding() {
                 <div className="m-song-actions">
                   <button
                     className="m-play-btn"
-                    disabled={!buffers}
-                    onClick={() => togglePlay(index)}
-                    title={!buffers ? "Loading sounds..." : (playingIndex === index ? "Stop" : "Play")}
+                    onClick={() => openRecordingModal(song)}
+                    disabled={!song.recording || !normalizeRecordingNotes(song.recording).length}
+                    title="Play with animals"
                   >
-                    <span className="material-symbols-outlined">
-                      {playingIndex === index ? "stop" : "play_arrow"}
-                    </span>
+                    <span className="material-symbols-outlined">play_arrow</span>
                   </button>
 
                   {/* Remix Button */}
@@ -310,6 +439,15 @@ export default function MobileLanding() {
       <footer className="m-footer">
         Register for free and rock out with your animals today!
       </footer>
+
+      {/* 🔹 Shared playback modal for mobile featured songs */}
+      {showRecModal && activeRecording && (
+        <RecordingPlaybackModal
+          recording={activeRecording}
+          recordedNotes={activeNotes}
+          onClose={closeRecordingModal}
+        />
+      )}
 
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
