@@ -20,7 +20,9 @@ export default function DesktopForum() {
     const [recsLoading, setRecsLoading] = useState(false);
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
     const [postError, setPostError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);   // <-- add this
 
+    const POSTS_PER_PAGE = 20;
 
 
     // ========== New post popup ==========
@@ -405,6 +407,13 @@ export default function DesktopForum() {
         }
     }) : [];
 
+    const totalPages = Math.max(1, Math.ceil(sortedPosts.length / POSTS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+
+
     const getViewTitle = () => {
         switch (activeView) {
             case "my-posts":
@@ -417,6 +426,9 @@ export default function DesktopForum() {
         }
     };
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedTags, sortBy, activeView]);
 
     return (
         <div className="forum-page">
@@ -565,7 +577,7 @@ export default function DesktopForum() {
                                 <p>No posts found.</p>
                             </div>
                         ) : (
-                            sortedPosts.map((post) => (
+                            paginatedPosts.map((post) => (
                                 <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
                                     <div className="post-author">
                                         <div>
@@ -587,8 +599,15 @@ export default function DesktopForum() {
                                             const ta = timeAgo(post.created_at, nowTick);
                                             return (
                                                 <span className="post-time">
-                                                    Created {ta === "just now" ? ta : `${ta} ago`}
+                                                    {ta === "just now"
+                                                        ? "Created just now"
+                                                        : ta === "yesterday"
+                                                            ? "Created yesterday"
+                                                            : ["m", "h", "d"].some(s => ta.endsWith(s))
+                                                                ? `Created ${ta} ago`
+                                                                : `Created ${ta}`}
                                                 </span>
+
                                             );
                                         })()
                                     )}
@@ -616,6 +635,31 @@ export default function DesktopForum() {
                                     </div>
                                 </div>
                             ))
+                        )}
+                        {totalPages > 1 && (
+                            <div className="pagination-controls">
+                                <button
+                                    className="page-btn"
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={safePage === 1}
+                                    aria-label="Previous page"
+                                >
+                                    ‹ Prev
+                                </button>
+
+                                <span className="page-info">
+                                    Page {safePage} of {totalPages}
+                                </span>
+
+                                <button
+                                    className="page-btn"
+                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={safePage === totalPages}
+                                    aria-label="Next page"
+                                >
+                                    Next ›
+                                </button>
+                            </div>
                         )}
                     </div>
                 </main>

@@ -31,6 +31,9 @@ export default function MobileForum() {
     const [newPostTags, setNewPostTags] = useState([]);
     const [postError, setPostError] = useState("");
 
+    const [currentPage, setCurrentPage] = useState(1);   // <-- add this
+    const POSTS_PER_PAGE = 20;
+
     // ========== Tags and sorting stuff ==========
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
     const soundTags = ["Song Recording"];
@@ -407,6 +410,14 @@ export default function MobileForum() {
                 return (b.id || 0) - (a.id || 0);
         }
     }) : [];
+    const totalPages = Math.max(1, Math.ceil(sortedPosts.length / POSTS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedTags, sortBy, activeView]);
 
     const getViewTitle = () => {
         switch (activeView) {
@@ -631,7 +642,7 @@ export default function MobileForum() {
                             </button>
                         </div>
                     ) : (
-                        sortedPosts.map((post) => (
+                        paginatedPosts.map((post) => (
                             <div
                                 key={post.id}
                                 className="mobile-post-card"
@@ -644,7 +655,8 @@ export default function MobileForum() {
                                         <h3 className="mobile-post-title">{truncate20(post.title)}</h3>
                                         <span className="mobile-author-name">by {truncate20(post.author)}</span>
                                         {post.created_at && (
-                                            <span className="mobile-post-time">{timeAgo(post.created_at, nowTick)}</span>
+                                            <span className="mobile-post-time">{
+                                                timeAgo(post.created_at, nowTick)}</span>
                                         )}
                                     </div>
                                     <button
@@ -679,18 +691,56 @@ export default function MobileForum() {
                                         {post.created_at && (
                                             (() => {
                                                 const ta = timeAgo(post.created_at, nowTick);
-                                                return (
-                                                    <span className="post-time">
-                                                        Created {ta === "just now" ? ta : `${ta} ago`}
-                                                    </span>
-                                                );
+
+                                                if (ta === "just now") {
+                                                    return <span className="post-time">Created just now</span>;
+                                                }
+
+                                                if (ta === "yesterday") {
+                                                    return <span className="post-time">Created yesterday</span>;
+                                                }
+
+                                                // Relative times: 5m, 3h, 2d, etc.
+                                                if (["m", "h", "d"].some((s) => ta.endsWith(s))) {
+                                                    return <span className="post-time">Created {ta} ago</span>;
+                                                }
+
+                                                // Absolute dates like "Nov 12"
+                                                return <span className="post-time">Created {ta}</span>;
                                             })()
                                         )}
+
                                     </div>
                                 </div>
                             </div>
                         ))
                     )}
+                    {sortedPosts.length > 0 && totalPages > 1 && (
+                        <div className="mobile-pagination">
+                            <button
+                                className="mobile-page-btn"
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                disabled={safePage === 1}
+                                aria-label="Previous page"
+                            >
+                                ‹ Prev
+                            </button>
+
+                            <span className="mobile-page-info">
+                                Page {safePage} of {totalPages}
+                            </span>
+
+                            <button
+                                className="mobile-page-btn"
+                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={safePage === totalPages}
+                                aria-label="Next page"
+                            >
+                                Next ›
+                            </button>
+                        </div>
+                    )}
+
                 </div>
             </main>
 
