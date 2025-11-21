@@ -634,6 +634,27 @@ html, body {
   background-color: #bfbfbf;
 }
 
+/* Pill-shaped green buttons */
+.pill-btn {
+  background: #16a34a;        /* Green (Tailwind’s green-600) */
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 9999px;      /* Makes it pill-shaped */
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.pill-btn:hover {
+  background: #15803d;        /* Slightly darker green on hover */
+}
+
+.pill-btn:disabled {
+  background: #9ae6b4;        /* Light muted green */
+  cursor: not-allowed;
+}
 .alert-modal,
 .confirm-modal,
 .tutorial-modal {

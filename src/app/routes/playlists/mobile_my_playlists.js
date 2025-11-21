@@ -6,6 +6,8 @@ import {
     updatePlaylist,
     deletePlaylist,
 } from "../../../api/playlists.js";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./mobile_my_playlists.css";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
@@ -19,6 +21,7 @@ export default function MobileMyPlaylists() {
     const [newName, setNewName] = useState("");
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const { modalState, showModal, closeModal } = useCustomModal();
 
     useEffect(() => {
         (async () => {
@@ -55,10 +58,10 @@ export default function MobileMyPlaylists() {
         const url = `${window.location.origin}${window.location.pathname}#/playlists/${id}`;
         try {
             await navigator.clipboard.writeText(url);
-            alert("Playlist link copied!");
+            showModal("Playlist link copied!", "success");
         } catch (err) {
             console.error("Copy failed:", err);
-            alert("Failed to copy link");
+            showModal("Failed to copy link", "error");
         }
     }
 
@@ -73,8 +76,9 @@ export default function MobileMyPlaylists() {
             setNewName("");
             setShowCreateForm(false);
             refresh();
+            showModal("Playlist created successfully!", "success");
         } else {
-            alert(res.error || "Failed to create");
+            showModal(res.error || "Failed to create playlist", "error");
         }
     }
 
@@ -82,18 +86,33 @@ export default function MobileMyPlaylists() {
         const name = window.prompt("Rename playlist to:", currentName);
         if (!name || name.trim() === currentName) return;
         const res = await updatePlaylist({ playlist_id: id, name: name.trim() });
-        if (res.ok) refresh(); else alert("Rename failed");
+        if (res.ok) {
+            refresh();
+            showModal("Playlist renamed successfully!", "success");
+        } else {
+            showModal("Rename failed", "error");
+        }
     }
 
     async function handleTogglePublic(id, current) {
         const res = await updatePlaylist({ playlist_id: id, is_public: !current });
-        if (res.ok) refresh(); else alert("Update failed");
+        if (res.ok) {
+            refresh();
+            showModal(`Playlist is now ${!current ? "public" : "private"}`, "success");
+        } else {
+            showModal("Update failed", "error");
+        }
     }
 
     async function handleDelete(id, name) {
         if (!window.confirm(`Delete playlist "${name}"? This cannot be undone.`)) return;
         const res = await deletePlaylist(id);
-        if (res.ok) refresh(); else alert("Delete failed");
+        if (res.ok) {
+            refresh();
+            showModal("Playlist deleted successfully", "success");
+        } else {
+            showModal("Delete failed", "error");
+        }
     }
 
     const handleAccountClick = () => {
@@ -346,6 +365,14 @@ export default function MobileMyPlaylists() {
                     </div>
                 </div>
             )}
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
 
             <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
         </div>

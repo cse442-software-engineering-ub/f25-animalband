@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./mobile_post_modal.css";
 import RecordingPlaybackModal from "../account/recording_playback_modal.js";
+
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -11,6 +14,7 @@ function parseDbTimestamp(s) {
     const d = new Date(iso);
     return isNaN(d.getTime()) ? null : d;
 }
+
 function timeAgoTS(ts) {
     const d = typeof ts === "string" ? parseDbTimestamp(ts) : ts instanceof Date ? ts : null;
     if (!d) return "";
@@ -27,6 +31,7 @@ function timeAgoTS(ts) {
     if (day < 7) return `${day}d`;
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+
 function formatCreated(ts) {
     const t = timeAgoTS(ts);
     if (!t) return "";
@@ -143,15 +148,18 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
     const listRef = useRef(null);
     const firstLoadRef = useRef(true);
     const [postError, setPostError] = useState("");
+    const { modalState, showModal, closeModal } = useCustomModal();
+
     // ==== Attached recording (mini player) ====
     const [buffers, setBuffers] = useState(null);
     const [recLoading, setRecLoading] = useState(false);
     const [recErr, setRecErr] = useState("");
-    const [recMeta, setRecMeta] = useState(null);   // { id, title, description }
-    const [recNotes, setRecNotes] = useState([]);   // notes or tracks-of-notes
+    const [recMeta, setRecMeta] = useState(null);
+    const [recNotes, setRecNotes] = useState([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const stopRef = useRef(null);
     const [showRecModal, setShowRecModal] = useState(false); // ⬅️ NEW
+
 
     const tree = useMemo(() => buildTree(commentsFlat), [commentsFlat]);
 
@@ -162,6 +170,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
             return n;
         });
     }, []);
+
     useEffect(() => {
         let mounted = true;
         (async () => {
@@ -174,6 +183,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
         })();
         return () => { mounted = false; };
     }, []);
+
     const fetchRecordingById = useCallback(async (id) => {
         if (id == null || Number.isNaN(id)) return;
         try {
@@ -203,6 +213,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
             setRecLoading(false);
         }
     }, []);
+
     useEffect(() => {
         if (post?.recording_id != null && !Number.isNaN(post.recording_id)) {
             fetchRecordingById(post.recording_id);
@@ -212,6 +223,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
             setRecErr("");
         }
     }, [post?.recording_id, fetchRecordingById]);
+
     const stopAll = useCallback(() => {
         if (stopRef.current) {
             try { stopRef.current(); } catch { }
@@ -231,7 +243,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
     }, [buffers, recNotes, stopAll]);
 
     useEffect(() => {
-        return () => stopAll();   // stop audio if modal unmounts
+        return () => stopAll();
     }, [stopAll]);
 
     const fetchComments = useCallback(async () => {
@@ -264,7 +276,6 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
             });
 
             if (firstLoadRef.current) {
-                // collapse 5th TOP-LEVEL comment
                 const topLevel = rows.filter(r => !r.parentId);
                 if (topLevel.length >= 5) {
                     setCollapsed(new Set([Number(topLevel[4].id)]));
@@ -292,7 +303,6 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
         return () => document.body.classList.remove("popup-open");
     }, [fetchComments]);
 
-    // SSE subscription (commentsStream)
     useEffect(() => {
         if (!post?.id) return;
         const url = `${PHP_URL}/commentsStream.php?postId=${encodeURIComponent(post.id)}`;
@@ -302,11 +312,12 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
         const onErr = (e) => console.warn("[SSE] comments error", e);
 
         es.addEventListener("comments", onComments);
-        es.onmessage = onComments; // heartbeats
+        es.onmessage = onComments;
         es.onerror = onErr;
 
         return () => es.close();
     }, [post?.id, fetchComments]);
+
     const onReply = (node) => setReplyTo(node);
 
     const onLike = async (node) => {
@@ -335,7 +346,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
         } catch (err) {
             console.error("like comment failed:", err);
             fetchComments();
-            alert("Failed to like/unlike. Please try again.");
+            showModal("Failed to like/unlike. Please try again.", "error");
         }
     };
 
@@ -511,6 +522,15 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
                     </div>
                 </div>
             </div>
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
+        </div>
             {showRecModal && recMeta && (
                 <RecordingPlaybackModal
                     recording={{

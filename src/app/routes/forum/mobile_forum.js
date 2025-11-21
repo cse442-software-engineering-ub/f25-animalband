@@ -1,8 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import MobilePostModal from "./mobile_post_modal";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./mobile_forum.css";
-
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -23,6 +24,7 @@ export default function MobileForum() {
     const [myRecordings, setMyRecordings] = useState([]);
     const [recsLoading, setRecsLoading] = useState(false);
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+    const { modalState, showModal, closeModal } = useCustomModal();
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -56,7 +58,6 @@ export default function MobileForum() {
         if (!user?.id) return;
         try {
             setRecsLoading(true);
-            // same cookie trick you used on desktop
             const cookiePairs = document.cookie.split("; ").map(c => c.split("="));
             const cookieMap = Object.fromEntries(cookiePairs);
             const authCookie = cookieMap["auth_token"] || "";
@@ -281,7 +282,7 @@ export default function MobileForum() {
                     likes: nextLikesFrom.length,
                 };
             }));
-            alert("Failed to like/unlike. Please try again.");
+            showModal("Failed to like/unlike. Please try again.", "error");
         }
     };
 
@@ -310,7 +311,6 @@ export default function MobileForum() {
         setPostError("");
     };
 
-
     const handleTagSelect = (tag) => {
         setNewPostTags(prev =>
             prev.includes(tag)
@@ -337,7 +337,6 @@ export default function MobileForum() {
             authorId: user.id,
             likes: 1,
             recording_id: selectedRecordingId ?? null,
-
         };
 
         const tempId = Date.now();
@@ -354,7 +353,6 @@ export default function MobileForum() {
             likesFrom: [user.username],
             liked: true,
             recording_id: selectedRecordingId ?? null,
-
         };
         setPosts(prev => [optimistic, ...prev]);
         try {
@@ -373,7 +371,7 @@ export default function MobileForum() {
         } catch (err) {
             setPosts(prev => prev.filter(p => p.id !== tempId));
             console.error(err);
-            alert("Post failed");
+            showModal("Post failed", "error");
         }
 
         handleClosePopup();
@@ -387,13 +385,11 @@ export default function MobileForum() {
             if (!post.liked) return false;
         }
 
-        // ========== Search filter ==========
         const matchesSearch = searchTerm === "" ||
             (post.title && post.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.content && post.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.author && post.author.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        // ========== Tag filter ==========
         const matchesTags = selectedTags.length === 0 ||
             selectedTags.some(tag => post.tags && post.tags.includes(tag));
 
@@ -687,7 +683,6 @@ export default function MobileForum() {
                                         </span>
                                     </div>
                                     <div className="mobile-post-actions">
-                                        {/* Time since posted */}
                                         {post.created_at && (
                                             (() => {
                                                 const ta = timeAgo(post.created_at, nowTick);
@@ -858,7 +853,6 @@ export default function MobileForum() {
                                 </div>
                                 {recsLoading && <small className="m-recording-select-hint">Loading your recordings…</small>}
                             </div>
-
                         </div>
                         <div className="mobile-popup-footer">
                             <button className="mobile-cancel-btn" onClick={handleClosePopup}>Cancel</button>
@@ -888,6 +882,15 @@ export default function MobileForum() {
                     onBumpPostComments={() => refreshNoJump()}
                 />
             )}
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
+
             {/* Material Icons */}
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

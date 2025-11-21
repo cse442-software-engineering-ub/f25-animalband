@@ -2,6 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { preloadLandingSounds } from "./landing_player.js";
 import AddToPlaylistButton from "../../../components/desktop_add_to_playlist_button.js";
+import CustomModal from "../../components/CustomModal.js";
+import useCustomModal from "../../components/useCustomModal.js";
 import "./desktop_landing.css";
 
 import RecordingPlaybackModal from "../account/recording_playback_modal.js";
@@ -20,6 +22,27 @@ export default function Landing() {
   const [loopCount, setLoopCount] = useState(null);
 
   const [featuredSongs, setFeaturedSongs] = useState([]);
+  const [buffers, setBuffers] = useState(null);
+  const [playingIndex, setPlayingIndex] = useState(-1);
+  const stopRef = useRef(null);
+  const { modalState, showModal, closeModal } = useCustomModal();
+
+  const togglePlay = (idx) => {
+    if (!buffers) return;
+    if (playingIndex === idx) {
+      stopAll();
+      setPlayingIndex(-1);
+      return;
+    }
+    stopAll();
+    const song = featuredSongs[idx];
+    if (!song) return;
+    stopRef.current = schedulePlayback(buffers, song.recording, () => {
+      setPlayingIndex(-1);
+      stopRef.current = null;
+    });
+    setPlayingIndex(idx);
+  };
   const [buffers, setBuffers] = useState(null); // still needed for WAV download
 
   // 🔹 State for playback modal (reuse same component as account/forum)
@@ -404,14 +427,8 @@ export default function Landing() {
                   songId={song.id}
                   compact
                   onAdded={() => {
-                    try {
-                      new AudioContext();
-                    } catch (e) {}
-                    alert(
-                      `Added "${
-                        song.title || `song_${song.id}`
-                      }" to your playlist!`
-                    );
+                    try { new AudioContext(); } catch (e) { }
+                    showModal(`Added "${song.title || `song_${song.id}`}" to your playlist!`, "success");
                   }}
                 />
               </div>
@@ -451,6 +468,15 @@ export default function Landing() {
         <h3>Register for free and rock out with your animals today!</h3>
       </footer>
 
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        message={modalState.message}
+        type={modalState.type}
+        title={modalState.title}
+      />
+
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
       {/* 🔹 Shared playback modal for Featured Songs */}
       {showRecModal && activeRecording && (
         <RecordingPlaybackModal

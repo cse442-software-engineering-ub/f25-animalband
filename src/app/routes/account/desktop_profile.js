@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import DeleteAccountModal from "../../components/DeleteAccountModal";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./desktop_profile.css";
 
 const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
@@ -13,6 +15,7 @@ export default function DesktopProfile() {
   const [likeCount, setLikeCount] = useState(0);
   const [recordingCount, setRecordingCount] = useState(0);
   const fileInputRef = useRef(null);
+  const { modalState, showModal, closeModal } = useCustomModal();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -66,11 +69,15 @@ export default function DesktopProfile() {
         credentials: "include",
       });
       const data = await res.json();
-      if (data.success) setUser((prev) => ({ ...prev, profilePic: data.profilePic }));
-      else alert("Failed to update profile picture.");
+      if (data.success) {
+        setUser((prev) => ({ ...prev, profilePic: data.profilePic }));
+        showModal("Profile picture updated successfully!", "success");
+      } else {
+        showModal("Failed to update profile picture.", "error");
+      }
     } catch (err) {
       console.error("Error uploading new profile pic", err);
-      alert("Error uploading new profile pic.");
+      showModal("Error uploading new profile pic.", "error");
     }
   };
 
@@ -81,7 +88,7 @@ export default function DesktopProfile() {
       navigate("/");
     } catch (err) {
       console.error("Logout failed", err);
-      alert("Failed to log out. Please try again.");
+      showModal("Failed to log out. Please try again.", "error");
     }
   };
 
@@ -95,11 +102,11 @@ export default function DesktopProfile() {
       if (res.ok) {
         window.location.href = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/";
       } else {
-        alert(data.message || "Failed to delete account.");
+        showModal(data.message || "Failed to delete account.", "error");
       }
     } catch (err) {
       console.error(err);
-      alert("Error deleting account.");
+      showModal("Error deleting account.", "error");
     }
   };
 
@@ -126,8 +133,8 @@ export default function DesktopProfile() {
         <aside className="sidebar">
           <h3>Menu</h3>
           <ul>
-          <li><button onClick={() => navigate("/")}>Home</button></li>
-          <li><button onClick={() => navigate("/forum")}>Forum</button></li>
+            <li><button onClick={() => navigate("/")}>Home</button></li>
+            <li><button onClick={() => navigate("/forum")}>Forum</button></li>
             <li><button onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
             <li><button onClick={() => navigate("/playlists")}>My Playlists</button></li>
             <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>
@@ -200,7 +207,6 @@ export default function DesktopProfile() {
                 </div>
               </div>
 
-              {/* New bottom action buttons */}
               <div className="profile-actions">
                 <button
                   className="action-btn edit-btn"
@@ -222,6 +228,14 @@ export default function DesktopProfile() {
         </main>
       </div>
 
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        message={modalState.message}
+        type={modalState.type}
+        title={modalState.title}
+      />
+
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
@@ -229,4 +243,3 @@ export default function DesktopProfile() {
     </div>
   );
 }
-

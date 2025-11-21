@@ -6,6 +6,8 @@ import {
     updatePlaylist,
     deletePlaylist,
 } from "../../../api/playlists.js";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "../forum/desktop_forum.css";
 import "./desktop_playlists.css";
 
@@ -20,7 +22,7 @@ export default function DesktopMyPlaylists() {
 
     const [creating, setCreating] = useState(false);
     const [newName, setNewName] = useState("");
-
+    const { modalState, showModal, closeModal } = useCustomModal();
 
     useEffect(() => {
         (async () => {
@@ -40,7 +42,6 @@ export default function DesktopMyPlaylists() {
         })();
     }, [navigate]);
 
-
     // ===== data =====
     async function refresh() {
         setLoading(true);
@@ -58,10 +59,10 @@ export default function DesktopMyPlaylists() {
         const url = `${window.location.origin}${window.location.pathname}#/playlists/${id}`;
         try {
             await navigator.clipboard.writeText(url);
-            alert("Playlist link copied!");
+            showModal("Playlist link copied!", "success");
         } catch (err) {
             console.error("Copy failed:", err);
-            alert("Failed to copy link");
+            showModal("Failed to copy link", "error");
         }
     }
 
@@ -72,33 +73,51 @@ export default function DesktopMyPlaylists() {
         setCreating(true);
         const res = await createPlaylist({ name, is_public: false });
         setCreating(false);
-        if (res.ok) { setNewName(""); refresh(); }
-        else alert(res.error || "Failed to create");
+        if (res.ok) { 
+            setNewName(""); 
+            refresh(); 
+            showModal("Playlist created successfully!", "success");
+        }
+        else showModal(res.error || "Failed to create playlist", "error");
     }
 
     async function handleRename(id) {
         const name = window.prompt("Rename playlist to:");
         if (!name) return;
         const res = await updatePlaylist({ playlist_id: id, name });
-        if (res.ok) refresh(); else alert("Rename failed");
+        if (res.ok) {
+            refresh();
+            showModal("Playlist renamed successfully!", "success");
+        } else {
+            showModal("Rename failed", "error");
+        }
     }
 
     async function handleTogglePublic(id, current) {
         const res = await updatePlaylist({ playlist_id: id, is_public: !current });
-        if (res.ok) refresh(); else alert("Update failed");
+        if (res.ok) {
+            refresh();
+            showModal(`Playlist is now ${!current ? "public" : "private"}`, "success");
+        } else {
+            showModal("Update failed", "error");
+        }
     }
 
     async function handleDelete(id) {
         if (!window.confirm("Delete this playlist? This cannot be undone.")) return;
         const res = await deletePlaylist(id);
-        if (res.ok) refresh(); else alert("Delete failed");
+        if (res.ok) {
+            refresh();
+            showModal("Playlist deleted successfully", "success");
+        } else {
+            showModal("Delete failed", "error");
+        }
     }
 
     const handleAccountClick = () => {
         if (user) navigate("/account");
         else navigate("/login");
     };
-
 
     return (
         <div className="forum-page">
@@ -135,14 +154,14 @@ export default function DesktopMyPlaylists() {
 
                     <nav className="sidebar-nav">
                         <ul>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
-          <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
-            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
-            <li><button className="df-sidebar-btn" onClick={() => navigate("/playlists")}>My Playlists</button></li>
-            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
-                                <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
-                                    Logout
-                                </button>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/playlists")}>My Playlists</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
+                            <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
+                                Logout
+                            </button>
                             </li>
                         </ul>
                     </nav>
@@ -218,6 +237,14 @@ export default function DesktopMyPlaylists() {
                     )}
                 </main>
             </div>
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
 
             <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
         </div>

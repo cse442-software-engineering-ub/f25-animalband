@@ -1,5 +1,7 @@
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./desktop_forum.css";
 import ForumPostModal from "./desktop_post_modal";
 
@@ -20,10 +22,11 @@ export default function DesktopForum() {
     const [myRecordings, setMyRecordings] = useState([]);
     const [recsLoading, setRecsLoading] = useState(false);
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+    const { modalState, showModal, closeModal } = useCustomModal();
     const [postError, setPostError] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-
     const POSTS_PER_PAGE = 20;
+
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -289,7 +292,7 @@ export default function DesktopForum() {
                     likes: nextLikesFrom.length,
                 };
             }));
-            alert("Failed to like/unlike. Please try again.");
+            showModal("Failed to like/unlike. Please try again.", "error");
         }
     };
 
@@ -380,7 +383,7 @@ export default function DesktopForum() {
         } catch (err) {
             setPosts(prev => prev.filter(p => p.id !== tempId));
             console.error(err);
-            alert("Post failed");
+            showModal("Post failed", "error");
         }
 
         handleClosePopup();
@@ -433,6 +436,7 @@ export default function DesktopForum() {
                 return "Forum";
         }
     };
+
 
     useEffect(() => {
         setCurrentPage(1);
@@ -585,7 +589,9 @@ export default function DesktopForum() {
                                 <p>No posts found.</p>
                             </div>
                         ) : (
+
                             paginatedPosts.map((post) => (
+
                                 <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>
                                     <div className="post-header">
                                         <div className="post-author">
@@ -607,6 +613,7 @@ export default function DesktopForum() {
                                                 const ta = timeAgo(post.created_at, nowTick);
                                                 return (
                                                     <span className="post-time">
+
                                                         {ta === "just now"
                                                             ? "Created just now"
                                                             : ta === "yesterday"
@@ -790,6 +797,15 @@ export default function DesktopForum() {
                     }}
                 />
             )}
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
+
             {/* Material Icons */}
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

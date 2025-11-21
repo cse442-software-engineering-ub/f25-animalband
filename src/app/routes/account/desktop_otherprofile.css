@@ -231,6 +231,10 @@
   .info-value {
     color: #000;
   }
+
+  .stats-container {
+    background-color: #f2f2f2 !important;
+  }
   
   /* ========== DELETE ACCOUNT MODAL ========== */
   .modal-overlay {
