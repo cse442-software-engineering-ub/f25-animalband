@@ -7,8 +7,8 @@ import {
   setMasterVolume,
 } from "../stage/stage_audioUtil";
 
-import Ostrich from "../../../assets/ostrich.png";
-import OstrichPlaying from "../../../assets/ostrichrockin.png";
+import Ostrich from "../../../assets/hamster.png";
+import OstrichPlaying from "../../../assets/hamsterrockin.png";
 import Kangaroo from "../../../assets/kangaroo.png";
 import KangarooPlaying from "../../../assets/kangaroorockin.png";
 
@@ -32,7 +32,7 @@ export default function RhythmGame() {
   const [showResults, setShowResults] = useState(false);
   const [winnerText, setWinnerText] = useState("");
 
-  const NOTE_SPEED = 1;
+  const NOTE_SPEED = 1.5;
   const SPAWN_INTERVAL = 1200;
   const NOTE_SIZE = 55;
   const MIN_LANE_SPACING = 80;
@@ -40,7 +40,7 @@ export default function RhythmGame() {
   const hitZoneRefs = useRef({});
   const [hitZoneCenters, setHitZoneCenters] = useState({});
 
-  const OSTRICH_KEYS = ["h", "j", "k", "l"];
+  const OSTRICH_KEYS = ["a", "s", "d", "f"];
   const KANGAROO_KEYS = ["u", "i", "o", "p"];
 
   const gameLoopRef = useRef(null);
@@ -210,7 +210,7 @@ export default function RhythmGame() {
     setScores((currentScores) => {
       let winner = "";
       if (currentScores.ostrich > currentScores.kangaroo) {
-        winner = "Ostrich Wins!";
+        winner = "Hamster Wins!";
       } else if (currentScores.kangaroo > currentScores.ostrich) {
         winner = "Kangaroo Wins!";
       } else {
@@ -283,61 +283,70 @@ export default function RhythmGame() {
     return () => cancelAnimationFrame(gameLoopRef.current);
   }, [gameStarted]);
 
-  /** KEYS + SCORING **/
-  useEffect(() => {
+  /** HANDLE KEY/TOUCH INPUT **/
+  const handleInput = (key) => {
+    if (!OSTRICH_KEYS.includes(key) && !KANGAROO_KEYS.includes(key)) return;
+
+    setPressedKeys((prev) => ({ ...prev, [key]: true }));
+    if (sounds[key]) playSound(sounds[key], masterVolume);
+
+    const player = OSTRICH_KEYS.includes(key) ? "ostrich" : "kangaroo";
+
+    if (!hitZoneCenters[key] || !gameStarted) return;
+
     const HIT_TOLERANCE = 100;
     const MAX_POINTS = 100;
 
-    const handleKeyDown = (e) => {
-      const key = e.key.toLowerCase();
-      if (!OSTRICH_KEYS.includes(key) && !KANGAROO_KEYS.includes(key)) return;
+    setNotes((prevNotes) => {
+      let index = -1;
+      let best = Infinity;
 
-      setPressedKeys((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
-      if (sounds[key]) playSound(sounds[key], masterVolume);
+      prevNotes.forEach((note, i) => {
+        if (note.key === key && note.player === player && !note.hit) {
+          const noteCenter = note.y + NOTE_SIZE / 2;
+          const hitZoneCenter = hitZoneCenters[key];
+          const dist = Math.abs(noteCenter - hitZoneCenter);
 
-      const player = OSTRICH_KEYS.includes(key) ? "ostrich" : "kangaroo";
-
-      if (!hitZoneCenters[key] || !gameStarted) return;
-
-      setNotes((prevNotes) => {
-        let index = -1;
-        let best = Infinity;
-
-        prevNotes.forEach((note, i) => {
-          if (note.key === key && note.player === player && !note.hit) {
-            const noteCenter = note.y + NOTE_SIZE / 2;
-            const hitZoneCenter = hitZoneCenters[key];
-            const dist = Math.abs(noteCenter - hitZoneCenter);
-
-            if (dist < best) {
-              best = dist;
-              index = i;
-            }
+          if (dist < best) {
+            best = dist;
+            index = i;
           }
+        }
+      });
+
+      if (index !== -1 && best <= HIT_TOLERANCE) {
+        const ratio = best / HIT_TOLERANCE;
+        const points = Math.round(MAX_POINTS * Math.cos((ratio * Math.PI) / 2));
+
+        setScores((prev) => {
+          const newScores = {
+            ...prev,
+            [player]: prev[player] + points,
+          };
+          scoresRef.current = newScores;
+          return newScores;
         });
 
-        if (index !== -1 && best <= HIT_TOLERANCE) {
-          const ratio = best / HIT_TOLERANCE;
-          const points = Math.round(
-            MAX_POINTS * Math.cos((ratio * Math.PI) / 2)
-          );
+        const arr = [...prevNotes];
+        arr[index].hit = true;
+        return arr;
+      }
 
-          setScores((prev) => {
-            const newScores = {
-              ...prev,
-              [player]: prev[player] + points,
-            };
-            scoresRef.current = newScores;
-            return newScores;
-          });
+      return prevNotes;
+    });
 
-          const arr = [...prevNotes];
-          arr[index].hit = true;
-          return arr;
-        }
+    // Auto-release after short delay for touch
+    setTimeout(() => {
+      setPressedKeys((prev) => ({ ...prev, [key]: false }));
+    }, 100);
+  };
 
-        return prevNotes;
-      });
+  /** KEYS + SCORING **/
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const key = e.key.toLowerCase();
+      if (pressedKeys[key]) return; // Prevent repeat
+      handleInput(key);
     };
 
     const handleKeyUp = (e) => {
@@ -352,7 +361,7 @@ export default function RhythmGame() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [sounds, masterVolume, hitZoneCenters, gameStarted]);
+  }, [sounds, masterVolume, hitZoneCenters, gameStarted, pressedKeys]);
 
   const isOstrichPlaying = OSTRICH_KEYS.some((k) => pressedKeys[k]);
   const isKangarooPlaying = KANGAROO_KEYS.some((k) => pressedKeys[k]);
@@ -436,6 +445,7 @@ export default function RhythmGame() {
             <img
               src={isOstrichPlaying ? OstrichPlaying : Ostrich}
               className="animal-icon"
+              alt="Ostrich"
             />
             <div className="lanes-group">
               {OSTRICH_KEYS.map((key) => (
@@ -459,6 +469,11 @@ export default function RhythmGame() {
                       pressedKeys[key] ? "hit-zone-active" : ""
                     }`}
                     ref={(el) => (hitZoneRefs.current[key] = el)}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      handleInput(key);
+                    }}
+                    onClick={() => handleInput(key)}
                   >
                     <span className="hit-key">{key.toUpperCase()}</span>
                   </div>
@@ -473,6 +488,7 @@ export default function RhythmGame() {
             <img
               src={isKangarooPlaying ? KangarooPlaying : Kangaroo}
               className="animal-icon"
+              alt="Kangaroo"
             />
             <div className="lanes-group">
               {KANGAROO_KEYS.map((key) => (
@@ -496,6 +512,11 @@ export default function RhythmGame() {
                       pressedKeys[key] ? "hit-zone-active" : ""
                     }`}
                     ref={(el) => (hitZoneRefs.current[key] = el)}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      handleInput(key);
+                    }}
+                    onClick={() => handleInput(key)}
                   >
                     <span className="hit-key">{key.toUpperCase()}</span>
                   </div>
