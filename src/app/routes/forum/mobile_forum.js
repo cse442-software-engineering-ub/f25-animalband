@@ -29,6 +29,7 @@ export default function MobileForum() {
     const [newPostTitle, setNewPostTitle] = useState("");
     const [newPostContent, setNewPostContent] = useState("");
     const [newPostTags, setNewPostTags] = useState([]);
+    const [postError, setPostError] = useState("");
 
     // ========== Tags and sorting stuff ==========
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
@@ -303,6 +304,7 @@ export default function MobileForum() {
         setNewPostContent("");
         setNewPostTags([]);
         setSelectedRecordingId(null);
+        setPostError("");
     };
 
 
@@ -734,11 +736,35 @@ export default function MobileForum() {
                                 <label>Content:</label>
                                 <textarea
                                     value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 300) {
+                                            setPostError("Content cannot exceed 300 characters.");
+                                        } else {
+                                            setPostError("");
+                                        }
+                                        setNewPostContent(v);
+                                    }}
                                     placeholder="Enter post content"
                                     rows="4"
                                 />
+                                {/* optional live counter */}
+                                <div
+                                    style={{
+                                        fontSize: "0.8rem",
+                                        marginTop: "4px",
+                                        color: newPostContent.length > 300 ? "red" : "#666",
+                                    }}
+                                >
+                                    {newPostContent.length}/300
+                                </div>
+                                {postError && (
+                                    <p style={{ color: "red", marginTop: "4px" }}>
+                                        {postError}
+                                    </p>
+                                )}
                             </div>
+
                             <div className="mobile-form-group">
                                 <label>Tags:</label>
                                 <div className="mobile-tag-selection">
@@ -790,7 +816,13 @@ export default function MobileForum() {
                                 type="button"
                                 className="mobile-submit-btn"
                                 onClick={handleSubmitPost}
-                                disabled={!user?.id || !newPostTitle.trim() || !newPostContent.trim()}
+                                disabled={
+                                    !user?.id ||
+                                    !newPostTitle.trim() ||
+                                    !newPostContent.trim() ||
+                                    newPostContent.length > 300
+                                }
+
                             >
                                 Create Post
                             </button>

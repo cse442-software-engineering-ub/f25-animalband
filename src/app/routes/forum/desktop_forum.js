@@ -19,6 +19,8 @@ export default function DesktopForum() {
     const [myRecordings, setMyRecordings] = useState([]);
     const [recsLoading, setRecsLoading] = useState(false);
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+    const [postError, setPostError] = useState("");
+
 
 
     // ========== New post popup ==========
@@ -302,6 +304,7 @@ export default function DesktopForum() {
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostTags([]);
+        setPostError("");
     };
 
     const handleTagSelect = (tag) => {
@@ -640,10 +643,27 @@ export default function DesktopForum() {
                                 <label>Content:</label>
                                 <textarea
                                     value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 300) {
+                                            setPostError("Content cannot exceed 300 characters.");
+                                        } else {
+                                            setPostError("");
+                                        }
+                                        setNewPostContent(v);
+                                    }}
                                     placeholder="Enter post content"
                                     rows="4"
                                 />
+                                {postError && (
+                                    <p className="error-text" style={{ color: "red", marginTop: "5px" }}>
+                                        {postError}
+                                    </p>
+                                )}
+                                <div style={{ fontSize: "0.85rem", color: newPostContent.length > 300 ? "red" : "#555" }}>
+                                    {newPostContent.length}/300
+                                </div>
+
                             </div>
                             <div className="form-group">
                                 <label>Tags:</label>
@@ -699,7 +719,13 @@ export default function DesktopForum() {
                                 type="button"
                                 className="submit-btn"
                                 onClick={handleSubmitPost}
-                                disabled={!user?.id || !newPostTitle.trim() || !newPostContent.trim()}
+                                disabled={
+                                    !user?.id ||
+                                    !newPostTitle.trim() ||
+                                    !newPostContent.trim() ||
+                                    newPostContent.length > 300
+                                }
+
                             >
                                 Create Post
                             </button>
