@@ -17,7 +17,7 @@ import SnakePlaying from "../../../assets/snakerockin.png";
 
 export default function DesktopStage() {
   const navigate = useNavigate();
-  const location = useLocation(); // Add this to access hash routing params
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [sounds, setSounds] = useState({});
   const [masterVolume, setMasterVol] = useState(1);
@@ -53,6 +53,10 @@ export default function DesktopStage() {
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [initialTrackCount, setInitialTrackCount] = useState(0);
+
+  // Save option state
+  const [saveOption, setSaveOption] = useState("overwrite");
+  const [originalTitle, setOriginalTitle] = useState("");
 
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
@@ -161,10 +165,9 @@ export default function DesktopStage() {
     checkUser();
   }, []);
 
-  // Load recording for editing from URL parameter - FIXED FOR HASH ROUTING
+  // Load recording for editing from URL parameter
   useEffect(() => {
     const loadRecordingForEdit = async () => {
-      // Use location.search for hash routing
       const params = new URLSearchParams(location.search);
       const recordingId = params.get('edit');
       
@@ -216,23 +219,20 @@ export default function DesktopStage() {
               
               setEditingRecordingId(recording.id);
               setRecordingTitle(recording.title);
+              setOriginalTitle(recording.title);
               setRecordingDescription(recording.description);
               
-              // Check if recording.recording exists and is an array
               if (!Array.isArray(recording.recording)) {
                 console.error("Recording data is not an array:", recording.recording);
                 alert("Invalid recording format. Cannot load tracks.");
                 return;
               }
               
-              // Filter out imported tracks (they can't be restored from JSON)
-              // Only load keyboard-based tracks
               const loadableTracks = recording.recording.filter(track => {
                 if (!Array.isArray(track)) {
                   console.warn("Track is not an array:", track);
                   return false;
                 }
-                // Check if this track contains any imported audio
                 const hasImported = track.some(note => note.isImported);
                 console.log("Track has imported audio:", hasImported, "Track:", track);
                 return !hasImported;
@@ -245,9 +245,8 @@ export default function DesktopStage() {
               
               setRecordedTracks(loadableTracks);
               setIsEditMode(true);
-              setInitialTrackCount(loadableTracks.length); // Track initial count
+              setInitialTrackCount(loadableTracks.length);
               
-              // Initialize track settings for loaded tracks
               const settings = loadableTracks.map((track, idx) => ({
                 name: `Track ${idx + 1}`,
                 muted: false,
@@ -260,7 +259,6 @@ export default function DesktopStage() {
               console.log("Track settings initialized:", settings);
               console.log("State updated - recordedTracks should now have", loadableTracks.length, "tracks");
               
-              // Simplified message - just show loaded tracks
               let message = `Loaded recording: ${recording.title}\nLoaded ${loadableTracks.length} track(s)`;
               
               if (importedTrackCount > 0) {
@@ -286,6 +284,101 @@ export default function DesktopStage() {
     };
 
     loadRecordingForEdit();
+  }, [navigate, location]);
+
+  // NEW: Load remix data from featured songs
+  useEffect(() => {
+    const loadRemixData = () => {
+      const params = new URLSearchParams(location.search);
+      const remixId = params.get('remix');
+      
+      if (!remixId) {
+        return;
+      }
+      
+      // Get remix data from sessionStorage
+      const remixDataStr = sessionStorage.getItem('remixData');
+      
+      if (!remixDataStr) {
+        console.error("No remix data found");
+        alert("Remix data not found. Please try again.");
+        navigate("/");
+        return;
+      }
+      
+      try {
+        const remixData = JSON.parse(remixDataStr);
+        
+        // Clear the sessionStorage after reading
+        sessionStorage.removeItem('remixData');
+        
+        console.log("Loading remix data:", remixData);
+        
+        if (!Array.isArray(remixData.recording)) {
+          console.error("Invalid recording format in remix data");
+          alert("Invalid recording format. Cannot load remix.");
+          return;
+        }
+        
+        // Filter out imported audio tracks (can't be remixed because AudioBuffers can't be serialized)
+        const loadableTracks = remixData.recording.filter(track => {
+          if (!Array.isArray(track)) {
+            console.warn("Track is not an array:", track);
+            return false;
+          }
+          // Check if track has any imported audio notes
+          const hasImported = track.some(note => note.isImported);
+          return !hasImported;
+        });
+        
+        console.log("Loadable tracks for remix:", loadableTracks.length);
+        
+        const importedTrackCount = remixData.recording.length - loadableTracks.length;
+        
+        // Set up the remix
+        setRecordedTracks(loadableTracks);
+        setRecordingTitle(`Remix of ${remixData.title || 'Untitled'}`);
+        setRecordingDescription(
+          `Remixed from "${remixData.title || 'Untitled'}" by ${remixData.author || 'Unknown'}\n\n${remixData.description || ''}`
+        );
+        
+        // Initialize track settings
+        const settings = loadableTracks.map((track, idx) => ({
+          name: `Track ${idx + 1}`,
+          muted: false,
+          solo: false,
+          volume: 1,
+        }));
+        setTrackSettings(settings);
+        setTrackCounter(loadableTracks.length + 1);
+        
+        // Set flags - remix is NOT edit mode, it's a new recording
+        setIsEditMode(false);
+        setEditingRecordingId(null);
+        setHasUnsavedChanges(false);
+        setInitialTrackCount(0);
+        
+        // Show message
+        let message = `🎵 Remix loaded: ${loadableTracks.length} track(s) ready to edit!\n\nFeel free to add, remove, or modify tracks, then save as your own creation.`;
+        
+        if (importedTrackCount > 0) {
+          message += `\n\n⚠️ Note: ${importedTrackCount} imported audio track(s) were skipped (imported audio cannot be included in remixes).`;
+        }
+        
+        if (loadableTracks.length === 0) {
+          message += "\n\n📝 No keyboard tracks found in the original. You can start recording from scratch or import audio.";
+        }
+        
+        alert(message);
+        
+      } catch (error) {
+        console.error("Error parsing remix data:", error);
+        alert("Failed to load remix data. Please try again.");
+        navigate("/");
+      }
+    };
+    
+    loadRemixData();
   }, [navigate, location]);
 
   // Track changes to recorded tracks
@@ -746,7 +839,6 @@ export default function DesktopStage() {
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      // Use the same endpoint for both create and update
       const endpoint = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php";
 
       const payload = {
@@ -756,10 +848,11 @@ export default function DesktopStage() {
         userToken: authCookie,
       };
 
-      // Add recordingId if we're editing (this tells the PHP to update instead of insert)
-      if (isEditMode && editingRecordingId) {
+      // ONLY include recordingId if in edit mode AND overwriting
+      if (isEditMode && saveOption === "overwrite" && editingRecordingId) {
         payload.recordingId = editingRecordingId;
       }
+      // For remix or new recordings, we don't include recordingId
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -771,21 +864,24 @@ export default function DesktopStage() {
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        alert(
-          isEditMode
-            ? "Recording updated successfully!"
-            : "Recording saved successfully!"
-        );
-        setShowSaveForm(false);
-        setHasUnsavedChanges(false); // Reset unsaved changes flag
+        if (isEditMode && saveOption === "overwrite") {
+          alert("Recording updated successfully!");
+          setHasUnsavedChanges(false);
+          setInitialTrackCount(recordedTracks.length);
+        } else if (isEditMode && saveOption === "remix") {
+          alert("Remix saved as a new recording!");
+          setIsEditMode(false);
+          setEditingRecordingId(null);
+          setHasUnsavedChanges(false);
+        } else {
+          alert("Recording saved successfully!");
+        }
         
-        // If we just saved a new recording, clear the form
-        if (!isEditMode) {
+        setShowSaveForm(false);
+        
+        if (!isEditMode || saveOption === "remix") {
           setRecordingTitle("");
           setRecordingDescription("");
-        } else {
-          // If editing, update the initial count
-          setInitialTrackCount(recordedTracks.length);
         }
       } else {
         const errorText = await response.text();
@@ -1159,7 +1255,40 @@ export default function DesktopStage() {
         {showSaveForm && (
           <div className="modal-overlay" onClick={() => setShowSaveForm(false)}>
             <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-              <h3>{isEditMode ? 'Update Your Recording' : 'Save Your Recording'}</h3>
+              <h3>{isEditMode ? 'Save Your Changes' : 'Save Your Recording'}</h3>
+              
+              {isEditMode && (
+                <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
+                  <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>Save Options:</p>
+                  <label style={{ display: 'block', marginBottom: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      value="overwrite"
+                      checked={saveOption === "overwrite"}
+                      onChange={(e) => {
+                        setSaveOption(e.target.value);
+                        setRecordingTitle(originalTitle);
+                      }}
+                      style={{ marginRight: '8px' }}
+                    />
+                    Overwrite Original - Update the existing recording
+                  </label>
+                  <label style={{ display: 'block', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      value="remix"
+                      checked={saveOption === "remix"}
+                      onChange={(e) => {
+                        setSaveOption(e.target.value);
+                        setRecordingTitle(`Copy of ${originalTitle}`);
+                      }}
+                      style={{ marginRight: '8px' }}
+                    />
+                    Save as Remix - Create a new copy
+                  </label>
+                </div>
+              )}
+              
               <label>
                 Title:
                 <input
@@ -1193,7 +1322,7 @@ export default function DesktopStage() {
                   {isSaving 
                     ? "Saving..." 
                     : isEditMode 
-                      ? "Update Recording" 
+                      ? (saveOption === "overwrite" ? "Update Recording" : "Save as Remix")
                       : "Save Recording"}
                 </button>
               </div>

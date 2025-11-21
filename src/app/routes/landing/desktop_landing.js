@@ -50,6 +50,27 @@ export default function Landing() {
 
   const handleNavigation = (path) => navigate(path);
 
+  // NEW: Handle remix button click
+  const handleRemix = (song) => {
+    // Stop any playing audio first
+    stopAll();
+    
+    // Store the song data in sessionStorage so the stage can access it
+    const remixData = {
+      songId: song.id,
+      title: song.title,
+      author: song.author,
+      description: song.description,
+      recording: song.recording,
+      isRemix: true
+    };
+    
+    sessionStorage.setItem('remixData', JSON.stringify(remixData));
+    
+    // Navigate to stage with remix parameter
+    navigate(`/stage?remix=${song.id}`);
+  };
+
   // Fetch user and counts
   useEffect(() => {
     const fetchUser = async () => {
@@ -251,7 +272,7 @@ export default function Landing() {
 
       {/* Featured Songs */}
       <section className="featured-songs-section">
-        <h2 className="featured-songs-title">Today’s Top Songs</h2>
+        <h2 className="featured-songs-title">Today's Top Songs</h2>
         <div className="featured-songs-grid">
           {featuredSongs.length === 0 && [0, 1, 2].map(i => (
             <div className="song-card" key={`sk-${i}`}>Loading…</div>
@@ -268,12 +289,20 @@ export default function Landing() {
                 <button className="song-download-btn" onClick={() => downloadWav(song)}>
                   <span className="material-symbols-outlined">download</span>
                 </button>
+                {/* NEW: Remix Button */}
+                <button 
+                  className="song-remix-btn" 
+                  onClick={() => handleRemix(song)}
+                  title="Remix this song"
+                >
+                  <span className="material-symbols-outlined">edit_note</span>
+                </button>
                 <AddToPlaylistButton
                   songId={song.id}
                   compact
                   onAdded={() => {
                     try { new AudioContext(); } catch (e) { }
-                    alert(`Added “${song.title || `song_${song.id}`}” to your playlist!`);
+                    alert(`Added "${song.title || `song_${song.id}`}" to your playlist!`);
                   }}
                 />
               </div>
@@ -309,12 +338,3 @@ export default function Landing() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
