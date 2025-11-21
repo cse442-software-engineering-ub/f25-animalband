@@ -286,7 +286,7 @@ export default function Landing() {
             <h3>Stage</h3>
             <p>Play instruments with your favorite animals.</p>
           </Link>
-          <Link to="/looping" className="feature-card">
+          <Link to="/rhythm-game" className="feature-card">
             <span className="material-symbols-outlined feature-icon">instant_mix</span>
             <h3>Rhythm Game</h3>
             <p>Test your musical gaming abilities!</p>

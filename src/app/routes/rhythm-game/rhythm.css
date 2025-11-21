@@ -1,0 +1,423 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.rhythm-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #4caf50 0%, #1b5e20 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  font-family: "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+/* --- Header --- */
+.rhythm-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem 2rem;
+  background-color: #D9D9D9;
+  position: relative;
+  z-index: 100;
+}
+
+.rhythm-logo-section {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rhythm-paw-icon {
+  font-size: 5rem !important;
+  color: #735442;
+}
+
+.rhythm-site-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #000;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.rhythm-header-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.rhythm-btn-login {
+  padding: 0.75rem 2rem;
+  background-color: #178C3A;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rhythm-btn-login:hover {
+  background-color: #15803d;
+}
+
+.rhythm-btn-register {
+  padding: 0.75rem 2rem;
+  background-color: transparent;
+  color: #178C3A;
+  border: 2px solid #178C3A;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rhythm-btn-register:hover {
+  background-color: #afd6bb;
+}
+
+.rhythm-profile-pic {
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+  cursor: pointer;
+  object-fit: cover;
+  border: 3px solid #178C3A;
+  transition: transform 0.2s;
+}
+
+.rhythm-profile-pic:hover {
+  transform: scale(1.05);
+}
+
+/* --- Start Screen --- */
+.start-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 120px);
+  color: white;
+}
+
+.start-title {
+  font-size: 56px;
+  margin-bottom: 30px;
+  font-weight: 800;
+}
+
+.start-button {
+  padding: 15px 50px;
+  background: white;
+  color: #388e3c;
+  border: none;
+  border-radius: 40px;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.start-button:hover {
+  background: #2e7d32;
+  color: #fff;
+}
+
+/* --- Countdown --- */
+.countdown {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 140px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Game Layout --- */
+.game-area {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 140px;
+  width: 100%;
+  height: calc(100vh - 120px);
+  padding-top: 40px;
+  position: relative;
+}
+
+.player-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- Animal Images --- */
+.animal-icon {
+  width: 100px;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+/* --- Lanes --- */
+.lanes-group {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  height: calc(60vh);
+  justify-content: center;
+}
+
+.lane {
+  position: relative;
+  width: 60px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+.lane-pressed {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* --- Notes --- */
+.note {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+}
+
+.note-ostrich {
+  background: #fe91b3;
+  border: 3px solid white;
+}
+
+.note-kangaroo {
+  background: #ffcc80;
+  border: 3px solid white;
+}
+
+/* --- Hit Zones --- */
+.hit-zone {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55px;
+  height: 55px;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  
+  /* box-shadow: 0 0 0 3px #00ff00; */
+}
+
+/* HITBOX VISUALIZATION */
+.hit-zone::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 55px;
+  height: 300px;
+  /* border: 3px dashed #ff00ff; */
+  /* background: rgba(255, 0, 255, 0.15); */
+  pointer-events: none;
+  z-index: -1;
+}
+
+.hit-zone::after {
+  content: '';
+  position: absolute;
+  left: -5px;
+  right: -5px;
+  top: 50%;
+  height: 3px;
+  /* background: #ffff00; */
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hit-zone-active {
+  background: rgba(255, 255, 255, 0.4);
+  transform: translateX(-50%) scale(1.15);
+}
+
+.hit-key {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* --- Reset Button --- */
+.reset-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 30px;
+  background: white;
+  color: #388e3c;
+  border: 2px solid #388e3c;
+  border-radius: 25px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s;
+  z-index: 10;
+}
+
+.reset-button:hover {
+  background: #388e3c;
+  color: white;
+}
+
+/* TIMER */
+.game-timer {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffffff;
+  background: rgba(0,0,0,0.6);
+  padding: 10px 18px;
+  border-radius: 10px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* RESULTS POPUP */
+.results-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+.results-box {
+  background: #222;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  border: 3px solid #fff;
+  animation: popIn 0.3s ease-out;
+}
+
+.results-box h2 {
+  font-size: 40px;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.play-again-btn {
+  padding: 12px 30px;
+  font-size: 20px;
+  border: none;
+  background: #ffea00;
+  color: #000;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.play-again-btn:hover {
+  background: #fff56a;
+}
+
+.score-display {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* --- Mobile Responsive --- */
+@media (max-width: 768px) {
+  .game-area {
+    gap: 40px;
+    padding-top: 20px;
+  }
+  
+  .animal-icon {
+    width: 60px;
+  }
+  
+  .lane {
+    width: 50px;
+  }
+  
+  .lanes-group {
+    gap: 10px;
+  }
+  
+  .hit-zone {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .note {
+    width: 38px;
+    height: 38px;
+  }
+  
+  .score-display {
+    font-size: 18px;
+  }
+  
+  .rhythm-paw-icon {
+    font-size: 3rem !important;
+  }
+  
+  .rhythm-site-title {
+    font-size: 1.5rem;
+  }
+  
+  .start-title {
+    font-size: 36px;
+  } 
+}

@@ -259,14 +259,26 @@ export default function MobileLanding() {
     <div className="m-landing">
       <header className={`m-header ${user ? "is-logged-in" : ""}`}>
         <div className="m-site-title">
-          <span className="material-symbols-outlined m-paw" aria-hidden>pets</span>
+          <span className="material-symbols-outlined m-paw" aria-hidden>
+            pets
+          </span>
           <span className="m-name">ANIMALBAND</span>
         </div>
         <div className={`m-auth ${user ? "is-logged-in" : ""}`}>
           {!user ? (
             <>
-              <button className="m-btn m-btn-solid" onClick={() => navigate("/login")}>Login</button>
-              <button className="m-btn m-btn-outline" onClick={() => navigate("/register")}>Register</button>
+              <button
+                className="m-btn m-btn-solid"
+                onClick={() => navigate("/login")}
+              >
+                Login
+              </button>
+              <button
+                className="m-btn m-btn-outline"
+                onClick={() => navigate("/register")}
+              >
+                Register
+              </button>
             </>
           ) : (
             <img
@@ -282,15 +294,25 @@ export default function MobileLanding() {
       <main className="m-main">
         <h1 className="m-title">Create Music with Animals</h1>
         <p className="m-sub">
-          Play music with your animal bandmates on a stage. Layer beats, record music,
-          and share it all with a friendly community.
+          Play music with your animal bandmates on a stage. Layer beats, record
+          music, and share it all with a friendly community.
         </p>
 
         {/* Swipeable Animal Carousel */}
         <div className="m-carousel">
-          <div className="m-track" ref={trackRef} role="region" aria-label="Feature images">
+          <div
+            className="m-track"
+            ref={trackRef}
+            role="region"
+            aria-label="Feature images"
+          >
             {slides.map((src, i) => (
-              <div className="m-slide" key={i} aria-roledescription="slide" aria-label={`Image ${i + 1} of ${slides.length}`}>
+              <div
+                className="m-slide"
+                key={i}
+                aria-roledescription="slide"
+                aria-label={`Image ${i + 1} of ${slides.length}`}
+              >
                 <img src={src} alt="" className="m-slide-img" />
               </div>
             ))}
@@ -310,7 +332,9 @@ export default function MobileLanding() {
         </div>
 
         {/* Start Button */}
-        <Link to="/stage" className="m-btn-start-band">Start Your Band</Link>
+        <Link to="/stage" className="m-btn-start-band">
+          Start Your Band
+        </Link>
 
         {/* Features */}
         <section className="m-features">
@@ -318,28 +342,38 @@ export default function MobileLanding() {
             <span className="material-symbols-outlined m-card-icon">piano</span>
             <div className="m-card-text">
               <div className="m-card-title">Stage</div>
-              <div className="m-card-sub">Play instruments with your favorite animals.</div>
+              <div className="m-card-sub">
+                Play instruments with your favorite animals.
+              </div>
             </div>
           </Link>
-          <Link to="/looping" className="m-card">
-            <span className="material-symbols-outlined m-card-icon">instant_mix</span>
+          <Link to="/rhythm-game" className="m-card">
+            <span className="material-symbols-outlined m-card-icon">
+              instant_mix
+            </span>
             <div className="m-card-text">
-              <div className="m-card-title">Looping</div>
-              <div className="m-card-sub">Layer beats & notes with a visual mixer.</div>
+              <div className="m-card-title">Rhythm Game</div>
+              <div className="m-card-sub">
+                Two-player competitive mode to test your rhythm.
+              </div>
             </div>
           </Link>
           <Link to="/forum" className="m-card">
             <span className="material-symbols-outlined m-card-icon">chat</span>
             <div className="m-card-text">
               <div className="m-card-title">Forum</div>
-              <div className="m-card-sub">Share your tracks, ask for help, and get feedback.</div>
+              <div className="m-card-sub">
+                Share your tracks, ask for help, and get feedback.
+              </div>
             </div>
           </Link>
           <Link to="/stage" className="m-card">
             <span className="material-symbols-outlined m-card-icon">edit</span>
             <div className="m-card-text">
               <div className="m-card-title">Customization</div>
-              <div className="m-card-sub">Import sounds and personalize your animals.</div>
+              <div className="m-card-sub">
+                Import sounds and personalize your animals.
+              </div>
             </div>
           </Link>
         </section>
@@ -349,11 +383,18 @@ export default function MobileLanding() {
           <h2 className="m-top-songs-title">Today's Top Songs</h2>
 
           <div className="m-top-songs-list">
-            {featuredSongs.length === 0 && [0, 1, 2].map(i => (
-              <div key={`sk-${i}`} className="m-song-card">
-                <div className="m-song-info">
-                  <div className="m-song-title">Loading…</div>
-                  <div className="m-song-author">&nbsp;</div>
+            {featuredSongs.length === 0 &&
+              [0, 1, 2].map((i) => (
+                <div key={`sk-${i}`} className="m-song-card">
+                  <div className="m-song-info">
+                    <div className="m-song-title">Loading…</div>
+                    <div className="m-song-author">&nbsp;</div>
+                  </div>
+                  <button className="m-play-btn" disabled>
+                    <span className="material-symbols-outlined">
+                      hourglass_top
+                    </span>
+                  </button>
                 </div>
                 <button className="m-play-btn" aria-label="Play song" disabled>
                   <span className="material-symbols-outlined">hourglass_top</span>
@@ -364,7 +405,9 @@ export default function MobileLanding() {
             {featuredSongs.map((song) => (
               <div key={song.id} className="m-song-card">
                 <div className="m-song-info">
-                  <div className="m-song-title">{song.title || `Untitled #${song.id}`}</div>
+                  <div className="m-song-title">
+                    {song.title || `Untitled #${song.id}`}
+                  </div>
                   <div className="m-song-author">by {song.author}</div>
                 </div>
 
