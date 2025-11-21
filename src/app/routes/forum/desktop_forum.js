@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import "./desktop_forum.css";
 import ForumPostModal from "./desktop_post_modal";
@@ -7,6 +7,7 @@ const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php"
 
 export default function DesktopForum() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -20,10 +21,9 @@ export default function DesktopForum() {
     const [recsLoading, setRecsLoading] = useState(false);
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
     const [postError, setPostError] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);   // <-- add this
+    const [currentPage, setCurrentPage] = useState(1);
 
     const POSTS_PER_PAGE = 20;
-
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -75,13 +75,11 @@ export default function DesktopForum() {
         return s.length > 30 ? s.slice(0, 30) + "..." : s;
     }
 
-
     const fetchMyRecordings = useCallback(async () => {
         if (!user?.id) return;
         try {
             setRecsLoading(true);
 
-            // get auth_token cookie (same as your MyRecordings page)
             const cookiePairs = document.cookie.split("; ").map(c => c.split("="));
             const cookieMap = Object.fromEntries(cookiePairs);
             const authCookie = cookieMap["auth_token"] || "";
@@ -95,7 +93,6 @@ export default function DesktopForum() {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
             const data = await res.json();
-            // Expecting: { success: true, recordings: [{ id, title, description, recording: [...] }, ...] }
             const list = (data?.recordings || []).map(r => ({
                 id: Number(r.id),
                 title: r.title ?? `Recording #${r.id}`,
@@ -108,8 +105,6 @@ export default function DesktopForum() {
             setRecsLoading(false);
         }
     }, [user?.id]);
-
-
 
     // ========== Fetch Posts ==========
     const fetchPosts = useCallback(async (opts = { refresh: false }) => {
@@ -187,10 +182,25 @@ export default function DesktopForum() {
             }
         };
 
-
         checkUser();
         fetchPosts();
     }, [navigate, fetchPosts]);
+
+    // ========== Handle share parameter from MyRecordings ==========
+    useEffect(() => {
+        const shareId = searchParams.get('share');
+        if (shareId && user) {
+            const recordingId = Number(shareId);
+            if (!isNaN(recordingId) && recordingId > 0) {
+                // Open the new post popup with this recording pre-selected
+                setSelectedRecordingId(recordingId);
+                handleNewPost();
+                // Clear the URL parameter
+                searchParams.delete('share');
+                setSearchParams(searchParams, { replace: true });
+            }
+        }
+    }, [searchParams, user]);
 
     // ========== Compute liked ==========
     useEffect(() => {
@@ -220,7 +230,6 @@ export default function DesktopForum() {
 
         return () => es.close();
     }, [fetchPosts]);
-
 
     const handleAccountClick = () => {
         if (user) {
@@ -284,7 +293,6 @@ export default function DesktopForum() {
         }
     };
 
-
     // ========== Tags ==========
     const handleTagClick = (tag) => {
         setSelectedTags(prev =>
@@ -297,8 +305,10 @@ export default function DesktopForum() {
     // ========== New Post ==========
     const handleNewPost = async () => {
         setShowNewPostPopup(true);
-        setSelectedRecordingId(null);
-        await fetchMyRecordings();
+        // Only fetch recordings if we don't already have them or if selectedRecordingId isn't set
+        if (!selectedRecordingId) {
+            await fetchMyRecordings();
+        }
     };
 
     const handleClosePopup = () => {
@@ -307,6 +317,7 @@ export default function DesktopForum() {
         setNewPostContent("");
         setNewPostTags([]);
         setPostError("");
+        setSelectedRecordingId(null);
     };
 
     const handleTagSelect = (tag) => {
@@ -316,6 +327,7 @@ export default function DesktopForum() {
                 : [...prev, tag]
         );
     };
+
     // ========== Handle post submission ==========
     const handleSubmitPost = async (e) => {
         if (e && typeof e.preventDefault === "function") e.preventDefault();
@@ -334,7 +346,6 @@ export default function DesktopForum() {
             authorId: user.id,
             likes: 1,
             recording_id: selectedRecordingId ?? null,
-
         };
 
         const tempId = Date.now();
@@ -383,13 +394,11 @@ export default function DesktopForum() {
             if (!post.liked) return false;
         }
 
-        // ========== Search filter ==========
         const matchesSearch = searchTerm === "" ||
             (post.title && post.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.content && post.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.author && post.author.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        // ========== Tag filter ==========
         const matchesTags = selectedTags.length === 0 ||
             selectedTags.some(tag => post.tags && post.tags.includes(tag));
 
@@ -412,7 +421,6 @@ export default function DesktopForum() {
     const startIndex = (safePage - 1) * POSTS_PER_PAGE;
     const endIndex = startIndex + POSTS_PER_PAGE;
     const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
-
 
     const getViewTitle = () => {
         switch (activeView) {
@@ -578,40 +586,39 @@ export default function DesktopForum() {
                             </div>
                         ) : (
                             paginatedPosts.map((post) => (
-                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
-                                    <div className="post-author">
-                                        <div>
-                                            <h3 className="post-title">{truncate30(post.title)}</h3>
-                                            <span
-                                                className="author-name clickable-author"
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // don't open the post modal
-                                                    navigate(`/account/${encodeURIComponent(post.authorId)}`);
-                                                }}
-                                            >
-                                                by {truncate30(post.author)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {/* Time since posted */}
-                                    {post.created_at && (
-                                        (() => {
-                                            const ta = timeAgo(post.created_at, nowTick);
-                                            return (
-                                                <span className="post-time">
-                                                    {ta === "just now"
-                                                        ? "Created just now"
-                                                        : ta === "yesterday"
-                                                            ? "Created yesterday"
-                                                            : ["m", "h", "d"].some(s => ta.endsWith(s))
-                                                                ? `Created ${ta} ago`
-                                                                : `Created ${ta}`}
+                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>
+                                    <div className="post-header">
+                                        <div className="post-author">
+                                            <div>
+                                                <h3 className="post-title">{truncate30(post.title)}</h3>
+                                                <span
+                                                    className="author-name clickable-author"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/account/${encodeURIComponent(post.authorId)}`);
+                                                    }}
+                                                >
+                                                    by {truncate30(post.author)}
                                                 </span>
-
-                                            );
-                                        })()
-                                    )}
-                                </div>
+                                            </div>
+                                        </div>
+                                        {post.created_at && (
+                                            (() => {
+                                                const ta = timeAgo(post.created_at, nowTick);
+                                                return (
+                                                    <span className="post-time">
+                                                        {ta === "just now"
+                                                            ? "Created just now"
+                                                            : ta === "yesterday"
+                                                                ? "Created yesterday"
+                                                                : ["m", "h", "d"].some(s => ta.endsWith(s))
+                                                                    ? `Created ${ta} ago`
+                                                                    : `Created ${ta}`}
+                                                    </span>
+                                                );
+                                            })()
+                                        )}
+                                    </div>
                                     <p className="post-content">{truncate30(post.content)}</p>
                                     <div className="post-tags">
                                         {post.tags && post.tags.map(tag => (
@@ -707,7 +714,6 @@ export default function DesktopForum() {
                                 <div style={{ fontSize: "0.85rem", color: newPostContent.length > 300 ? "red" : "#555" }}>
                                     {newPostContent.length}/300
                                 </div>
-
                             </div>
                             <div className="form-group">
                                 <label>Tags:</label>
@@ -734,7 +740,6 @@ export default function DesktopForum() {
                             </div>
                             <div className="form-group">
                                 <label>Attach Recording (optional):</label>
-
                                 <div className="recording-select-wrap">
                                     <select
                                         className="recording-select"
@@ -753,7 +758,6 @@ export default function DesktopForum() {
                                         ))}
                                     </select>
                                 </div>
-
                                 {recsLoading && <small className="recording-select-hint">Loading your recordings…</small>}
                             </div>
                         </div>
@@ -769,7 +773,6 @@ export default function DesktopForum() {
                                     !newPostContent.trim() ||
                                     newPostContent.length > 300
                                 }
-
                             >
                                 Create Post
                             </button>
