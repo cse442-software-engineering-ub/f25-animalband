@@ -1,82 +1,85 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./desktop_register.css";
 
 export default function Register() {
   const navigate = useNavigate();
   const [errors, setErrors] = useState({});
+  const { modalState, showModal, closeModal } = useCustomModal();
 
-    const handleRegister = async (e) => {
-        e.preventDefault();
+  const handleRegister = async (e) => {
+    e.preventDefault();
 
-        const form = e.target;
-        const username = form["username"].value.trim();
-        const email = form["email"].value.trim();
-        const password = form["password"].value;
-        const passwordConf = form["password-conf"].value;
-        const profilePic = form["profilePic"].files[0];
+    const form = e.target;
+    const username = form["username"].value.trim();
+    const email = form["email"].value.trim();
+    const password = form["password"].value;
+    const passwordConf = form["password-conf"].value;
+    const profilePic = form["profilePic"].files[0];
 
-        // Reset errors
-        const newErrors = {};
+    // Reset errors
+    const newErrors = {};
 
-        // Validate empty fields
-        if (!username) newErrors.username = true;
-        if (!email) newErrors.email = true;
-        if (!password) newErrors.password = true;
-        if (!passwordConf) newErrors.passwordConf = true;
+    // Validate empty fields
+    if (!username) newErrors.username = true;
+    if (!email) newErrors.email = true;
+    if (!password) newErrors.password = true;
+    if (!passwordConf) newErrors.passwordConf = true;
 
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (email && !emailRegex.test(email)) {
-            newErrors.email = true;
-            alert("Please enter a valid email address.");
-            setErrors(newErrors);
-            return;
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailRegex.test(email)) {
+      newErrors.email = true;
+      showModal("Please enter a valid email address.", "error");
+      setErrors(newErrors);
+      return;
+    }
+
+    // Check if there are any errors
+    if (Object.keys(newErrors).length > 0) {
+      showModal("Please fill in all required fields.", "error");
+      setErrors(newErrors);
+      return;
+    }
+
+    if (password !== passwordConf) {
+      showModal("Passwords do not match.", "error");
+      setErrors({ password: true, passwordConf: true });
+      return;
+    }
+
+    setErrors({});
+
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("email", email);
+    formData.append("password", password);
+    if (profilePic) {
+      formData.append("profilePic", profilePic);
+    }
+
+    try {
+      const response = await fetch(
+        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/register.php",
+        {
+          method: "POST",
+          body: formData,
+          credentials: "include",
         }
+      );
 
-        // Check if there are any errors
-        if (Object.keys(newErrors).length > 0) {
-            alert("Please fill in all required fields.");
-            setErrors(newErrors);
-            return;
-        }
+      if (!response.ok) {
+        throw new Error(`Request failed. Status ${response.status}`);
+      }
 
-        if (password !== passwordConf) {
-            alert("Passwords do not match.");
-            setErrors({ password: true, passwordConf: true });
-            return;
-        }
-
-        setErrors({});
-
-        const formData = new FormData();
-        formData.append("username", username);
-        formData.append("email", email);
-        formData.append("password", password);
-        if (profilePic) {
-            formData.append("profilePic", profilePic);
-        }
-
-        try {
-            const response = await fetch(
-                "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/register.php",
-                {
-                    method: "POST",
-                    body: formData,
-                    credentials: "include",
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`Request failed. Status ${response.status}`);
-            }
-
-            navigate("/");
-        } catch (err) {
-            console.error(err);
-            alert("Registration failed");
-        }
-    };
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      showModal("Registration failed. Please try again.", "error");
+    }
+  };
 
   return (
     <div className="register-page">
@@ -130,6 +133,14 @@ export default function Register() {
         <button type="submit">Register</button>
       </form>
 
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        message={modalState.message}
+        type={modalState.type}
+        title={modalState.title}
+      />
+
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
@@ -137,4 +148,3 @@ export default function Register() {
     </div>
   );
 }
-

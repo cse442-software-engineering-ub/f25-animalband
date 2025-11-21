@@ -1,5 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./mobile_profile.css";
 
 export default function MobileProfile() {
@@ -7,6 +9,7 @@ export default function MobileProfile() {
   const [user, setUser] = useState(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const fileInputRef = useRef(null);
+  const { modalState, showModal, closeModal } = useCustomModal();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -57,12 +60,13 @@ export default function MobileProfile() {
           ...prev,
           profilePic: data.profilePic,
         }));
+        showModal("Profile picture updated successfully!", "success");
       } else {
-        alert("Failed to update profile picture.");
+        showModal("Failed to update profile picture.", "error");
       }
     } catch (err) {
       console.error("Error uploading new profile pic", err);
-      alert("Error uploading new profile pic.");
+      showModal("Error uploading new profile pic.", "error");
     }
   };
 
@@ -74,12 +78,10 @@ export default function MobileProfile() {
     }
   };
 
-  // NEW: Handle edit profile button click
   const handleEditProfile = () => {
     navigate("/account/edit");
   };
 
-  // Navigate to forum with specific view
   const navigateToForum = (view) => {
     navigate("/forum", { state: { activeView: view } });
     setShowMobileMenu(false);
@@ -183,7 +185,6 @@ export default function MobileProfile() {
               <span className="material-symbols-outlined">person</span>
               My Profile
             </button>
-            {/* NEW: Edit Profile option in mobile menu */}
             <button
               className="mobile-nav-btn"
               onClick={() => { navigate("/account/edit"); setShowMobileMenu(false); }}
@@ -223,7 +224,6 @@ export default function MobileProfile() {
             </div>
             <h2>{user.username}</h2>
 
-            {/* NEW: Edit Profile Button */}
             <button
               className="mobile-edit-profile-btn"
               onClick={handleEditProfile}
@@ -292,6 +292,14 @@ export default function MobileProfile() {
           <span>Profile</span>
         </Link>
       </nav>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        message={modalState.message}
+        type={modalState.type}
+        title={modalState.title}
+      />
 
       {/* Material Icons Font */}
       <link

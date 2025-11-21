@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./desktop_post_modal.css";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
@@ -145,51 +147,54 @@ export default function ForumPostModal({
     const [draft, setDraft] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [collapsed, setCollapsed] = useState(() => new Set());
-    const listRef = useRef(null)
+    const listRef = useRef(null);
     const firstLoadRef = useRef(true);
     const [postError, setPostError] = useState("");
+    const { modalState, showModal, closeModal } = useCustomModal();
 
     // ==== Attached recording (mini player) ====
-    const [buffers, setBuffers] = useState(null);        // SOUND_CONFIG buffers
+    const [buffers, setBuffers] = useState(null);
     const [recLoading, setRecLoading] = useState(false);
     const [recErr, setRecErr] = useState("");
-    const [recMeta, setRecMeta] = useState(null);        // { id, title, description }
-    const [recNotes, setRecNotes] = useState([]);        // array of notes OR tracks-of-notes
+    const [recMeta, setRecMeta] = useState(null);
+    const [recNotes, setRecNotes] = useState([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const stopRef = useRef(null);
-
 
     useEffect(() => {
         let mounted = true;
         (async () => {
             try {
                 const b = await preloadLandingSounds();
-                console.log("[mini-player] preloadLandingSounds resolved:", b); if (mounted) setBuffers(b);
+                console.log("[mini-player] preloadLandingSounds resolved:", b);
+                if (mounted) setBuffers(b);
             } catch (e) {
                 console.error("preloadLandingSounds failed:", e);
             }
         })();
         return () => { mounted = false; };
     }, []);
+
     const fetchRecordingById = useCallback(async (id) => {
         if (id == null || Number.isNaN(id)) return;
         try {
             setRecLoading(true);
             setRecErr("");
             const res = await fetch(
-                `${PHP_URL}/getLocalRecordingById.php?id=${encodeURIComponent(id)}`, // <- change to ...ById.php if you rename
+                `${PHP_URL}/getLocalRecordingById.php?id=${encodeURIComponent(id)}`,
                 { credentials: "include", cache: "no-store" }
             );
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            console.log("[getLocalRecordingById] parsed JSON:", data);  // <-- log it            if (!data?.success || !data?.recording) throw new Error("Bad recording payload");
+            console.log("[getLocalRecordingById] parsed JSON:", data);
+            if (!data?.success || !data?.recording) throw new Error("Bad recording payload");
 
             setRecMeta({
                 id: data.id,
                 title: data.title ?? `Recording #${data.id}`,
                 description: data.description ?? ""
             });
-            setRecNotes(data.recording); // landing_player handles flat or track-of-notes
+            setRecNotes(data.recording);
         } catch (e) {
             console.error("fetchRecordingById failed:", e);
             setRecMeta(null);
@@ -209,6 +214,7 @@ export default function ForumPostModal({
             setRecErr("");
         }
     }, [post?.recording_id, fetchRecordingById]);
+
     const stopAll = useCallback(() => {
         if (stopRef.current) {
             try { stopRef.current(); } catch { }
@@ -226,6 +232,7 @@ export default function ForumPostModal({
         });
         setIsPlaying(true);
     }, [buffers, recNotes, stopAll]);
+
     useEffect(() => {
         document.body.classList.add("popup-open");
         return () => {
@@ -352,7 +359,7 @@ export default function ForumPostModal({
         } catch (err) {
             console.error("like comment failed:", err);
             fetchComments();
-            alert("Failed to like/unlike. Please try again.");
+            showModal("Failed to like/unlike. Please try again.", "error");
         }
     };
 
@@ -398,9 +405,8 @@ export default function ForumPostModal({
             setReplyTo(null);
         } catch (err) {
             console.error("comment failed:", err);
-            // rollback optimistic
             setCommentsFlat(prev => prev.filter(c => c.id !== tempId));
-            alert("Failed to post comment.");
+            showModal("Failed to post comment.", "error");
         } finally {
             setSubmitting(false);
         }
@@ -450,7 +456,7 @@ export default function ForumPostModal({
                                 <div className="ab-mini-player">
                                     <div className="ab-mini-player-meta">
                                         <strong>{recMeta.title}</strong>
-                                        {recMeta.description ? <span className="ab-mini-desc"> — {recMeta.description}</span> : null}
+                                        {recMeta.description ? <span className="ab-mini-desc"> – {recMeta.description}</span> : null}
                                     </div>
                                     <div className="ab-mini-player-controls">
                                         <button
@@ -466,14 +472,6 @@ export default function ForumPostModal({
                             )}
                         </div>
                     </div>
-
-
-
-
-
-
-
-
 
                     {postError && (
                         <div className="ab-error" role="alert" aria-live="assertive">
@@ -534,6 +532,14 @@ export default function ForumPostModal({
                     </div>
                 </div>
             </div>
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
         </div>
     );
 }
