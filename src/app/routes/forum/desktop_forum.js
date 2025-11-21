@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import CustomModal from "../../components/CustomModal";
 import useCustomModal from "../../components/useCustomModal";
@@ -9,6 +9,7 @@ const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php"
 
 export default function DesktopForum() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -22,6 +23,10 @@ export default function DesktopForum() {
     const [recsLoading, setRecsLoading] = useState(false);
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
     const { modalState, showModal, closeModal } = useCustomModal();
+    const [postError, setPostError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const POSTS_PER_PAGE = 20;
+
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
@@ -184,6 +189,22 @@ export default function DesktopForum() {
         fetchPosts();
     }, [navigate, fetchPosts]);
 
+    // ========== Handle share parameter from MyRecordings ==========
+    useEffect(() => {
+        const shareId = searchParams.get('share');
+        if (shareId && user) {
+            const recordingId = Number(shareId);
+            if (!isNaN(recordingId) && recordingId > 0) {
+                // Open the new post popup with this recording pre-selected
+                setSelectedRecordingId(recordingId);
+                handleNewPost();
+                // Clear the URL parameter
+                searchParams.delete('share');
+                setSearchParams(searchParams, { replace: true });
+            }
+        }
+    }, [searchParams, user]);
+
     // ========== Compute liked ==========
     useEffect(() => {
         if (!user) return;
@@ -287,8 +308,10 @@ export default function DesktopForum() {
     // ========== New Post ==========
     const handleNewPost = async () => {
         setShowNewPostPopup(true);
-        setSelectedRecordingId(null);
-        await fetchMyRecordings();
+        // Only fetch recordings if we don't already have them or if selectedRecordingId isn't set
+        if (!selectedRecordingId) {
+            await fetchMyRecordings();
+        }
     };
 
     const handleClosePopup = () => {
@@ -296,6 +319,8 @@ export default function DesktopForum() {
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostTags([]);
+        setPostError("");
+        setSelectedRecordingId(null);
     };
 
     const handleTagSelect = (tag) => {
@@ -394,6 +419,12 @@ export default function DesktopForum() {
         }
     }) : [];
 
+    const totalPages = Math.max(1, Math.ceil(sortedPosts.length / POSTS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+
     const getViewTitle = () => {
         switch (activeView) {
             case "my-posts":
@@ -405,6 +436,11 @@ export default function DesktopForum() {
                 return "Forum";
         }
     };
+
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedTags, sortBy, activeView]);
 
     return (
         <div className="forum-page">
@@ -553,7 +589,9 @@ export default function DesktopForum() {
                                 <p>No posts found.</p>
                             </div>
                         ) : (
-                            sortedPosts.map((post) => (
+
+                            paginatedPosts.map((post) => (
+
                                 <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>
                                     <div className="post-header">
                                         <div className="post-author">
@@ -575,7 +613,14 @@ export default function DesktopForum() {
                                                 const ta = timeAgo(post.created_at, nowTick);
                                                 return (
                                                     <span className="post-time">
-                                                        Created {ta === "just now" ? ta : `${ta} ago`}
+
+                                                        {ta === "just now"
+                                                            ? "Created just now"
+                                                            : ta === "yesterday"
+                                                                ? "Created yesterday"
+                                                                : ["m", "h", "d"].some(s => ta.endsWith(s))
+                                                                    ? `Created ${ta} ago`
+                                                                    : `Created ${ta}`}
                                                     </span>
                                                 );
                                             })()
@@ -605,6 +650,31 @@ export default function DesktopForum() {
                                 </div>
                             ))
                         )}
+                        {totalPages > 1 && (
+                            <div className="pagination-controls">
+                                <button
+                                    className="page-btn"
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={safePage === 1}
+                                    aria-label="Previous page"
+                                >
+                                    ‹ Prev
+                                </button>
+
+                                <span className="page-info">
+                                    Page {safePage} of {totalPages}
+                                </span>
+
+                                <button
+                                    className="page-btn"
+                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={safePage === totalPages}
+                                    aria-label="Next page"
+                                >
+                                    Next ›
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </main>
             </div>
@@ -631,10 +701,26 @@ export default function DesktopForum() {
                                 <label>Content:</label>
                                 <textarea
                                     value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 300) {
+                                            setPostError("Content cannot exceed 300 characters.");
+                                        } else {
+                                            setPostError("");
+                                        }
+                                        setNewPostContent(v);
+                                    }}
                                     placeholder="Enter post content"
                                     rows="4"
                                 />
+                                {postError && (
+                                    <p className="error-text" style={{ color: "red", marginTop: "5px" }}>
+                                        {postError}
+                                    </p>
+                                )}
+                                <div style={{ fontSize: "0.85rem", color: newPostContent.length > 300 ? "red" : "#555" }}>
+                                    {newPostContent.length}/300
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label>Tags:</label>
@@ -688,7 +774,12 @@ export default function DesktopForum() {
                                 type="button"
                                 className="submit-btn"
                                 onClick={handleSubmitPost}
-                                disabled={!user?.id || !newPostTitle.trim() || !newPostContent.trim()}
+                                disabled={
+                                    !user?.id ||
+                                    !newPostTitle.trim() ||
+                                    !newPostContent.trim() ||
+                                    newPostContent.length > 300
+                                }
                             >
                                 Create Post
                             </button>

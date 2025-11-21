@@ -27,6 +27,7 @@ import ResetEmail from "./routes/login/desktop_reset_email.js";
 
 import MyRecordings from "./routes/account/recordings.js";
 
+import RhythmGame from "./routes/rhythm-game/rhythm_game.js";
 import DesktopMyPlaylists from "./routes/playlists/desktop_my_playlists.js";
 import DesktopPlaylistDetail from "./routes/playlists/desktop_playlist_detail.js";
 import MobileMyPlaylists from "./routes/playlists/mobile_my_playlists.js";
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/account-email" element={<ResetEmail />} />
           <Route path="/account/edit" element={<EditAccount />} />
           <Route path="/my-recordings" element={<MyRecordings />} />
+          <Route path="/rhythm-game" element={<RhythmGame />} />
           <Route path="/playlists" element={<MyPlaylists />} />
           <Route path="/playlists/:id" element={<PlaylistDetail />} />
           <Route path="*" element={<NotFound />} />
