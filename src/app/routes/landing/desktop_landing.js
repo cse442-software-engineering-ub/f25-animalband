@@ -320,16 +320,18 @@ export default function Landing() {
                 {/* 🔹 Opens animal playback modal, same component as forum/account */}
                 <button
                   className="song-play-btn"
+                  aria-label="Play Song"
                   onClick={() => openRecordingModal(song)}
                 >
                   <span className="material-symbols-outlined">play_arrow</span>
                 </button>
-                <button className="song-download-btn" onClick={() => downloadWav(song)}>
+                <button className="song-download-btn" aria-label="Download Song" onClick={() => downloadWav(song)}>
                   <span className="material-symbols-outlined">download</span>
                 </button>
                 {/* NEW: Remix Button */}
                 <button 
                   className="song-remix-btn" 
+                  aria-label="Remix Song"
                   onClick={() => handleRemix(song)}
                   title="Remix this song"
                 >

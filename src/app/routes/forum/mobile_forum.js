@@ -647,6 +647,7 @@ export default function MobileForum() {
                                     </div>
                                     <button
                                         className={`mobile-like-btn ${post.liked ? "liked" : ""}`}
+                                        aria-label="Like post"
                                         onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onKeyDown={(e) => e.stopPropagation()}

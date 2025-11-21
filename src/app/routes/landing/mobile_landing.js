@@ -355,7 +355,7 @@ export default function MobileLanding() {
                   <div className="m-song-title">Loading…</div>
                   <div className="m-song-author">&nbsp;</div>
                 </div>
-                <button className="m-play-btn" disabled>
+                <button className="m-play-btn" aria-label="Play song" disabled>
                   <span className="material-symbols-outlined">hourglass_top</span>
                 </button>
               </div>
@@ -372,6 +372,7 @@ export default function MobileLanding() {
                 <div className="m-song-actions">
                   <button
                     className="m-play-btn"
+                    aria-label="Play song"
                     onClick={() => openRecordingModal(song)}
                     disabled={!song.recording || !normalizeRecordingNotes(song.recording).length}
                     title="Play with animals"
@@ -383,6 +384,7 @@ export default function MobileLanding() {
                   <button
                     className="m-remix-btn"
                     onClick={() => handleRemix(song)}
+                    aria-label="Remix this song"
                     title="Remix this song"
                   >
                     <span className="material-symbols-outlined">

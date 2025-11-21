@@ -398,6 +398,7 @@ export default function MyRecordings() {
                       justifyContent: 'center'
                     }}
                     title="Play Recording"
+                    aria-label="Play Recording"
                   >
                     {isPlaying ? '■' : '▶'}
                   </button>
@@ -418,6 +419,7 @@ export default function MyRecordings() {
                       justifyContent: 'center'
                     }}
                     title="Edit Recording"
+                    aria-label="Edit Recording"
                   >
                     ✏️
                   </button>
@@ -441,6 +443,7 @@ export default function MyRecordings() {
                       justifyContent: 'center'
                     }}
                     title="Close"
+                    aria-label="Close"
                   >
                     ✕
                   </button>
