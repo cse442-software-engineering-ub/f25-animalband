@@ -2,6 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
 import AddToPlaylistButton from "../../../components/desktop_add_to_playlist_button.js";
+import CustomModal from "../../components/CustomModal.js";
+import useCustomModal from "../../components/useCustomModal.js";
 import "./desktop_landing.css";
 
 import Ostrich from "../../../assets/ostrich.png";
@@ -21,6 +23,7 @@ export default function Landing() {
   const [buffers, setBuffers] = useState(null);
   const [playingIndex, setPlayingIndex] = useState(-1);
   const stopRef = useRef(null);
+  const { modalState, showModal, closeModal } = useCustomModal();
 
   const togglePlay = (idx) => {
     if (!buffers) return;
@@ -251,7 +254,7 @@ export default function Landing() {
 
       {/* Featured Songs */}
       <section className="featured-songs-section">
-        <h2 className="featured-songs-title">Today’s Top Songs</h2>
+        <h2 className="featured-songs-title">Today's Top Songs</h2>
         <div className="featured-songs-grid">
           {featuredSongs.length === 0 && [0, 1, 2].map(i => (
             <div className="song-card" key={`sk-${i}`}>Loading…</div>
@@ -273,7 +276,7 @@ export default function Landing() {
                   compact
                   onAdded={() => {
                     try { new AudioContext(); } catch (e) { }
-                    alert(`Added “${song.title || `song_${song.id}`}” to your playlist!`);
+                    showModal(`Added "${song.title || `song_${song.id}`}" to your playlist!`, "success");
                   }}
                 />
               </div>
@@ -304,6 +307,14 @@ export default function Landing() {
       <footer className="footer">
         <h3>Register for free and rock out with your animals today!</h3>
       </footer>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        message={modalState.message}
+        type={modalState.type}
+        title={modalState.title}
+      />
 
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     </div>

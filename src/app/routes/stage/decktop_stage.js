@@ -1254,14 +1254,14 @@ export default function DesktopStage() {
                 <span style={{ fontSize: "12px", marginRight: "10px" }}>
                   {Math.round((trackSettings[index]?.volume ?? 1) * 100)}%
                 </span>
-                <button onClick={() => toggleMute(index)}>
+                <button className="pill-btn" onClick={() => toggleMute(index)}>
                   {trackSettings[index]?.muted ? "Unmute" : "Mute"}
                 </button>
-                <button onClick={() => toggleSolo(index)}>
+                <button className="pill-btn" onClick={() => toggleSolo(index)}>
                   {trackSettings[index]?.solo ? "Unsolo" : "Solo"}
                 </button>
-                <button onClick={() => startRename(index)}>Rename</button>
-                <button onClick={() => deleteTrack(index)}>Delete</button>
+                <button className="pill-btn" onClick={() => startRename(index)}>Rename</button>
+                <button className="pill-btn" onClick={() => deleteTrack(index)}>Delete</button>
               </div>
             </div>
           ))}
