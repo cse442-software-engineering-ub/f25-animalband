@@ -389,15 +389,6 @@ export default function MobileLanding() {
               </div>
             </div>
           </Link>
-          <Link to="/stage" className="m-card">
-            <span className="material-symbols-outlined m-card-icon">edit</span>
-            <div className="m-card-text">
-              <div className="m-card-title">Customization</div>
-              <div className="m-card-sub">
-                Import sounds and personalize your animals.
-              </div>
-            </div>
-          </Link>
         </section>
 
         {/* Today's Top Songs */}
