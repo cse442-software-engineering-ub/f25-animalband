@@ -542,7 +542,7 @@
 .stats-container,
 .featured-songs-section
  {
-  background-color: #ffffff !important;
+  background-color: #ffffff;
 }
 
 /* Optional: keep smooth transitions if there were gradients or tints */
@@ -595,5 +595,52 @@ body {
   }
 }
 
+/* Remix Button Styles */
+.song-remix-btn {
+  background-color: #178C3A;;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
+.song-remix-btn:hover {
+  background-color: #15803d;
+  transform: scale(1.1);
+}
 
+.song-remix-btn:active {
+  transform: scale(0.95);
+}
+
+.song-remix-btn .material-symbols-outlined {
+  color: white;
+  font-size: 20px;
+}
+
+.song-remix-btn:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.song-remix-btn:disabled:hover {
+  background-color: #d1d5db;
+  transform: none;
+}
+
+/* Ensure button group has proper spacing */
+.song-button-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}

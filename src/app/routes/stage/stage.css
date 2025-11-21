@@ -633,3 +633,280 @@ html, body {
 .header{
   background-color: #bfbfbf;
 }
+
+.alert-modal,
+.confirm-modal,
+.tutorial-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.tutorial-modal {
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 20px;
+  border-radius: 0.75rem 0.75rem 0 0;
+  margin: -2rem -2.5rem 20px -2.5rem;
+  color: white;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Color-coded headers matching project palette */
+.modal-header.info {
+  background-color: #178C3A;
+  box-shadow: 0 4px 6px -1px rgba(23, 140, 58, 0.2);
+}
+
+.modal-header.success {
+  background-color: #178C3A;
+  box-shadow: 0 4px 6px -1px rgba(23, 140, 58, 0.3);
+}
+
+.modal-header.warning {
+  background-color: #f59e0b;
+  box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
+}
+
+.modal-header.error {
+  background-color: #b91c1c;
+  box-shadow: 0 4px 6px -1px rgba(185, 28, 28, 0.3);
+}
+
+.modal-content {
+  padding: 20px 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #000;
+}
+
+.modal-content p {
+  margin: 0;
+}
+
+/* Tutorial specific styles */
+.tutorial-content {
+  text-align: left;
+}
+
+.tutorial-content section {
+  margin-bottom: 25px;
+}
+
+.tutorial-content h4 {
+  color: #178C3A;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #178C3A;
+  padding-bottom: 5px;
+}
+
+.tutorial-content ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 10px 0;
+}
+
+.tutorial-content li {
+  margin-bottom: 10px;
+  padding-left: 25px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.tutorial-content li:before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: #178C3A;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.tutorial-content strong {
+  color: #000;
+  font-weight: 700;
+}
+
+/* Button styles for modals - override existing form-buttons */
+.modal-box .form-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.modal-box .form-buttons button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.15s;
+}
+
+.modal-box .form-buttons button:hover {
+  transform: translateY(-1px);
+}
+
+.modal-box .form-buttons .btn-primary {
+  background-color: #178C3A;
+  color: white;
+}
+
+.modal-box .form-buttons .btn-primary:hover {
+  background-color: #15803d;
+}
+
+.modal-box .form-buttons .btn-danger {
+  background-color: #b91c1c;
+  color: white;
+}
+
+.modal-box .form-buttons .btn-danger:hover {
+  background-color: #991b1b;
+}
+
+/* Default button styling (cancel buttons) */
+.modal-box .form-buttons button:not(.btn-primary):not(.btn-danger) {
+  background-color: #d9d9d9;
+  color: #000;
+}
+
+.modal-box .form-buttons button:not(.btn-primary):not(.btn-danger):hover {
+  background-color: #bfbfbf;
+}
+
+/* Tutorial button styling in circle controls - matching the green circle button style */
+.stagestuff .circle-btn.tutorial {
+  background-color: #178C3A;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.stagestuff .circle-btn.tutorial:hover {
+  background-color: #15803d;
+  transform: scale(1.1);
+}
+
+/* Ensure circle buttons in bottom controls are consistent */
+.stagestuff .bottom-controls .circle-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.15s, background-color 0.2s;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .tutorial-modal {
+    max-height: 90vh;
+  }
+  
+  .modal-header {
+    padding: 15px;
+    margin: -1.5rem -1.5rem 15px -1.5rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 20px;
+  }
+  
+  .tutorial-content h4 {
+    font-size: 16px;
+  }
+  
+  .modal-content {
+    font-size: 14px;
+  }
+  
+  .tutorial-content li {
+    font-size: 14px;
+  }
+  
+  .modal-box .form-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .modal-box .form-buttons button {
+    width: 100%;
+  }
+  
+  .stagestuff .circle-btn.tutorial {
+    width: 45px;
+    height: 45px;
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-box {
+    padding: 1.5rem;
+  }
+  
+  .stagestuff .circle-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .stagestuff .circle-btn.tutorial {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+}
+
+/* Make sure modals appear above everything */
+.modal-overlay {
+  z-index: 2000;
+}
+
+/* Add subtle animation to modals */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-box {
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+/* Improve modal overlay appearance */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}

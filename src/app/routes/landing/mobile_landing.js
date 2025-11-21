@@ -29,6 +29,9 @@ export default function MobileLanding() {
   const [showRecModal, setShowRecModal] = useState(false);
   const [activeRecording, setActiveRecording] = useState(null); // {id,title,description}
   const [activeNotes, setActiveNotes] = useState([]);           // song.recording
+  const [buffers, setBuffers] = useState(null);
+  const [playingIndex, setPlayingIndex] = useState(-1);
+  const stopRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -79,6 +82,55 @@ export default function MobileLanding() {
   const handleNavigation = (path) => {
     navigate(path);
   };
+
+  const stopAll = () => {
+    if (stopRef.current) {
+      stopRef.current();
+      stopRef.current = null;
+    }
+  };
+
+  const togglePlay = (index) => {
+    if (!buffers) return;
+    if (playingIndex === index) {
+      stopAll();
+      setPlayingIndex(-1);
+      return;
+    }
+    stopAll();
+    const song = featuredSongs[index];
+    if (!song) return;
+    stopRef.current = schedulePlayback(buffers, song.recording, () => {
+      setPlayingIndex(-1);
+      stopRef.current = null;
+    });
+    setPlayingIndex(index);
+  };
+
+  // NEW: Handle remix button click
+  const handleRemix = (song) => {
+    // Stop any playing audio first
+    stopAll();
+    
+    // Store the song data in sessionStorage so the stage can access it
+    const remixData = {
+      songId: song.id,
+      title: song.title,
+      author: song.author,
+      description: song.description,
+      recording: song.recording,
+      isRemix: true
+    };
+    
+    sessionStorage.setItem('remixData', JSON.stringify(remixData));
+    
+    // Navigate to stage with remix parameter
+    navigate(`/stage?remix=${song.id}`);
+  };
+
+  useEffect(() => {
+    return () => stopAll();
+  }, []);
 
   useEffect(() => {
     const el = trackRef.current;
@@ -331,8 +383,8 @@ export default function MobileLanding() {
                   <div className="m-song-author">by {song.author}</div>
                 </div>
 
-                <div className="m-song-actions" style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-                  {/* 🔹 Open animal playback modal */}
+                {/* FIXED: Removed inline styles that were overriding CSS */}
+                <div className="m-song-actions">
                   <button
                     className="m-play-btn"
                     onClick={() => openRecordingModal(song)}
@@ -342,16 +394,17 @@ export default function MobileLanding() {
                     <span className="material-symbols-outlined">play_arrow</span>
                   </button>
 
-                  {/* 🔹 Download WAV (same fix as desktop) */}
-                  {/* <button
-                    className="m-play-btn"
-                    onClick={() => downloadWav(song)}
-                    disabled={!buffers || !song.recording || !normalizeRecordingNotes(song.recording).length}
-                    title={!buffers ? "Preparing audio…" : "Download WAV"}
+                  {/* Remix Button */}
+                  <button
+                    className="m-remix-btn"
+                    onClick={() => handleRemix(song)}
+                    title="Remix this song"
                   >
-                    <span className="material-symbols-outlined">download</span>
+                    <span className="material-symbols-outlined">
+                      edit_note
+                    </span>
                   </button>
-                   */}
+
                   <MobileAddToPlaylistButton
                     songId={song.id}
                     compact
@@ -366,7 +419,7 @@ export default function MobileLanding() {
           </div>
         </section>
 
-        {/* Stats (still static for now) */}
+        {/* Stats */}
         <section className="m-stats">
           <div className="m-stat">
             <div className="m-stat-num">12,572</div>
