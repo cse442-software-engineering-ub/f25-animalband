@@ -37,7 +37,7 @@ export default function Landing() {
   // NEW: Handle remix button click
   const handleRemix = (song) => {
     // Stop any playing audio first
-    stopAll();
+    // stopAll();
     
     // Store the song data in sessionStorage so the stage can access it
     const remixData = {

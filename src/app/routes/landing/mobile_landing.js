@@ -29,7 +29,7 @@ export default function MobileLanding() {
   const [showRecModal, setShowRecModal] = useState(false);
   const [activeRecording, setActiveRecording] = useState(null); // {id,title,description}
   const [activeNotes, setActiveNotes] = useState([]);           // song.recording
-  const [buffers, setBuffers] = useState(null);
+  // const [buffers, setBuffers] = useState(null);
   const [playingIndex, setPlayingIndex] = useState(-1);
   const stopRef = useRef(null);
 
@@ -90,22 +90,7 @@ export default function MobileLanding() {
     }
   };
 
-  const togglePlay = (index) => {
-    if (!buffers) return;
-    if (playingIndex === index) {
-      stopAll();
-      setPlayingIndex(-1);
-      return;
-    }
-    stopAll();
-    const song = featuredSongs[index];
-    if (!song) return;
-    stopRef.current = schedulePlayback(buffers, song.recording, () => {
-      setPlayingIndex(-1);
-      stopRef.current = null;
-    });
-    setPlayingIndex(index);
-  };
+
 
   // NEW: Handle remix button click
   const handleRemix = (song) => {
