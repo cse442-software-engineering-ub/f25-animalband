@@ -29,6 +29,7 @@ function timeAgoTS(ts) {
     if (day < 7) return `${day}d`;
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+
 function formatCreated(ts) {
     const t = timeAgoTS(ts);
     if (!t) return "";
@@ -161,9 +162,7 @@ export default function ForumPostModal({
     const [recNotes, setRecNotes] = useState([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const stopRef = useRef(null);
-
-    const [showRecModal, setShowRecModal] = useState(false); // ⬅️ NEW
-
+    const [showRecModal, setShowRecModal] = useState(false);
 
     useEffect(() => {
         let mounted = true;
@@ -314,20 +313,6 @@ export default function ForumPostModal({
         return () => es.close();
     }, [post?.id, fetchComments]);
 
-    useEffect(() => {
-        if (!post?.id) return;
-        const es = new EventSource(`${PHP_URL}/commentsStream.php?postId=${encodeURIComponent(post.id)}`, { withCredentials: false });
-
-        const onMsg = () => fetchComments();
-        const onErr = () => console.warn("comments SSE disconnected");
-
-        es.addEventListener("comments", onMsg);
-        es.onmessage = onMsg;
-        es.onerror = onErr;
-
-        return () => es.close();
-    }, [post?.id, fetchComments]);
-
     const onReply = (node) => {
         setReplyTo(node);
     };
@@ -416,13 +401,6 @@ export default function ForumPostModal({
         }
     };
 
-    useEffect(() => {
-        document.body.classList.add("popup-open");
-        return () => document.body.classList.remove("popup-open");
-    }, []);
-
-    if (!post) return null;
-
     if (!post) return null;
 
     return (
@@ -458,41 +436,28 @@ export default function ForumPostModal({
                                 <span>{post.comments ?? 0} comments</span>
                             </div>
 
-                        <div className="pmp-attached-recording">
-                            {recLoading && <div className="ab-loading">Loading recording…</div>}
-                            {!recLoading && recErr && (
-                                <div className="ab-error" role="alert">{recErr}</div>
-                            )}
-                            {!recLoading && !recErr && recMeta && Array.isArray(recNotes) && recNotes.length > 0 && (
-                                <div className="ab-mini-player">
-                                    <div className="ab-mini-player-meta">
-                                        <strong>{recMeta.title}</strong>
-                                        {recMeta.description ? <span className="ab-mini-desc"> – {recMeta.description}</span> : null}
+                            <div className="pmp-attached-recording">
+                                {recLoading && <div className="ab-loading">Loading recording…</div>}
+                                {!recLoading && recErr && (
+                                    <div className="ab-error" role="alert">{recErr}</div>
+                                )}
+                                {!recLoading && !recErr && recMeta && Array.isArray(recNotes) && recNotes.length > 0 && (
+                                    <div className="ab-mini-player">
+                                        <div className="ab-mini-player-meta">
+                                            <strong>{recMeta.title}</strong>
+                                            {recMeta.description ? <span className="ab-mini-desc"> — {recMeta.description}</span> : null}
+                                        </div>
+                                        <div className="ab-mini-player-controls">
+                                            <button
+                                                type="button"
+                                                className="ab-mini-play"
+                                                onClick={() => setShowRecModal(true)}
+                                            >
+                                                ▶ Play
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
-                                {!recLoading &&
-                                    !recErr &&
-                                    recMeta &&
-                                    Array.isArray(recNotes) &&
-                                    recNotes.length > 0 && (
-                                        <div className="ab-mini-player">
-                                            <div className="ab-mini-player-meta">
-                                                <strong>{recMeta.title}</strong>
-                                                {recMeta.description ? (
-                                                    <span className="ab-mini-desc"> — {recMeta.description}</span>
-                                                ) : null}
-                                            </div>
-                                            <div className="ab-mini-player-controls">
-                                                <button
-                                                    type="button"
-                                                    className="ab-mini-play"
-                                                    onClick={() => setShowRecModal(true)} // ⬅️ open full playback modal
-                                                >
-                                                    ▶ Play
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
                             </div>
                         </div>
 
@@ -515,8 +480,7 @@ export default function ForumPostModal({
                             />
                             <div className="ab-new-comment-meta">
                                 <span
-                                    className={`char-count ${draft.length >= 500 ? "limit-reached" : ""
-                                        }`}
+                                    className={`char-count ${draft.length >= 500 ? "limit-reached" : ""}`}
                                 >
                                     {draft.length}/500
                                 </span>
@@ -575,10 +539,7 @@ export default function ForumPostModal({
                 type={modalState.type}
                 title={modalState.title}
             />
-        </div>
-    );
-}
-            {/* 🔹 Shared playback modal (same UX as MyRecordings) */}
+
             {showRecModal && recMeta && (
                 <RecordingPlaybackModal
                     recording={{
@@ -592,5 +553,4 @@ export default function ForumPostModal({
             )}
         </>
     );
-
 }

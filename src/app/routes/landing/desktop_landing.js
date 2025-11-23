@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { preloadLandingSounds } from "./landing_player.js";
 import AddToPlaylistButton from "../../../components/desktop_add_to_playlist_button.js";
 import CustomModal from "../../components/CustomModal.js";
@@ -23,32 +23,13 @@ export default function Landing() {
 
   const [featuredSongs, setFeaturedSongs] = useState([]);
   const [buffers, setBuffers] = useState(null);
-  const [playingIndex, setPlayingIndex] = useState(-1);
   const stopRef = useRef(null);
   const { modalState, showModal, closeModal } = useCustomModal();
 
-  const togglePlay = (idx) => {
-    if (!buffers) return;
-    if (playingIndex === idx) {
-      stopAll();
-      setPlayingIndex(-1);
-      return;
-    }
-    stopAll();
-    const song = featuredSongs[idx];
-    if (!song) return;
-    stopRef.current = schedulePlayback(buffers, song.recording, () => {
-      setPlayingIndex(-1);
-      stopRef.current = null;
-    });
-    setPlayingIndex(idx);
-  };
-  const [buffers, setBuffers] = useState(null); // still needed for WAV download
-
-  // 🔹 State for playback modal (reuse same component as account/forum)
+  // State for playback modal (reuse same component as account/forum)
   const [showRecModal, setShowRecModal] = useState(false);
-  const [activeRecording, setActiveRecording] = useState(null); // {id,title,description}
-  const [activeNotes, setActiveNotes] = useState([]); // song.recording
+  const [activeRecording, setActiveRecording] = useState(null);
+  const [activeNotes, setActiveNotes] = useState([]);
 
   const handleAccountClick = () => {
     if (user) navigate("/account");
@@ -57,12 +38,8 @@ export default function Landing() {
 
   const handleNavigation = (path) => navigate(path);
 
-  // NEW: Handle remix button click
+  // Handle remix button click
   const handleRemix = (song) => {
-    // Stop any playing audio first
-    // stopAll();
-
-    // Store the song data in sessionStorage so the stage can access it
     const remixData = {
       songId: song.id,
       title: song.title,
@@ -73,8 +50,6 @@ export default function Landing() {
     };
 
     sessionStorage.setItem("remixData", JSON.stringify(remixData));
-
-    // Navigate to stage with remix parameter
     navigate(`/stage?remix=${song.id}`);
   };
 
@@ -144,7 +119,7 @@ export default function Landing() {
     })();
   }, []);
 
-  // 🔹 Open/close modal using same props as ForumPostModal/MyRecordings
+  // Open/close modal using same props as ForumPostModal/MyRecordings
   const openRecordingModal = (song) => {
     if (!song || !Array.isArray(song.recording) || song.recording.length === 0)
       return;
@@ -154,7 +129,7 @@ export default function Landing() {
       title: song.title || `Song #${song.id}`,
       description: song.description || "",
     });
-    setActiveNotes(song.recording); // this is what RecordingPlaybackModal expects as recordedNotes
+    setActiveNotes(song.recording);
     setShowRecModal(true);
   };
 
@@ -399,7 +374,6 @@ export default function Landing() {
                 <p className="song-desc">{song.description}</p>
               )}
               <div className="song-button-group">
-                {/* 🔹 Opens animal playback modal, same component as forum/account */}
                 <button
                   className="song-play-btn"
                   aria-label="Play Song"
@@ -414,7 +388,6 @@ export default function Landing() {
                 >
                   <span className="material-symbols-outlined">download</span>
                 </button>
-                {/* NEW: Remix Button */}
                 <button
                   className="song-remix-btn"
                   aria-label="Remix Song"
@@ -476,8 +449,7 @@ export default function Landing() {
         title={modalState.title}
       />
 
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-      {/* 🔹 Shared playback modal for Featured Songs */}
+      {/* Shared playback modal for Featured Songs */}
       {showRecModal && activeRecording && (
         <RecordingPlaybackModal
           recording={activeRecording}
