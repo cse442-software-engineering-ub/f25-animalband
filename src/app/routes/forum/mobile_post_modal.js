@@ -5,7 +5,6 @@ import useCustomModal from "../../components/useCustomModal";
 import "./mobile_post_modal.css";
 import RecordingPlaybackModal from "../account/recording_playback_modal.js";
 
-
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
 function parseDbTimestamp(s) {
@@ -158,8 +157,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
     const [recNotes, setRecNotes] = useState([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const stopRef = useRef(null);
-    const [showRecModal, setShowRecModal] = useState(false); // ⬅️ NEW
-
+    const [showRecModal, setShowRecModal] = useState(false);
 
     const tree = useMemo(() => buildTree(commentsFlat), [commentsFlat]);
 
@@ -419,7 +417,8 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
                                 {!!post.created_at && (
                                     <>
                                         <span className="m-dot">•</span>
-                                        <span className="m-post-time">{formatCreated(post.created_at)}</span>                                </>
+                                        <span className="m-post-time">{formatCreated(post.created_at)}</span>
+                                    </>
                                 )}
                             </div>
                             <div className="m-post-content">{post.content}</div>
@@ -449,13 +448,10 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
                                             >
                                                 ▶ Play
                                             </button>
-
-
                                         </div>
                                     </div>
                                 )}
                             </div>
-
                         </div>
 
                         <form className="m-new-comment" onSubmit={submitComment}>
@@ -530,7 +526,7 @@ export default function MobilePostModal({ post, user, onClose, onBumpPostComment
                 type={modalState.type}
                 title={modalState.title}
             />
-        </div>
+
             {showRecModal && recMeta && (
                 <RecordingPlaybackModal
                     recording={{
