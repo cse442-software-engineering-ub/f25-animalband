@@ -172,3 +172,17 @@ body.popup-open { overflow: hidden; }
 
 /* comments list can just flow; no separate cap needed */
 .ab-comments-list { margin-top: 12px; }
+
+/* Existing (or similar) */
+.post-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000; /* or whatever it is now */
+}
+
+/* Make sure the recording modal sits above it */
+.modal-overlay.recording-playback-overlay {
+  position: fixed;   /* if not already set globally */
+  inset: 0;          /* same full-screen coverage */
+  z-index: 2000 !important;
+}
