@@ -440,6 +440,14 @@ export default function MobileLanding() {
                     </span>
                   </button>
 
+                  <button
+                  className="song-download-btn"
+                  aria-label="Download Song"
+                  onClick={() => downloadWav(song)}
+                  >
+                  <span className="material-symbols-outlined">download</span>
+                  </button>
+
                   {/* Remix Button */}
                   <button
                     className="m-remix-btn"
