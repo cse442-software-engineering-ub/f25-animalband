@@ -933,3 +933,9 @@ body.popup-open { overflow: hidden; }
   font-size: 0.85rem;
   color: #555;
 }
+
+
+.clickable-mobile-author {
+    cursor: pointer;
+    text-decoration: underline;
+}

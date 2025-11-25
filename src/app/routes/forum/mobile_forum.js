@@ -32,6 +32,7 @@ export default function MobileForum() {
     const [newPostContent, setNewPostContent] = useState("");
     const [newPostTags, setNewPostTags] = useState([]);
     const [postError, setPostError] = useState("");
+    const [titleError, setTitleError] = useState("");
 
     const [currentPage, setCurrentPage] = useState(1);   // <-- add this
     const POSTS_PER_PAGE = 20;
@@ -309,6 +310,7 @@ export default function MobileForum() {
         setNewPostTags([]);
         setSelectedRecordingId(null);
         setPostError("");
+        setTitleError("");
     };
 
     const handleTagSelect = (tag) => {
@@ -649,7 +651,29 @@ export default function MobileForum() {
                                 <div className="mobile-post-header">
                                     <div className="mobile-post-author">
                                         <h3 className="mobile-post-title">{truncate20(post.title)}</h3>
-                                        <span className="mobile-author-name">by {truncate20(post.author)}</span>
+
+                                        <span className="mobile-author-name">by </span>
+
+                                        <span
+                                            className="mobile-author-name clickable-mobile-author"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/account/${encodeURIComponent(post.authorId)}`);
+                                            }}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    e.stopPropagation();
+                                                    navigate(`/account/${encodeURIComponent(post.authorId)}`);
+                                                }
+                                            }}
+                                        >
+                                            {truncate20(post.author)}
+                                        </span>
+
+
+
                                         {post.created_at && (
                                             <span className="mobile-post-time">{
                                                 timeAgo(post.created_at, nowTick)}</span>
@@ -773,10 +797,33 @@ export default function MobileForum() {
                                 <input
                                     type="text"
                                     value={newPostTitle}
-                                    onChange={(e) => setNewPostTitle(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 100) {
+                                            setTitleError("Title cannot exceed 100 characters.");
+                                        } else {
+                                            setTitleError("");
+                                        }
+                                        setNewPostTitle(v);
+                                    }}
                                     placeholder="Enter post title"
                                 />
+                                <div
+                                    style={{
+                                        fontSize: "0.8rem",
+                                        marginTop: "4px",
+                                        color: newPostTitle.length > 100 ? "red" : "#666",
+                                    }}
+                                >
+                                    {newPostTitle.length}/100
+                                </div>
+                                {titleError && (
+                                    <p style={{ color: "red", marginTop: "4px" }}>
+                                        {titleError}
+                                    </p>
+                                )}
                             </div>
+
                             <div className="mobile-form-group">
                                 <label>Content:</label>
                                 <textarea
@@ -861,6 +908,7 @@ export default function MobileForum() {
                                 className="mobile-submit-btn"
                                 onClick={handleSubmitPost}
                                 disabled={
+                                    newPostTitle.length > 100||
                                     !user?.id ||
                                     !newPostTitle.trim() ||
                                     !newPostContent.trim() ||

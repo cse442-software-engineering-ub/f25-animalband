@@ -310,7 +310,7 @@ export default function DesktopPlaylistDetail() {
                         </div>
 
                         <div className="header-actions">
-                            <button className="nav-btn" onClick={() => navigate("/playlists")}>Back</button>
+                            <button className="new-post-btn" onClick={() => navigate("/playlists")}>Back</button>
                             <button 
                                 className="new-post-btn" 
                                 onClick={saveOrder} 
