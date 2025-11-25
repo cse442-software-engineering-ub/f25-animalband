@@ -4,10 +4,15 @@ import CustomModal from "../../components/CustomModal";
 import useCustomModal from "../../components/useCustomModal";
 import "./mobile_profile.css";
 
+const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
+
 export default function MobileProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [postCount, setPostCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+  const [recordingCount, setRecordingCount] = useState(0);
   const fileInputRef = useRef(null);
   const { modalState, showModal, closeModal } = useCustomModal();
 
@@ -15,7 +20,7 @@ export default function MobileProfile() {
     const fetchUser = async () => {
       try {
         const res = await fetch(
-          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getUser.php",
+          `${PHP_BASE}/getUser.php`,
           { credentials: "include" }
         );
         const data = await res.json();
@@ -32,6 +37,28 @@ export default function MobileProfile() {
     fetchUser();
   }, [navigate]);
 
+  useEffect(() => {
+    if (!user?.username || !user?.email) return;
+    const fetchUserStats = async () => {
+      try {
+        const postRes = await fetch(`${PHP_BASE}/getUserPostCount.php?username=${encodeURIComponent(user.username)}`);
+        const postData = await postRes.json();
+        setPostCount(postData.count || 0);
+
+        const likeRes = await fetch(`${PHP_BASE}/getUserLikeCount.php?username=${encodeURIComponent(user.username)}`);
+        const likeData = await likeRes.json();
+        setLikeCount(likeData.totalLikes || 0);
+
+        const recRes = await fetch(`${PHP_BASE}/getUserRecordingCount.php?email=${encodeURIComponent(user.email)}`);
+        const recData = await recRes.json();
+        setRecordingCount(recData.count || 0);
+      } catch (err) {
+        console.error("Failed to fetch user's stats", err);
+      }
+    };
+    fetchUserStats();
+  }, [user]);
+
   const handleProfilePicClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -47,7 +74,7 @@ export default function MobileProfile() {
 
     try {
       const res = await fetch(
-        "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/updateProfilePic.php",
+        `${PHP_BASE}/updateProfilePic.php`,
         {
           method: "POST",
           body: formData,
@@ -107,7 +134,7 @@ export default function MobileProfile() {
         <div className="mobile-header-right">
           {user ? (
             <img
-              src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+              src={`${PHP_BASE}/${user.profilePic}`}
               alt="Profile"
               className="mobile-profile-pic"
               onClick={handleAccountClick}
@@ -209,7 +236,7 @@ export default function MobileProfile() {
           <>
             <div className="mobile-profile-pic-container" onClick={handleProfilePicClick}>
               <img
-                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                src={`${PHP_BASE}/${user.profilePic}`}
                 alt="Profile"
                 className="mobile-profile-pic-large"
               />
@@ -252,15 +279,15 @@ export default function MobileProfile() {
               <h3>My Statistics</h3>
               <div className="mobile-stats-container">
                 <div className="mobile-stat-card">
-                  <div className="mobile-stat-number">15</div>
+                  <div className="mobile-stat-number">{postCount}</div>
                   <div className="mobile-stat-label">Posts</div>
                 </div>
                 <div className="mobile-stat-card">
-                  <div className="mobile-stat-number">8</div>
+                  <div className="mobile-stat-number">{recordingCount}</div>
                   <div className="mobile-stat-label">Recordings</div>
                 </div>
                 <div className="mobile-stat-card">
-                  <div className="mobile-stat-number">127</div>
+                  <div className="mobile-stat-number">{likeCount}</div>
                   <div className="mobile-stat-label">Likes</div>
                 </div>
               </div>
@@ -279,13 +306,13 @@ export default function MobileProfile() {
           <span className="material-symbols-outlined mobile-nav-icon">piano</span>
           <span>Stage</span>
         </Link>
-        <Link to="/looping" className="mobile-nav-item">
-          <span className="material-symbols-outlined mobile-nav-icon">instant_mix</span>
-          <span>Looping</span>
-        </Link>
         <Link to="/forum" className="mobile-nav-item">
           <span className="material-symbols-outlined mobile-nav-icon">chat</span>
           <span>Forum</span>
+        </Link>
+        <Link to="/playlists" className="mobile-nav-item">
+          <span className="material-symbols-outlined mobile-nav-icon">playlist_play</span>
+          <span>Playlists</span>
         </Link>
         <Link to="/account" className="mobile-nav-item active">
           <span className="material-symbols-outlined mobile-nav-icon">person</span>
