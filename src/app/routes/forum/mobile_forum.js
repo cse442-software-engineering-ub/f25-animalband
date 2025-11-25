@@ -745,13 +745,13 @@ export default function MobileForum() {
                     <span className="material-symbols-outlined mobile-nav-icon">piano</span>
                     <span>Stage</span>
                 </Link>
-                <Link to="/looping" className="mobile-nav-item">
-                    <span className="material-symbols-outlined mobile-nav-icon">instant_mix</span>
-                    <span>Looping</span>
-                </Link>
                 <Link to="/forum" className="mobile-nav-item active">
                     <span className="material-symbols-outlined mobile-nav-icon">chat</span>
                     <span>Forum</span>
+                </Link>
+                <Link to="/playlists" className="mobile-nav-item">
+                    <span className="material-symbols-outlined mobile-nav-icon">playlist_play</span>
+                    <span>Playlists</span>
                 </Link>
                 <Link to="/account" className="mobile-nav-item">
                     <span className="material-symbols-outlined mobile-nav-icon">person</span>
