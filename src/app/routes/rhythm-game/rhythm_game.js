@@ -31,6 +31,7 @@ export default function RhythmGame() {
   const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
   const [showResults, setShowResults] = useState(false);
   const [winnerText, setWinnerText] = useState("");
+  const [isNarrowScreen, setIsNarrowScreen] = useState(false);
 
   const NOTE_SPEED = 1.5;
   const SPAWN_INTERVAL = 1200;
@@ -69,6 +70,18 @@ export default function RhythmGame() {
       }
     };
     fetchUser();
+  }, []);
+
+  /** CHECK SCREEN WIDTH **/
+  useEffect(() => {
+    const checkScreenWidth = () => {
+      setIsNarrowScreen(window.innerWidth <= 430);
+    };
+
+    checkScreenWidth();
+    window.addEventListener("resize", checkScreenWidth);
+
+    return () => window.removeEventListener("resize", checkScreenWidth);
   }, []);
 
   const handleAccountClick = () => {
@@ -424,6 +437,11 @@ export default function RhythmGame() {
       {!gameStarted && countdown === null && !showResults && (
         <div className="start-screen">
           <h1 className="start-title">RHYTHM BATTLE</h1>
+          {isNarrowScreen && (
+            <p className="rotate-message">
+              Please rotate your device for the best experience.
+            </p>
+          )}
           <button className="start-button" onClick={startGame}>
             START GAME
           </button>

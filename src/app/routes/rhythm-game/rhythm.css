@@ -120,6 +120,25 @@
   font-weight: 800;
 }
 
+.rotate-message {
+  font-size: 18px;
+  color: #ffffff;
+  margin-bottom: 20px;
+  text-align: center;
+  padding: 0 20px;
+  font-weight: 600;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 .start-button {
   padding: 15px 50px;
   background: white;
@@ -495,4 +514,5 @@
     padding: 6px 16px;
     font-size: 12px;
   }
+
 }
