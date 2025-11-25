@@ -24,6 +24,7 @@ export default function DesktopForum() {
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
     const { modalState, showModal, closeModal } = useCustomModal();
     const [postError, setPostError] = useState("");
+    const [titleError, setTitleError] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const POSTS_PER_PAGE = 20;
 
@@ -320,6 +321,7 @@ export default function DesktopForum() {
         setNewPostContent("");
         setNewPostTags([]);
         setPostError("");
+        setTitleError("");
         setSelectedRecordingId(null);
     };
 
@@ -597,6 +599,7 @@ export default function DesktopForum() {
                                         <div className="post-author">
                                             <div>
                                                 <h3 className="post-title">{truncate30(post.title)}</h3>
+                                                <span className="author-name">by </span>
                                                 <span
                                                     className="author-name clickable-author"
                                                     onClick={(e) => {
@@ -604,7 +607,7 @@ export default function DesktopForum() {
                                                         navigate(`/account/${encodeURIComponent(post.authorId)}`);
                                                     }}
                                                 >
-                                                    by {truncate30(post.author)}
+                                                    {truncate30(post.author)}
                                                 </span>
                                             </div>
                                         </div>
@@ -693,10 +696,32 @@ export default function DesktopForum() {
                                 <input
                                     type="text"
                                     value={newPostTitle}
-                                    onChange={(e) => setNewPostTitle(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 100) {
+                                            setTitleError("Title cannot exceed 100 characters.");
+                                        } else {
+                                            setTitleError("");
+                                        }
+                                        setNewPostTitle(v);
+                                    }}
                                     placeholder="Enter post title"
                                 />
+                                {titleError && (
+                                    <p className="error-text" style={{ color: "red", marginTop: "5px" }}>
+                                        {titleError}
+                                    </p>
+                                )}
+                                <div
+                                    style={{
+                                        fontSize: "0.85rem",
+                                        color: newPostTitle.length > 100 ? "red" : "#555",
+                                    }}
+                                >
+                                    {newPostTitle.length}/100
+                                </div>
                             </div>
+
                             <div className="form-group">
                                 <label>Content:</label>
                                 <textarea
@@ -775,6 +800,7 @@ export default function DesktopForum() {
                                 className="submit-btn"
                                 onClick={handleSubmitPost}
                                 disabled={
+                                    newPostTitle.length > 100 ||
                                     !user?.id ||
                                     !newPostTitle.trim() ||
                                     !newPostContent.trim() ||
