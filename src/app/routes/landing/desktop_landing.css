@@ -340,10 +340,16 @@
   margin-bottom: 0.5rem;
 }
 
+.song-desc-container {
+  height: 1.5rem;   /* fixed space for 1 line — adjust as needed */
+  display: flex;
+  align-items: center; /* optional: vertically center the text */
+}
+
 .song-desc {
   font-size: 0.8rem;
   color: #555;
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 
 .song-button-group {

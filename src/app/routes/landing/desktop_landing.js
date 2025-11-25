@@ -1,3 +1,4 @@
+//desktop version
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { preloadLandingSounds } from "./landing_player.js";
@@ -371,7 +372,11 @@ export default function Landing() {
               </h3>
               <p className="song-author">by {song.author}</p>
               {song.description && (
-                <p className="song-desc">{song.description}</p>
+                <div className="song-desc-container">
+                  <p className="song-desc">
+                    {song.description?.trim() || "\u00A0"}
+                  </p>
+                </div>
               )}
               <div className="song-button-group">
                 <button
@@ -400,8 +405,15 @@ export default function Landing() {
                   songId={song.id}
                   compact
                   onAdded={() => {
-                    try { new AudioContext(); } catch (e) { }
-                    showModal(`Added "${song.title || `song_${song.id}`}" to your playlist!`, "success");
+                    try {
+                      new AudioContext();
+                    } catch (e) {}
+                    showModal(
+                      `Added "${
+                        song.title || `song_${song.id}`
+                      }" to your playlist!`,
+                      "success"
+                    );
                   }}
                 />
               </div>
