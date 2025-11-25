@@ -1,4 +1,4 @@
-//desktop version
+// src/routes/playlists/mobile_add_to_playlist_button.js
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -7,11 +7,11 @@ import {
   addSongToPlaylist,
   createPlaylist,
 } from "../api/playlists.js";
-import "./desktop_add_to_playlist_button.css";
+import "./mobile_add_to_playlist_button.css";
 
-export default function AddToPlaylistButton({
+export default function MobileAddToPlaylistButton({
   songId,
-  compact = false,
+  compact = true,
   onAdded,
   requireLogin = true,
   user = null,
@@ -47,22 +47,21 @@ export default function AddToPlaylistButton({
     })();
   }, [open]);
 
+  // lock body scroll while modal open
   useEffect(() => {
     if (!open) return;
-    const prevOverflow = document.body.style.overflow;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prevOverflow;
+      document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
   }, [open]);
 
   async function handleAdd(pid) {
     if (!ensureAuthed()) return;
-    console.log("Adding", { playlist_id: pid, song_id: songId });
-
     try {
       setLoading(true);
       const res = await addSongToPlaylist(pid, songId);
@@ -108,50 +107,74 @@ export default function AddToPlaylistButton({
     }
   }
 
-  const modal = (
+  const trigger = (
+    <button
+      className={`m-addpl-trigger ${compact ? "compact" : ""}`}
+      title="Add to playlist"
+      onClick={() => {
+        if (!ensureAuthed()) return;
+        setOpen(true);
+      }}
+      disabled={loading}
+    >
+      <span className="material-symbols-outlined">playlist_add</span>
+      {!compact && <span>Add</span>}
+    </button>
+  );
+
+  const modal = open ? (
     <div
-      className="modal"
+      className="m-addpl-overlay"
       role="dialog"
       aria-modal="true"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) setOpen(false);
       }}
     >
-      <div className="modal-card">
-        <div className="modal-header">
+      <div className="m-addpl-sheet" role="document">
+        <div className="m-addpl-header">
           <h3>Add to Playlist</h3>
           <button
-            onClick={() => setOpen(false)}
-            className="icon-close"
+            className="m-addpl-close"
             aria-label="Close"
+            onClick={() => setOpen(false)}
           >
             ×
           </button>
         </div>
 
-        <div className="modal-body">
-          {error && <div className="error-message">{error}</div>}
+        <div className="m-addpl-body">
+          {error && <div className="m-addpl-error">{error}</div>}
 
-          {playlists.length === 0 ? (
-            <p>No playlists yet. Create one below.</p>
-          ) : (
-            <ul className="list">
+          {playlists.length > 0 ? (
+            <ul className="m-addpl-list">
               {playlists.map((p) => (
                 <li key={p.id}>
                   <button
-                    className="list-item"
+                    className="m-addpl-item"
                     onClick={() => handleAdd(p.id)}
                     disabled={loading}
                   >
-                    {p.name}
+                    <span className="material-symbols-outlined">
+                      queue_music
+                    </span>
+                    <span className="m-addpl-name">{p.name}</span>
+                    {p.is_public ? (
+                      <span className="m-addpl-badge">Public</span>
+                    ) : (
+                      <span className="m-addpl-badge dim">Private</span>
+                    )}
                   </button>
                 </li>
               ))}
             </ul>
+          ) : (
+            <p className="m-addpl-empty">No playlists yet. Create one below.</p>
           )}
 
-          <div className="divider" />
-          <label className="field">
+          <div className="m-addpl-divider" />
+
+          <label className="m-addpl-field">
             <span>New playlist name</span>
             <input
               value={newName}
@@ -160,8 +183,9 @@ export default function AddToPlaylistButton({
               placeholder="e.g., Roadtrip Vibes"
             />
           </label>
+
           <button
-            className="btn primary"
+            className="m-addpl-primary"
             onClick={handleCreateAndAdd}
             disabled={loading || !newName.trim()}
           >
@@ -170,23 +194,11 @@ export default function AddToPlaylistButton({
         </div>
       </div>
     </div>
-  );
+  ) : null;
 
   return (
-    <div className="ab-add-to-pl">
-      <button
-        className="song-play-btn song-add-btn"
-        onClick={() => {
-          if (!ensureAuthed()) return;
-          setOpen(true);
-        }}
-        disabled={loading}
-        title="Add to playlist"
-        aria-label="Add to playlist"
-      >
-        <span className="material-symbols-outlined">playlist_add</span>
-      </button>
-
+    <div className="m-addpl">
+      {trigger}
       {open ? createPortal(modal, document.body) : null}
     </div>
   );

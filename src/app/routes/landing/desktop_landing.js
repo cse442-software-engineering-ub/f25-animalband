@@ -404,10 +404,11 @@ export default function Landing() {
                 <AddToPlaylistButton
                   songId={song.id}
                   compact
+                  user={user}
                   onAdded={() => {
-                    try {
-                      new AudioContext();
-                    } catch (e) {}
+                    // try {
+                    //   new AudioContext();
+                    // } catch (e) {}
                     showModal(
                       `Added "${
                         song.title || `song_${song.id}`

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { preloadLandingSounds } from "./landing_player.js";
 import MobileAddToPlaylistButton from "../../../components/mobile_add_to_playlist_button.js";
+import CustomModal from "../../components/CustomModal.js";
+import useCustomModal from "../../components/useCustomModal.js";
 
 import RecordingPlaybackModal from "../account/recording_playback_modal.js";
 
@@ -24,6 +26,7 @@ export default function MobileLanding() {
   // Songs
   const [featuredSongs, setFeaturedSongs] = useState([]);
   const [buffers, setBuffers] = useState(null); // for WAV download
+  const { modalState, showModal, closeModal } = useCustomModal();
 
   // 🔹 Shared playback modal state (same behavior as desktop landing)
   const [showRecModal, setShowRecModal] = useState(false);
@@ -452,7 +455,12 @@ export default function MobileLanding() {
                     compact
                     user={user}
                     onAdded={() => {
-                      console.log("Added to playlist!");
+                      showModal(
+                      `Added "${
+                        song.title || `song_${song.id}`
+                      }" to your playlist!`,
+                      "success"
+                    );
                     }}
                   />
                 </div>
@@ -481,6 +489,14 @@ export default function MobileLanding() {
       <footer className="m-footer">
         Register for free and rock out with your animals today!
       </footer>
+
+      <CustomModal
+              isOpen={modalState.isOpen}
+              onClose={closeModal}
+              message={modalState.message}
+              type={modalState.type}
+              title={modalState.title}
+      />
 
       {/* 🔹 Shared playback modal for mobile featured songs */}
       {showRecModal && activeRecording && (
