@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { preloadLandingSounds } from "./landing_player.js";
 import MobileAddToPlaylistButton from "../../../components/mobile_add_to_playlist_button.js";
+import CustomModal from "../../components/CustomModal.js";
+import useCustomModal from "../../components/useCustomModal.js";
 
 import RecordingPlaybackModal from "../account/recording_playback_modal.js";
 
@@ -15,6 +17,9 @@ import Snake from "../../../assets/snake.jpeg";
 export default function MobileLanding() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [memberCount, setMemberCount] = useState(null);
+  const [postCount, setPostCount] = useState(null);
+  const [loopCount, setLoopCount] = useState(null);
 
   // Carousel
   const slides = [Ostrich, Bird, Hamster, Kangaroo, Snake];
@@ -24,6 +29,7 @@ export default function MobileLanding() {
   // Songs
   const [featuredSongs, setFeaturedSongs] = useState([]);
   const [buffers, setBuffers] = useState(null); // for WAV download
+  const { modalState, showModal, closeModal } = useCustomModal();
 
   // 🔹 Shared playback modal state (same behavior as desktop landing)
   const [showRecModal, setShowRecModal] = useState(false);
@@ -71,7 +77,29 @@ export default function MobileLanding() {
         console.error("Failed to fetch user", err);
       }
     };
+
+    const fetchCount = async (url, setter) => {
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        setter(data[Object.keys(data)[0]]);
+      } catch (err) {
+        console.error(err);
+      }
+    };
     checkUser();
+    fetchCount(
+      "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getMemberCount.php",
+      setMemberCount
+    );
+    fetchCount(
+      "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getPostCount.php",
+      setPostCount
+    );
+    fetchCount(
+      "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getLoopCount.php",
+      setLoopCount
+    );
   }, []);
 
   const handleAccountClick = () => {
@@ -437,6 +465,14 @@ export default function MobileLanding() {
                     </span>
                   </button>
 
+                  <button
+                    className="song-download-btn"
+                    aria-label="Download Song"
+                    onClick={() => downloadWav(song)}
+                  >
+                    <span className="material-symbols-outlined">download</span>
+                  </button>
+
                   {/* Remix Button */}
                   <button
                     className="m-remix-btn"
@@ -452,7 +488,12 @@ export default function MobileLanding() {
                     compact
                     user={user}
                     onAdded={() => {
-                      console.log("Added to playlist!");
+                      showModal(
+                        `Added "${
+                          song.title || `song_${song.id}`
+                        }" to your playlist!`,
+                        "success"
+                      );
                     }}
                   />
                 </div>
@@ -464,15 +505,29 @@ export default function MobileLanding() {
         {/* Stats */}
         <section className="m-stats">
           <div className="m-stat">
-            <div className="m-stat-num">12,572</div>
+            <div className="m-stat-num">
+              <p className="stat-number">
+                {loopCount !== null ? loopCount.toLocaleString() : "Loading..."}
+              </p>
+            </div>
             <div className="m-stat-label">Loops</div>
           </div>
           <div className="m-stat">
-            <div className="m-stat-num">472</div>
+            <div className="m-stat-num">
+              <p className="stat-number">
+                {memberCount !== null
+                  ? memberCount.toLocaleString()
+                  : "Loading..."}
+              </p>
+            </div>
             <div className="m-stat-label">Members</div>
           </div>
           <div className="m-stat">
-            <div className="m-stat-num">2,184</div>
+            <div className="m-stat-num">
+              <p className="stat-number">
+                {postCount !== null ? postCount.toLocaleString() : "Loading..."}
+              </p>
+            </div>
             <div className="m-stat-label">Posts</div>
           </div>
         </section>
@@ -481,6 +536,14 @@ export default function MobileLanding() {
       <footer className="m-footer">
         Register for free and rock out with your animals today!
       </footer>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        message={modalState.message}
+        type={modalState.type}
+        title={modalState.title}
+      />
 
       {/* 🔹 Shared playback modal for mobile featured songs */}
       {showRecModal && activeRecording && (

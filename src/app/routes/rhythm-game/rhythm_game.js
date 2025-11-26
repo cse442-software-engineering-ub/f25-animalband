@@ -31,6 +31,7 @@ export default function RhythmGame() {
   const [timeRemaining, setTimeRemaining] = useState(GAME_DURATION);
   const [showResults, setShowResults] = useState(false);
   const [winnerText, setWinnerText] = useState("");
+  const [isNarrowScreen, setIsNarrowScreen] = useState(false);
 
   const NOTE_SPEED = 1.5;
   const SPAWN_INTERVAL = 1200;
@@ -71,6 +72,18 @@ export default function RhythmGame() {
     fetchUser();
   }, []);
 
+  /** CHECK SCREEN WIDTH **/
+  useEffect(() => {
+    const checkScreenWidth = () => {
+      setIsNarrowScreen(window.innerWidth <= 430);
+    };
+
+    checkScreenWidth();
+    window.addEventListener("resize", checkScreenWidth);
+
+    return () => window.removeEventListener("resize", checkScreenWidth);
+  }, []);
+
   const handleAccountClick = () => {
     if (user) navigate("/account");
     else navigate("/login");
@@ -104,7 +117,7 @@ export default function RhythmGame() {
     localStorage.setItem("masterVolume", masterVolume);
   }, [masterVolume]);
 
-  /** MEASURE HIT ZONES - Fixed to remeasure after countdown **/
+  /** MEASURE HIT ZONES **/
   useEffect(() => {
     if (gameStarted && countdown === null) {
       const centers = {};
@@ -335,7 +348,6 @@ export default function RhythmGame() {
       return prevNotes;
     });
 
-    // Auto-release after short delay for touch
     setTimeout(() => {
       setPressedKeys((prev) => ({ ...prev, [key]: false }));
     }, 100);
@@ -345,7 +357,7 @@ export default function RhythmGame() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
-      if (pressedKeys[key]) return; // Prevent repeat
+      if (pressedKeys[key]) return;
       handleInput(key);
     };
 
@@ -425,6 +437,11 @@ export default function RhythmGame() {
       {!gameStarted && countdown === null && !showResults && (
         <div className="start-screen">
           <h1 className="start-title">RHYTHM BATTLE</h1>
+          {isNarrowScreen && (
+            <p className="rotate-message">
+              Please rotate your device for the best experience.
+            </p>
+          )}
           <button className="start-button" onClick={startGame}>
             START GAME
           </button>
@@ -437,117 +454,118 @@ export default function RhythmGame() {
       {/* GAME AREA */}
       {gameStarted && (
         <div className="game-area">
+          {/* TIMER */}
           <div className="game-timer">⏱ {timeRemaining}s</div>
 
-          {/* Ostrich Section */}
-          <div className="player-section">
-            <div className="score-display">Score: {scores.ostrich}</div>
-            <img
-              src={isOstrichPlaying ? OstrichPlaying : Ostrich}
-              className="animal-icon"
-              alt="Ostrich"
-            />
-            <div className="lanes-group">
-              {OSTRICH_KEYS.map((key) => (
-                <div
-                  key={key}
-                  className={`lane ${pressedKeys[key] ? "lane-pressed" : ""}`}
-                >
-                  {notes
-                    .filter(
-                      (n) => n.key === key && n.player === "ostrich" && !n.hit
-                    )
-                    .map((note) => (
-                      <div
-                        key={note.id}
-                        className="note note-ostrich"
-                        style={{ top: note.y }}
-                      />
-                    ))}
+          {/* PLAYERS CONTAINER */}
+          <div className="players-container">
+            {/* Ostrich Section */}
+            <div className="player-section">
+              <div className="score-display">Score: {scores.ostrich}</div>
+              <img
+                src={isOstrichPlaying ? OstrichPlaying : Ostrich}
+                className="animal-icon"
+                alt="Ostrich"
+              />
+              <div className="lanes-group">
+                {OSTRICH_KEYS.map((key) => (
                   <div
-                    className={`hit-zone ${
-                      pressedKeys[key] ? "hit-zone-active" : ""
-                    }`}
-                    ref={(el) => (hitZoneRefs.current[key] = el)}
-                    onTouchStart={(e) => {
-                      e.preventDefault();
-                      handleInput(key);
-                    }}
-                    onClick={() => handleInput(key)}
+                    key={key}
+                    className={`lane ${pressedKeys[key] ? "lane-pressed" : ""}`}
                   >
-                    <span className="hit-key">{key.toUpperCase()}</span>
+                    {notes
+                      .filter(
+                        (n) => n.key === key && n.player === "ostrich" && !n.hit
+                      )
+                      .map((note) => (
+                        <div
+                          key={note.id}
+                          className="note note-ostrich"
+                          style={{ top: note.y }}
+                        />
+                      ))}
+                    <div
+                      className={`hit-zone ${
+                        pressedKeys[key] ? "hit-zone-active" : ""
+                      }`}
+                      ref={(el) => (hitZoneRefs.current[key] = el)}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        handleInput(key);
+                      }}
+                      onClick={() => handleInput(key)}
+                    >
+                      <span className="hit-key">{key.toUpperCase()}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+
+            {/* Kangaroo Section */}
+            <div className="player-section">
+              <div className="score-display">Score: {scores.kangaroo}</div>
+              <img
+                src={isKangarooPlaying ? KangarooPlaying : Kangaroo}
+                className="animal-icon"
+                alt="Kangaroo"
+              />
+              <div className="lanes-group">
+                {KANGAROO_KEYS.map((key) => (
+                  <div
+                    key={key}
+                    className={`lane ${pressedKeys[key] ? "lane-pressed" : ""}`}
+                  >
+                    {notes
+                      .filter(
+                        (n) =>
+                          n.key === key && n.player === "kangaroo" && !n.hit
+                      )
+                      .map((note) => (
+                        <div
+                          key={note.id}
+                          className="note note-kangaroo"
+                          style={{ top: note.y }}
+                        />
+                      ))}
+                    <div
+                      className={`hit-zone ${
+                        pressedKeys[key] ? "hit-zone-active" : ""
+                      }`}
+                      ref={(el) => (hitZoneRefs.current[key] = el)}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        handleInput(key);
+                      }}
+                      onClick={() => handleInput(key)}
+                    >
+                      <span className="hit-key">{key.toUpperCase()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Kangaroo Section */}
-          <div className="player-section">
-            <div className="score-display">Score: {scores.kangaroo}</div>
-            <img
-              src={isKangarooPlaying ? KangarooPlaying : Kangaroo}
-              className="animal-icon"
-              alt="Kangaroo"
+          {/* CONTROLS AT BOTTOM */}
+          <div className="game-controls">
+            <button className="reset-button" onClick={resetGame}>
+              RESET
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={masterVolume}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                setMasterVol(v);
+                setMasterVolume(v);
+              }}
+              className="volume-slider"
             />
-            <div className="lanes-group">
-              {KANGAROO_KEYS.map((key) => (
-                <div
-                  key={key}
-                  className={`lane ${pressedKeys[key] ? "lane-pressed" : ""}`}
-                >
-                  {notes
-                    .filter(
-                      (n) => n.key === key && n.player === "kangaroo" && !n.hit
-                    )
-                    .map((note) => (
-                      <div
-                        key={note.id}
-                        className="note note-kangaroo"
-                        style={{ top: note.y }}
-                      />
-                    ))}
-                  <div
-                    className={`hit-zone ${
-                      pressedKeys[key] ? "hit-zone-active" : ""
-                    }`}
-                    ref={(el) => (hitZoneRefs.current[key] = el)}
-                    onTouchStart={(e) => {
-                      e.preventDefault();
-                      handleInput(key);
-                    }}
-                    onClick={() => handleInput(key)}
-                  >
-                    <span className="hit-key">{key.toUpperCase()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
-
-          <button className="reset-button" onClick={resetGame}>
-            RESET
-          </button>
-
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={masterVolume}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              setMasterVol(v);
-              setMasterVolume(v);
-            }}
-            className="volume-slider"
-            style={{
-              position: "fixed",
-              bottom: "20px",
-              left: "20px",
-              width: "150px",
-            }}
-          />
         </div>
       )}
 
