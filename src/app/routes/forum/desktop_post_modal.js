@@ -317,6 +317,11 @@ export default function ForumPostModal({
         setReplyTo(node);
     };
 
+    useEffect(() => {
+        if (!post?.id) return;
+        fetchComments();
+    }, [post?.id, fetchComments]);
+
     const onLike = async (node) => {
         if (!user) return;
         setCommentsFlat(prev => prev.map(c => {
