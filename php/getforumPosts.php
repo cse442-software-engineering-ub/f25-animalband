@@ -58,28 +58,38 @@ $allPosts = [];
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $tags = isset($row['tags']) ? json_decode($row['tags'], true) : [];
-        if (!is_array($tags)) $tags = [];
-        
+        if (!is_array($tags))
+            $tags = [];
+
         $likesFrom = isset($row['likesFrom']) ? json_decode($row['likesFrom'], true) : [];
-        if (!is_array($likesFrom)) $likesFrom = [];
-        
+        if (!is_array($likesFrom))
+            $likesFrom = [];
+
+        // NEW: decode any existing entities from DB
+        $title = html_entity_decode($row['title'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $content = html_entity_decode($row['content'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $author = html_entity_decode($row['author'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $created = $row['created_at']; // timestamp, no need to encode
+
         $allPosts[] = [
-            'id' => (int)$row['id'],
-            'title' => htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8'),
-            'content' => htmlspecialchars($row['content'], ENT_QUOTES, 'UTF-8'),
+            'id' => (int) $row['id'],
+            'title' => $title,
+            'content' => $content,
             'tags' => $tags,
             'likesFrom' => $likesFrom,
-            'author' => htmlspecialchars($row['author'], ENT_QUOTES, 'UTF-8'),
-            'authorId' => (int)$row['authorId'],
-            'likeCount' => (int)$row['likeCount'],
-            'comments' => (int)$row['comments'],
-            'created_at' => htmlspecialchars($row['created_at'], ENT_QUOTES, 'UTF-8'),
-            'recording_id'=> isset($row['recording_id']) ? (int)$row['recording_id'] : null
+            'author' => $author,
+            'authorId' => (int) $row['authorId'],
+            'likeCount' => (int) $row['likeCount'],
+            'comments' => (int) $row['comments'],
+            'created_at' => $created,
+            'recording_id' => isset($row['recording_id']) ? (int) $row['recording_id'] : null
         ];
     }
 }
 
-echo json_encode($allPosts, JSON_UNESCAPED_UNICODE);
+// Keep this, maybe add UNESCAPED_SLASHES just for niceness
+echo json_encode($allPosts, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
 
 $stmt->close();
 $conn->close();
