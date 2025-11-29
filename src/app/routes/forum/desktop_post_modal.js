@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player";
 import CustomModal from "../../components/CustomModal";
 import useCustomModal from "../../components/useCustomModal";
@@ -71,7 +72,8 @@ function CommentNode({
     onLike,
     currentUser,
     collapsedSet,
-    toggleCollapsed
+    toggleCollapsed,
+    onAuthorClick,
 }) {
     const isCollapsed = collapsedSet.has(node.id);
 
@@ -88,7 +90,20 @@ function CommentNode({
                     >
                         {isCollapsed ? "▶" : "▼"}
                     </button>
-                    <span className="ab-comment-author"> {node.author} </span>
+
+                    <span
+                        type="button"
+                        className="ab-comment-author clickable-author"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onAuthorClick && node.authorId) {
+                                onAuthorClick(node.authorId);
+                            }
+                        }}
+                        aria-label={`View profile for ${node.author}`}
+                    >
+                        {node.author}
+                    </span>
                     <span className="ab-comment-dot">•</span>
                     <span className="ab-comment-time">{timeAgoTS(node.created_at)}</span>
                 </div>
@@ -126,10 +141,12 @@ function CommentNode({
                                         currentUser={currentUser}
                                         collapsedSet={collapsedSet}
                                         toggleCollapsed={toggleCollapsed}
+                                        onAuthorClick={onAuthorClick}  
                                     />
                                 ))}
                             </div>
                         )}
+
                     </>
                 )}
             </div>
@@ -143,6 +160,7 @@ export default function ForumPostModal({
     onClose,
     onBumpPostComments
 }) {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [commentsFlat, setCommentsFlat] = useState([]);
     const [replyTo, setReplyTo] = useState(null);
@@ -177,7 +195,9 @@ export default function ForumPostModal({
         })();
         return () => { mounted = false; };
     }, []);
-
+    const handleCommentAuthorClick = useCallback((authorId) => {
+        navigate(`/account/${encodeURIComponent(authorId)}`);
+    }, [navigate]);
     const fetchRecordingById = useCallback(async (id) => {
         if (id == null || Number.isNaN(id)) return;
         try {
@@ -529,6 +549,7 @@ export default function ForumPostModal({
                                         currentUser={user}
                                         collapsedSet={collapsed}
                                         toggleCollapsed={toggleCollapsed}
+                                        onAuthorClick={handleCommentAuthorClick}
                                     />
                                 ))
                             )}
