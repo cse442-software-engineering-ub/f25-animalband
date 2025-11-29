@@ -9,7 +9,7 @@ import OstrichPlaying from "../../../assets/ostrich_playing.jpeg";
 import Bird from "../../../assets/bird.jpeg";
 import BirdPlaying from "../../../assets/bird_playing.jpeg";
 import Hamster from "../../../assets/hamster.jpeg";
-import HamsterPlaying from "../../../assets/hamster_playing.jpeg";
+import HamsterPlaying from "../../../assets/hamsterrockin.png";
 import Kangaroo from "../../../assets/kangaroo.jpeg";
 import KangarooPlaying from "../../../assets/kangaroo_playing.jpeg";
 import Snake from "../../../assets/snake.jpeg";
