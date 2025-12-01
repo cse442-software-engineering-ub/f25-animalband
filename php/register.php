@@ -98,7 +98,7 @@ if ($username && $email && $password) {
         'expires' => time() + 3600,
         'path' => '/',
         'secure' => true,
-        'httponly' => true,  // prevent JS access to cookie
+        'httponly' => false,  // prevent JS access to cookie
         'samesite' => 'Strict',
     ]);
 } else {
