@@ -6,6 +6,8 @@ import {
     reorderPlaylist,
 } from "../../../api/playlists.js";
 import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player.js";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./mobile_playlist_details.css";
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
@@ -25,6 +27,7 @@ export default function MobilePlaylistDetail() {
     const [playingIndex, setPlayingIndex] = useState(-1);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const stopRef = useRef(null);
+    const { modalState, showModal, closeModal } = useCustomModal();
 
     // touch dragging refs
     const touchDraggingRef = useRef(false);
@@ -72,16 +75,16 @@ export default function MobilePlaylistDetail() {
             } else {
                 if (res?.error === "Private playlist") {
                     setInfo(null);
-                    alert("This playlist is private.");
+                    showModal("This playlist is private.", "warning");
                     navigate("/playlists");
                 } else {
-                    alert(res?.error || "Load failed");
+                    showModal(res?.error || "Failed to load playlist", "error");
                     setInfo({ playlist: null, tracks: [] });
                 }
             }
         } catch (e) {
             console.error(e);
-            alert("Load failed");
+            showModal("Failed to load playlist", "error");
             setInfo({ playlist: null, tracks: [] });
         } finally {
             setLoading(false);
@@ -191,14 +194,23 @@ export default function MobilePlaylistDetail() {
         setSavingOrder(true);
         const r = await reorderPlaylist(pid, order);
         setSavingOrder(false);
-        if (!r?.ok) alert(r?.error || "Failed to save order");
-        else setDirty(false);
+        if (!r?.ok) {
+            showModal(r?.error || "Failed to save order", "error");
+        } else {
+            setDirty(false);
+            showModal("Order saved successfully!", "success");
+        }
     }
 
     async function handleRemove(songId, songTitle) {
         if (!window.confirm(`Remove "${songTitle}" from playlist?`)) return;
         const r = await removeSongFromPlaylist(pid, songId);
-        if (r?.ok) refresh(); else alert(r?.error || "Remove failed");
+        if (r?.ok) {
+            refresh();
+            showModal("Track removed from playlist", "success");
+        } else {
+            showModal(r?.error || "Remove failed", "error");
+        }
     }
 
     const handleAccountClick = () => {
@@ -229,7 +241,6 @@ export default function MobilePlaylistDetail() {
         if (!canEdit) return;
         setDragIdx(index);
         e.dataTransfer.effectAllowed = "move";
-        // required for Firefox to start drag
         e.dataTransfer.setData("text/plain", String(index));
         e.currentTarget.classList.add("m-dragging");
     }
@@ -267,7 +278,7 @@ export default function MobilePlaylistDetail() {
 
     function touchMove(e) {
         if (!canEdit || !touchDraggingRef.current) return;
-        e.preventDefault(); // prevent scroll while reordering
+        e.preventDefault();
         const overIndex = indexFromTouch(e);
         if (overIndex == null || dragIdx == null || overIndex === dragIdx) return;
         setTracks(prev => moveItem(prev, dragIdx, overIndex));
@@ -421,6 +432,7 @@ export default function MobilePlaylistDetail() {
                                     <div className="mobile-track-actions">
                                         <button
                                             className="mobile-song-btn play"
+                                            aria-label={playingIndex === i ? "Stop" : "Play"}
                                             title={playingIndex === i ? "Stop" : "Play"}
                                             onClick={() => togglePlay(i)}
                                         >
@@ -432,6 +444,7 @@ export default function MobilePlaylistDetail() {
                                         <button
                                             className="mobile-song-btn download"
                                             title="Download WAV"
+                                            aria-label="Download WAV"
                                             onClick={() => downloadWav(t)}
                                         >
                                             <span className="material-symbols-outlined">download</span>
@@ -442,6 +455,7 @@ export default function MobilePlaylistDetail() {
                                                 className="mobile-song-btn danger"
                                                 onClick={() => handleRemove(t.id, t.title || `Song #${t.id}`)}
                                                 title="Remove from playlist"
+                                                aria-label="Remove from playlist"
                                             >
                                                 <span className="material-symbols-outlined">delete</span>
                                             </button>
@@ -473,6 +487,14 @@ export default function MobilePlaylistDetail() {
                     <span>Playlists</span>
                 </Link>
             </nav>
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
 
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

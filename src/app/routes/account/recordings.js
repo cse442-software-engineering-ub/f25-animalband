@@ -11,7 +11,7 @@ import BirdPlaying from "../../../assets/birdrockin.png";
 import Hamster from "../../../assets/hamster.png";
 import HamsterPlaying from "../../../assets/hamsterrockin.png";
 import Kangaroo from "../../../assets/kangaroo.png";
-import KangarooPlaying from "../../../assets/kangaroorockin.png"; 
+import KangarooPlaying from "../../../assets/kangaroorockin.png";
 import Snake from "../../../assets/snake.png";
 import SnakePlaying from "../../../assets/snakerockin.png";
 
@@ -59,7 +59,6 @@ export default function MyRecordings() {
             loadedCount++;
             if (loadedCount === allImages.length) {
               setImagesLoaded(true);
-              //console.log("All animal images fully preloaded");
             }
           };
           img.onerror = () => console.warn("Failed to preload:", src);
@@ -193,6 +192,12 @@ export default function MyRecordings() {
     navigate(`/stage?edit=${rec.id}`);
   };
 
+  // Navigate to forum with recording pre-selected
+  const shareToForum = (rec) => {
+    stopAllSounds();
+    navigate(`/forum?share=${rec.id}`);
+  };
+
   // Play recording with animation
   const playRecording = async () => {
     if (recordedNotes.length === 0) return;
@@ -293,14 +298,40 @@ export default function MyRecordings() {
         <aside className="ea-sidebar">
           <h3>Menu</h3>
           <ul>
-            <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
-            <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
-            <li><button onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
-            <li><button onClick={() => navigate("/playlists")}>My Playlists</button></li>
-            <li><button onClick={() => navigate("/stage")}>Back to Stage</button></li>
-            <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
-              Logout
-            </button></li>
+            <li>
+              <button className="df-sidebar-btn" onClick={() => navigate("/")}>
+                Home
+              </button>
+            </li>
+            <li>
+              <button
+                className="df-sidebar-btn"
+                onClick={() => navigate("/forum")}
+              >
+                Forum
+              </button>
+            </li>
+            <li>
+              <button onClick={() => navigate("/my-recordings")}>
+                My Recordings
+              </button>
+            </li>
+            <li>
+              <button onClick={() => navigate("/playlists")}>
+                My Playlists
+              </button>
+            </li>
+            <li>
+              <button onClick={() => navigate("/stage")}>Back to Stage</button>
+            </li>
+            <li>
+              <button
+                className="df-sidebar-btn logout-btn"
+                onClick={() => navigate("/login")}
+              >
+                Logout
+              </button>
+            </li>
           </ul>
         </aside>
 
@@ -312,8 +343,11 @@ export default function MyRecordings() {
 
           <div className="recordings-grid">
             {recordings.length === 0 && (
-              <p style={{ textAlign: 'center', width: '100%', padding: '20px' }}>
-                No recordings yet. Go to the stage to create your first recording!
+              <p
+                style={{ textAlign: "center", width: "100%", padding: "20px" }}
+              >
+                No recordings yet. Go to the stage to create your first
+                recording!
               </p>
             )}
             {recordings.map((rec) => (
@@ -333,20 +367,23 @@ export default function MyRecordings() {
               <div
                 className="modal-content"
                 onClick={(e) => e.stopPropagation()}
-                style={{ maxWidth: '600px', position: 'relative' }}
+                style={{ maxWidth: "600px", position: "relative" }}
               >
                 <h2>{selectedRecording.title}</h2>
                 <p>{selectedRecording.description}</p>
 
                 {/* Mini animal stage */}
-                <div className="mini-stage" style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '15px',
-                  margin: '20px 0',
-                  minHeight: '120px'
-                }}>
+                <div
+                  className="mini-stage"
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: "15px",
+                    margin: "20px 0",
+                    minHeight: "120px",
+                  }}
+                >
                   {Object.keys(ANIMAL_IMAGES)
                     .filter((animal) =>
                       recordedNotes.some((track) =>
@@ -366,60 +403,86 @@ export default function MyRecordings() {
                           playingAnimals[animal] ? "playing" : ""
                         }`}
                         style={{
-                          height: '80px',
-                          width: 'auto',
-                          transition: 'transform 0.3s ease'
+                          height: "80px",
+                          width: "auto",
+                          transition: "transform 0.3s ease",
                         }}
                       />
                     ))}
                 </div>
 
-                <div className="buttons-row" style={{
-                  display: 'flex',
-                  gap: '15px',
-                  justifyContent: 'center',
-                  marginTop: '20px'
-                }}>
+                <div
+                  className="buttons-row"
+                  style={{
+                    display: "flex",
+                    gap: "15px",
+                    justifyContent: "center",
+                    marginTop: "20px",
+                  }}
+                >
                   <button
                     onClick={playRecording}
                     disabled={!imagesLoaded || isPlaying}
                     className="circle-btn play"
                     style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '50%',
-                      backgroundColor: isPlaying ? '#666' : '#15803d',
-                      color: 'white',
-                      border: 'none',
-                      cursor: isPlaying ? 'not-allowed' : 'pointer',
-                      fontSize: '24px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      backgroundColor: isPlaying ? "#666" : "#15803d",
+                      color: "white",
+                      border: "none",
+                      cursor: isPlaying ? "not-allowed" : "pointer",
+                      fontSize: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                     title="Play Recording"
+                    aria-label="Play Recording"
                   >
-                    {isPlaying ? '■' : '▶'}
+                    {isPlaying ? "■" : "▶"}
                   </button>
                   <button
                     onClick={() => editRecording(selectedRecording)}
                     className="circle-btn edit"
                     style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '50%',
-                      backgroundColor: '#15803d',
-                      color: 'white',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '24px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      backgroundColor: "#15803d",
+                      color: "white",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                     title="Edit Recording"
+                    aria-label="Edit Recording"
                   >
                     ✏️
+                  </button>
+                  <button
+                    onClick={() => shareToForum(selectedRecording)}
+                    className="circle-btn share"
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      backgroundColor: "#15803d",
+                      color: "white",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    title="Share to Forum"
+                    aria-label="Share to Forum"
+                  >
+                    💬
                   </button>
                   <button
                     className="circle-btn close"
@@ -428,19 +491,20 @@ export default function MyRecordings() {
                       closeModal();
                     }}
                     style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '50%',
-                      backgroundColor: '#9E9E9E',
-                      color: 'white',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '24px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      backgroundColor: "#9E9E9E",
+                      color: "white",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                     title="Close"
+                    aria-label="Close"
                   >
                     ✕
                   </button>

@@ -1,8 +1,11 @@
 import { useNavigate, Link } from "react-router-dom";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./desktop_login.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { modalState, showModal, closeModal } = useCustomModal();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,10 +32,10 @@ export default function Login() {
       if (data.success) {
         navigate("/");
       } else {
-        navigate("/login");
+        showModal("Login failed. Please check your credentials.", "error");
       }
     } catch {
-      alert("Login failed");
+      showModal("Login failed. Please try again.", "error");
     }
   };
 
@@ -59,9 +62,17 @@ export default function Login() {
           </button>
         </form>
         <p className="register-link">
-          Don’t have an account? <Link to="/register">Register</Link>
+          Don't have an account? <Link to="/register">Register</Link>
         </p>
       </div>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        message={modalState.message}
+        type={modalState.type}
+        title={modalState.title}
+      />
 
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

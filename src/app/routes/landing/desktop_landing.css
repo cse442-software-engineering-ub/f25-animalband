@@ -190,11 +190,13 @@
 }
 
 .features-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  display: flex;
+  justify-content: flex-start;   /* align left */
+  align-items: flex-start;
+  gap: 2rem;
   max-width: 72rem;
-  margin: 0 auto 1rem;
+  margin: 0 auto 2rem;
+  padding-left: 10rem;  /* Added left padding to visually center */
 }
 
 .feature-card {
@@ -207,6 +209,8 @@
   padding: 1.25rem;
   text-align: center;
   transition: box-shadow 0.2s;
+  width: 280px;  /* fixed width */
+  box-sizing: border-box;
 }
 
 .feature-icon {
@@ -336,10 +340,16 @@
   margin-bottom: 0.5rem;
 }
 
+.song-desc-container {
+  height: 1.5rem;   /* fixed space for 1 line — adjust as needed */
+  display: flex;
+  align-items: center; /* optional: vertically center the text */
+}
+
 .song-desc {
   font-size: 0.8rem;
   color: #555;
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 
 .song-button-group {
@@ -438,10 +448,6 @@
     font-size: 3rem;
   }
 
-  .features-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .animals-container {
     gap: 1rem;
   }
@@ -470,9 +476,6 @@
     font-size: 3.5rem !important;
   }
 
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
 
   .stats-container {
     flex-direction: column;
@@ -487,7 +490,6 @@
     padding: 2rem 1rem;
   }
 
-
   .animals-container {
     gap: 1rem;
   }
@@ -514,10 +516,6 @@
 
   .paw-icon {
     font-size: 3.5rem !important;
-  }
-
-  .features-grid {
-    grid-template-columns: 1fr;
   }
 
   .stats-container {
@@ -542,7 +540,7 @@
 .stats-container,
 .featured-songs-section
  {
-  background-color: #ffffff !important;
+  background-color: #ffffff;
 }
 
 /* Optional: keep smooth transitions if there were gradients or tints */

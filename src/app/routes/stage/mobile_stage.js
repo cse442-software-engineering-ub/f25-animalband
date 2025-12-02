@@ -9,7 +9,7 @@ import OstrichPlaying from "../../../assets/ostrich_playing.jpeg";
 import Bird from "../../../assets/bird.jpeg";
 import BirdPlaying from "../../../assets/bird_playing.jpeg";
 import Hamster from "../../../assets/hamster.jpeg";
-import HamsterPlaying from "../../../assets/hamster_playing.jpeg";
+import HamsterPlaying from "../../../assets/hamsterrockin.png";
 import Kangaroo from "../../../assets/kangaroo.jpeg";
 import KangarooPlaying from "../../../assets/kangaroo_playing.jpeg";
 import Snake from "../../../assets/snake.jpeg";
@@ -57,6 +57,15 @@ export default function MobileStage() {
   // Save option state
   const [saveOption, setSaveOption] = useState("overwrite");
   const [originalTitle, setOriginalTitle] = useState("");
+
+  // Custom modal state
+  const [showModal, setShowModal] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: "", message: "", type: "info" });
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmModalData, setConfirmModalData] = useState({ title: "", message: "", onConfirm: null });
+  
+  // Tutorial state
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
@@ -132,6 +141,32 @@ export default function MobileStage() {
     );
   };
 
+  // Custom modal functions
+  const showAlertModal = (title, message, type = "info") => {
+    setModalContent({ title, message, type });
+    setShowModal(true);
+  };
+
+  const showConfirm = (title, message, onConfirm) => {
+    setConfirmModalData({ title, message, onConfirm });
+    setShowConfirmModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+  };
+
+  const closeConfirmModal = () => {
+    setShowConfirmModal(false);
+  };
+
+  const handleConfirm = () => {
+    if (confirmModalData.onConfirm) {
+      confirmModalData.onConfirm();
+    }
+    closeConfirmModal();
+  };
+
   useEffect(() => {
     const checkUser = async () => {
       if (requestInProgressRef.current) return;
@@ -183,7 +218,7 @@ export default function MobileStage() {
       const authCookie = cookieObj["auth_token"] || "";
       
       if (!authCookie) {
-        alert("You must be logged in to edit recordings.");
+        showAlertModal("Login Required", "You must be logged in to edit recordings.", "warning");
         navigate("/my-recordings");
         return;
       }
@@ -241,16 +276,16 @@ export default function MobileStage() {
                 message += "\n\nNo keyboard tracks found. You can record new tracks or import audio.";
               }
               
-              alert(message);
+              showAlertModal("Recording Loaded", message, "success");
             } else {
-              alert("Recording not found.");
+              showAlertModal("Not Found", "Recording not found.", "error");
               navigate("/my-recordings");
             }
           }
         }
       } catch (error) {
         console.error("Error loading recording for edit:", error);
-        alert("Failed to load recording. Please try again.");
+        showAlertModal("Load Failed", "Failed to load recording. Please try again.", "error");
         navigate("/my-recordings");
       }
     };
@@ -273,7 +308,7 @@ export default function MobileStage() {
       
       if (!remixDataStr) {
         console.error("No remix data found");
-        alert("Remix data not found. Please try again.");
+        showAlertModal("Remix Error", "Remix data not found. Please try again.", "error");
         navigate("/");
         return;
       }
@@ -288,7 +323,7 @@ export default function MobileStage() {
         
         if (!Array.isArray(remixData.recording)) {
           console.error("Invalid recording format in remix data");
-          alert("Invalid recording format. Cannot load remix.");
+          showAlertModal("Invalid Format", "Invalid recording format. Cannot load remix.", "error");
           return;
         }
         
@@ -340,11 +375,11 @@ export default function MobileStage() {
           message += "\n\n📝 No keyboard tracks found in the original. You can start recording from scratch or import audio.";
         }
         
-        alert(message);
+        showAlertModal("🎵 Remix Ready!", message, "success");
         
       } catch (error) {
         console.error("Error parsing remix data:", error);
-        alert("Failed to load remix data. Please try again.");
+        showAlertModal("Remix Error", "Failed to load remix data. Please try again.", "error");
         navigate("/");
       }
     };
@@ -375,12 +410,12 @@ export default function MobileStage() {
   // Custom navigation handler with warning
   const handleNavigateAway = useCallback((path) => {
     if (hasUnsavedChanges) {
-      const confirmLeave = window.confirm(
-        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
+      showConfirm(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.',
+        () => navigate(path)
       );
-      if (!confirmLeave) {
-        return;
-      }
+      return;
     }
     navigate(path);
   }, [hasUnsavedChanges, navigate]);
@@ -444,7 +479,7 @@ export default function MobileStage() {
       const timeSinceStart = performance.now() - recordStartTime;
 
       if (timeSinceStart > MAX_AUDIO_DURATION * 1000) {
-        alert("Recording limit reached (10 minutes). Please stop recording.");
+        showAlertModal("Recording Limit", "Recording limit reached (10 minutes). Please stop recording.", "warning");
         return;
       }
 
@@ -478,8 +513,10 @@ export default function MobileStage() {
 
   const toggleRecording = () => {
     if (!isRecording && recordedTracks.length >= MAX_TRACKS) {
-      alert(
-        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
+      showAlertModal(
+        "Maximum Tracks Reached",
+        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`,
+        "warning"
       );
       return;
     }
@@ -491,7 +528,7 @@ export default function MobileStage() {
       if (recordedTracks.length > 0) playTracksDuringRecording();
     } else {
       if (currentTrack.length === 0) {
-        alert("Cannot save empty track.");
+        showAlertModal("Empty Track", "Cannot save empty track.", "warning");
         setIsRecording(false);
         return;
       }
@@ -724,8 +761,10 @@ export default function MobileStage() {
 
   const importAudioTrack = () => {
     if (recordedTracks.length >= MAX_TRACKS) {
-      alert(
-        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`
+      showAlertModal(
+        "Maximum Tracks Reached",
+        `Maximum number of tracks (${MAX_TRACKS}) reached. Please delete some tracks first.`,
+        "warning"
       );
       return;
     }
@@ -738,10 +777,10 @@ export default function MobileStage() {
       if (!file) return;
 
       if (file.size > MAX_FILE_SIZE) {
-        alert(
-          `File is too large. Maximum size is ${
-            MAX_FILE_SIZE / (1024 * 1024)
-          }MB.`
+        showAlertModal(
+          "File Too Large",
+          `File is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`,
+          "error"
         );
         return;
       }
@@ -760,8 +799,10 @@ export default function MobileStage() {
         !allowedTypes.includes(file.type) &&
         !file.name.match(/\.(mp3|wav|ogg|webm|m4a)$/i)
       ) {
-        alert(
-          "Invalid file type. Please upload a valid audio file (MP3, WAV, OGG, WebM, M4A)."
+        showAlertModal(
+          "Invalid File Type",
+          "Invalid file type. Please upload a valid audio file (MP3, WAV, OGG, WebM, M4A).",
+          "error"
         );
         return;
       }
@@ -773,10 +814,10 @@ export default function MobileStage() {
         );
 
         if (audioBuffer.duration > MAX_AUDIO_DURATION) {
-          alert(
-            `Audio file is too long. Maximum duration is ${
-              MAX_AUDIO_DURATION / 60
-            } minutes.`
+          showAlertModal(
+            "Audio Too Long",
+            `Audio file is too long. Maximum duration is ${MAX_AUDIO_DURATION / 60} minutes.`,
+            "error"
           );
           return;
         }
@@ -801,11 +842,13 @@ export default function MobileStage() {
         setTrackCounter((c) => c + 1);
         setImportedAudioBuffers((prev) => [...prev, audioBuffer]);
 
-        alert(`Successfully imported: ${sanitizedFileName}`);
+        showAlertModal("Success", `Successfully imported: ${sanitizedFileName}`, "success");
       } catch (err) {
         console.error("Error importing audio:", err);
-        alert(
-          "Failed to import audio file. Make sure it's a valid audio format and not corrupted."
+        showAlertModal(
+          "Import Failed",
+          "Failed to import audio file. Make sure it's a valid audio format and not corrupted.",
+          "error"
         );
       }
     };
@@ -849,6 +892,15 @@ export default function MobileStage() {
             gainNode.gain.value = masterVolume * trackVolume;
             source.connect(gainNode).connect(offlineCtx.destination);
             source.start(time / 1000);
+          } else {
+            const buffer = sounds[key];
+            if (!buffer) return;
+            const source = offlineCtx.createBufferSource();
+            source.buffer = buffer;
+            const gainNode = offlineCtx.createGain();
+            gainNode.gain.value = masterVolume * trackVolume;
+            source.connect(gainNode).connect(offlineCtx.destination);
+            source.start(time / 1000);
           }
         });
       });
@@ -864,7 +916,7 @@ export default function MobileStage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed:", err);
-      alert("Failed to export recording. Please try again.");
+      showAlertModal("Export Failed", "Failed to export recording. Please try again.", "error");
     }
   };
 
@@ -877,15 +929,15 @@ export default function MobileStage() {
     MAX_DESCRIPTION_LENGTH
   );
 
-  if (!sanitizedTitle) {
-    alert("Please enter a valid title.");
-    return;
-  }
+    if (!sanitizedTitle) {
+      showAlertModal("Title Required", "Please enter a valid title.", "warning");
+      return;
+    }
 
-  if (recordedTracks.length === 0) {
-    alert("No tracks to save.");
-    return;
-  }
+    if (recordedTracks.length === 0) {
+      showAlertModal("No Tracks", "No tracks to save.", "warning");
+      return;
+    }
 
   setIsSaving(true);
 
@@ -893,11 +945,11 @@ export default function MobileStage() {
   const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
   const authCookie = cookieObj["auth_token"] || "";
 
-  if (!authCookie) {
-    alert("You must be logged in to save recordings.");
-    setIsSaving(false);
-    return;
-  }
+    if (!authCookie) {
+      showAlertModal("Login Required", "You must be logged in to save recordings.", "warning");
+      setIsSaving(false);
+      return;
+    }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -1302,6 +1354,7 @@ export default function MobileStage() {
             style={{
               width: "100%",
               padding: "12px",
+              marginBottom: "10px",
               fontSize: "16px",
               fontWeight: "600",
               border: "2px solid #333",
@@ -1320,6 +1373,29 @@ export default function MobileStage() {
           >
             <span className="material-symbols-outlined">upload</span>
             Import
+          </button>
+
+          <button
+            onClick={() => setShowTutorial(true)}
+            style={{
+              width: "100%",
+              padding: "12px",
+              fontSize: "16px",
+              fontWeight: "600",
+              border: "2px solid #333",
+              borderRadius: "8px",
+              backgroundColor: "white",
+              color: "#333",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+            }}
+            aria-label="Show Tutorial"
+          >
+            <span style={{ fontSize: "20px", fontWeight: "bold" }}>?</span>
+            Tutorial
           </button>
         </div>
 
@@ -1396,6 +1472,114 @@ export default function MobileStage() {
                       ? (saveOption === "overwrite" ? "Update Recording" : "Save as Remix")
                       : "Save Recording"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Alert Modal */}
+        {showModal && (
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-box alert-modal" onClick={(e) => e.stopPropagation()}>
+              <div className={`modal-header ${modalContent.type}`}>
+                <h3>{modalContent.title}</h3>
+              </div>
+              <div className="modal-content">
+                <p style={{ whiteSpace: 'pre-line' }}>{modalContent.message}</p>
+              </div>
+              <div className="form-buttons">
+                <button onClick={closeModal} className="btn-primary">OK</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Confirm Modal */}
+        {showConfirmModal && (
+          <div className="modal-overlay" onClick={closeConfirmModal}>
+            <div className="modal-box confirm-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header warning">
+                <h3>{confirmModalData.title}</h3>
+              </div>
+              <div className="modal-content">
+                <p style={{ whiteSpace: 'pre-line' }}>{confirmModalData.message}</p>
+              </div>
+              <div className="form-buttons">
+                <button onClick={closeConfirmModal}>Cancel</button>
+                <button onClick={handleConfirm} className="btn-danger">Confirm</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tutorial Modal */}
+        {showTutorial && (
+          <div className="modal-overlay" onClick={() => setShowTutorial(false)}>
+            <div className="modal-box tutorial-modal" onClick={(e) => e.stopPropagation()} style={{
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}>
+              <div className="modal-header info">
+                <h3>How to Use ANIMALBAND</h3>
+              </div>
+              <div className="modal-content tutorial-content" style={{
+                textAlign: 'left',
+                fontSize: '14px'
+              }}>
+                <section style={{ marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>Touch Controls</h4>
+                  <ul style={{ paddingLeft: '20px', marginBottom: '0' }}>
+                    <li style={{ marginBottom: '8px' }}><strong>Tap on animals</strong> to play sounds - each animal has 4 quadrants to tap!</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Hamster:</strong> Drums (tap top-left, top-right, bottom-left, bottom-right)</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Bird:</strong> Vocal sounds</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Ostrich:</strong> Keyboard/Piano</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Kangaroo:</strong> Guitar</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Snake:</strong> Bass</li>
+                  </ul>
+                </section>
+
+                <section style={{ marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>Control Buttons</h4>
+                  <ul style={{ paddingLeft: '20px', marginBottom: '0' }}>
+                    <li style={{ marginBottom: '8px' }}><strong>● Start Recording:</strong> Begin recording a new track</li>
+                    <li style={{ marginBottom: '8px' }}><strong>■ Stop Recording:</strong> Save your current track</li>
+                    <li style={{ marginBottom: '8px' }}><strong>► Play Recording:</strong> Play all your tracks together</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Export:</strong> Download your recording as a WAV file</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Save:</strong> Save your recording to your account</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Import:</strong> Add an audio file as a track</li>
+                    <li style={{ marginBottom: '8px' }}><strong>? Tutorial:</strong> Show this help guide</li>
+                  </ul>
+                </section>
+
+                <section style={{ marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>Track Management</h4>
+                  <ul style={{ paddingLeft: '20px', marginBottom: '0' }}>
+                    <li style={{ marginBottom: '8px' }}><strong>Volume Slider:</strong> Adjust master volume or individual track volumes</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Mute:</strong> Temporarily silence a track</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Solo:</strong> Play only this track (mutes all others)</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Rename:</strong> Double-tap track name or use Rename button</li>
+                    <li style={{ marginBottom: '8px' }}><strong>Delete:</strong> Remove a track permanently</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>💡 Tips</h4>
+                  <ul style={{ paddingLeft: '20px', marginBottom: '0' }}>
+                    <li style={{ marginBottom: '8px' }}>Record up to {MAX_TRACKS} tracks total</li>
+                    <li style={{ marginBottom: '8px' }}>While recording, existing tracks will play along</li>
+                    <li style={{ marginBottom: '8px' }}>You can import audio files (MP3, WAV, OGG, WebM, M4A)</li>
+                    <li style={{ marginBottom: '8px' }}>Maximum recording length: {MAX_AUDIO_DURATION / 60} minutes per track</li>
+                    <li style={{ marginBottom: '8px' }}>Save your creations to access them later from "My Recordings"</li>
+                    <li style={{ marginBottom: '8px' }}>Edit saved recordings by clicking the edit button in "My Recordings"</li>
+                  </ul>
+                </section>
+              </div>
+              <div className="form-buttons">
+                <button onClick={() => setShowTutorial(false)} className="btn-primary" style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: '16px'
+                }}>Got It!</button>
               </div>
             </div>
           </div>

@@ -1,0 +1,22 @@
+/* Make long playlist names wrap in the modal list */
+.list-item {
+  display: block;             /* take full row */
+  width: 100%;
+  text-align: left;
+  white-space: normal;        /* allow wrapping */
+  word-break: break-word;     /* break long tokens if needed */
+  overflow-wrap: anywhere;    /* handle really long strings */
+  line-height: 1.25;
+}
+
+.modal-card {
+  width: min(520px, 92vw);
+  max-height: 85vh;           /* don't exceed viewport */
+  display: flex;
+  flex-direction: column;     /* header fixed, body flexes */
+}
+
+.modal-body {
+  overflow: auto;             /* scroll here */
+  padding: 1rem;
+}

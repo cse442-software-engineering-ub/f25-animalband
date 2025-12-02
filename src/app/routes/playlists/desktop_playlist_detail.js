@@ -6,10 +6,11 @@ import {
     reorderPlaylist,
 } from "../../../api/playlists.js";
 import { preloadLandingSounds, schedulePlayback } from "../landing/landing_player.js";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "../forum/desktop_forum.css";
 import "./desktop_playlist_details.css";
 import "./desktop_playlists.css";
-
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -27,7 +28,7 @@ export default function DesktopPlaylistDetail() {
     const [buffers, setBuffers] = useState(null);
     const [playingIndex, setPlayingIndex] = useState(-1);
     const stopRef = useRef(null);
-
+    const { modalState, showModal, closeModal } = useCustomModal();
 
     useEffect(() => {
         (async () => {
@@ -54,21 +55,22 @@ export default function DesktopPlaylistDetail() {
             } else {
                 if (res?.error === "Private playlist") {
                     setInfo(null);
-                    alert("This playlist is private.");
+                    showModal("This playlist is private.", "warning");
                     navigate("/");
                 } else {
-                    alert(res?.error || "Load failed");
+                    showModal(res?.error || "Failed to load playlist", "error");
                     setInfo({ playlist: null, tracks: [] });
                 }
             }
         } catch (e) {
             console.error(e);
-            alert("Load failed");
+            showModal("Failed to load playlist", "error");
             setInfo({ playlist: null, tracks: [] });
         } finally {
             setLoading(false);
         }
     }
+
     useEffect(() => {
         (async () => {
             try {
@@ -223,13 +225,22 @@ export default function DesktopPlaylistDetail() {
         setSavingOrder(true);
         const r = await reorderPlaylist(pid, order);
         setSavingOrder(false);
-        if (!r?.ok) alert(r?.error || "Failed to save order");
-        else setDirty(false);
+        if (!r?.ok) {
+            showModal(r?.error || "Failed to save order", "error");
+        } else {
+            setDirty(false);
+            showModal("Order saved successfully!", "success");
+        }
     }
 
     async function handleRemove(songId) {
         const r = await removeSongFromPlaylist(pid, songId);
-        if (r?.ok) refresh(); else alert(r?.error || "Remove failed");
+        if (r?.ok) {
+            refresh();
+            showModal("Track removed from playlist", "success");
+        } else {
+            showModal(r?.error || "Remove failed", "error");
+        }
     }
 
     const handleAccountClick = () => {
@@ -299,7 +310,7 @@ export default function DesktopPlaylistDetail() {
                         </div>
 
                         <div className="header-actions">
-                            <button className="nav-btn" onClick={() => navigate("/playlists")}>Back</button>
+                            <button className="new-post-btn" onClick={() => navigate("/playlists")}>Back</button>
                             <button 
                                 className="new-post-btn" 
                                 onClick={saveOrder} 
@@ -330,7 +341,7 @@ export default function DesktopPlaylistDetail() {
                                     onDragOver={canEdit ? onDragOver : undefined}
                                     onDrop={canEdit ? (e) => onDrop(e, i) : undefined}
                                 >
-                                    {canEdit && <span className="plf-drag" title="Drag to reorder">⋮⋮</span>}
+                                    {canEdit && <span className="plf-drag" aria-label="Drag to reorder" title="Drag to reorder">⋮⋮</span>}
 
                                     <div className="plf-track-meta">
                                         <div className="plf-track-title">{t.title || `Song #${t.id}`}</div>
@@ -345,6 +356,7 @@ export default function DesktopPlaylistDetail() {
                                             className="song-play-btn"
                                             title={playingIndex === i ? "Stop" : "Play"}
                                             onClick={() => togglePlay(i)}
+                                            aria-label="Play Song"
                                         >
                                             <span className="material-symbols-outlined">
                                                 {playingIndex === i ? "stop" : "play_arrow"}
@@ -354,6 +366,7 @@ export default function DesktopPlaylistDetail() {
                                         <button
                                             className="song-download-btn"
                                             title="Download WAV"
+                                            aria-label="Download Song"
                                             onClick={() => downloadWav(t)}
                                         >
                                             <span className="material-symbols-outlined">download</span>
@@ -369,12 +382,19 @@ export default function DesktopPlaylistDetail() {
                                         )}
                                     </div>
                                 </li>
-
                             ))}
                         </ul>
                     )}
                 </main>
             </div>
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
 
             <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
         </div>

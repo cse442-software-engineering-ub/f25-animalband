@@ -377,6 +377,9 @@
 
 .post-title {
   font-size: 1.3rem;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
   font-weight: 700;
   color: #333;
   margin: 0 0 0.25rem 0;
@@ -1051,4 +1054,42 @@
 
 body.popup-open {
   overflow: hidden;
+}
+
+.clickable-author {
+  cursor: pointer;
+  color: #0077cc;
+  text-decoration: underline;
+}
+
+.clickable-author:hover {
+  color: #005999;
+}
+
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0;
+}
+
+.page-btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.page-info {
+  font-size: 0.9rem;
+  color: #555;
 }
