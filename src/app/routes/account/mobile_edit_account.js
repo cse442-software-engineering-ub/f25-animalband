@@ -1,308 +1,338 @@
-import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "./mobile_edit_account.css";
+import { useEffect, useState, useRef } from "react";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
+import "./mobile_profile.css";
 
-const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
+const PHP_BASE = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
-export default function MobileEditAccount() {
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
+export default function MobileProfile() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [postCount, setPostCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+  const [recordingCount, setRecordingCount] = useState(0);
+  const fileInputRef = useRef(null);
+  const { modalState, showModal, closeModal } = useCustomModal();
 
-    // Form states
-    const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
-    const [currentPwd, setCurrentPwd] = useState("");
-    const [newPwd, setNewPwd] = useState("");
-    const [confirmPwd, setConfirmPwd] = useState("");
-    const [msg, setMsg] = useState(null);
-
-    // Password visibility states
-    const [showCurrent, setShowCurrent] = useState(false);
-    const [showNew, setShowNew] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
-
-    // Mobile navigation states
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [user, setUser] = useState(null);
-
-    // Get User data
-    useEffect(() => {
-        (async () => {
-            try {
-                const res = await fetch(
-                    `${PHP_URL}/getUser.php`,
-                    { credentials: "include" }
-                );
-                const text = await res.text();
-                console.log("Raw response:", text);
-                const data = JSON.parse(text);
-
-                if (!data.loggedIn) {
-                    navigate("/login");
-                    return;
-                }
-                setUser(data);
-                setUsername(data.username || "");
-                setEmail(data.email || "");
-            } catch (e) {
-                console.error(e);
-                setMsg({ type: "error", text: "Failed to load user." });
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, [navigate]);
-
-    // Sidebar handlers
-    const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-    const closeSidebar = () => setSidebarOpen(false);
-
-    // Submission
-    const onSubmit = async (e) => {
-        e.preventDefault();
-        setMsg(null);
-
-        if (!currentPwd) {
-            setMsg({ type: "error", text: "Please enter your current password." });
-            return;
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(
+          `${PHP_BASE}/getUser.php`,
+          { credentials: "include" }
+        );
+        const data = await res.json();
+        if (data.loggedIn) {
+          setUser(data);
+        } else {
+          navigate("/login");
         }
-        if (newPwd && newPwd !== confirmPwd) {
-            setMsg({ type: "error", text: "New passwords do not match." });
-            return;
-        }
-
-        setSubmitting(true);
-        try {
-            const res = await fetch(`${PHP_URL}/updateAccount.php`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: username.trim(),
-                    currentPassword: currentPwd,
-                    newPassword: newPwd || null,
-                }),
-            });
-            const data = await res.json();
-            if (data.success) {
-                setMsg({ type: "ok", text: "Profile updated!" });
-                setCurrentPwd("");
-                setNewPwd("");
-                setConfirmPwd("");
-
-                // Update user data
-                setUser(prev => ({ ...prev, username: username.trim() }));
-            } else {
-                setMsg({ type: "error", text: data.message || "Update failed." });
-            }
-        } catch (e) {
-            console.error(e);
-            setMsg({ type: "error", text: "Network error." });
-        } finally {
-            setSubmitting(false);
-        }
+      } catch (err) {
+        console.error("Failed to fetch user", err);
+        navigate("/login");
+      }
     };
+    fetchUser();
+  }, [navigate]);
 
-    if (loading) return <p className="mea-loading">Loading…</p>;
+  useEffect(() => {
+    if (!user?.username || !user?.email) return;
+    const fetchUserStats = async () => {
+      try {
+        const postRes = await fetch(`${PHP_BASE}/getUserPostCount.php?username=${encodeURIComponent(user.username)}`);
+        const postData = await postRes.json();
+        setPostCount(postData.count || 0);
 
-    return (
-        <div className="mea-page">
-            {/* Mobile Header */}
-            <header className="mea-header">
-                <div className="mea-logo-section" onClick={() => navigate("/")}>
-                    <span className="material-symbols-outlined mea-paw-icon">pets</span>
-                    <span className="mea-site-title">ANIMALBAND</span>
-                </div>
-                <div className="mea-header-buttons">
-                    {user && user.profilePic ? (
-                        <img
-                            src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
-                            alt="Profile"
-                            className="mea-profile-pic"
-                            onClick={() => navigate("/account")}
-                        />
-                    ) : (
-                        <button
-                            className="mea-menu-toggle"
-                            onClick={toggleSidebar}
-                        >
-                            <span className="material-symbols-outlined">menu</span>
-                        </button>
-                    )}
-                </div>
-            </header>
+        const likeRes = await fetch(`${PHP_BASE}/getUserLikeCount.php?username=${encodeURIComponent(user.username)}`);
+        const likeData = await likeRes.json();
+        setLikeCount(likeData.totalLikes || 0);
 
-            {/* Mobile Sidebar */}
-            <div className={`mea-sidebar ${sidebarOpen ? 'open' : ''}`}>
-                <div className="mea-sidebar-header">
-                    <h3>Menu</h3>
-                    <button className="mea-sidebar-close" onClick={closeSidebar}>
-                        <span className="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <ul>
-                    <li>
-                        <button onClick={() => { navigate("/account"); closeSidebar(); }}>
-                            My Profile
-                        </button>
-                    </li>
-                    <li>
-                        <button onClick={() => { navigate("/stage"); closeSidebar(); }}>
-                            Back to Stage
-                        </button>
-                    </li>
-                    <li>
-                        <button onClick={() => {
-                            // Add logout functionality here
-                            console.log("Logout");
-                            navigate("/login");
-                        }}>
-                            Logout
-                        </button>
-                    </li>
-                </ul>
-            </div>
+        const recRes = await fetch(`${PHP_BASE}/getUserRecordingCount.php?email=${encodeURIComponent(user.email)}`);
+        const recData = await recRes.json();
+        setRecordingCount(recData.count || 0);
+      } catch (err) {
+        console.error("Failed to fetch user's stats", err);
+      }
+    };
+    fetchUserStats();
+  }, [user]);
 
-            {/* Overlay */}
-            <div
-                className={`mea-overlay ${sidebarOpen ? 'active' : ''}`}
-                onClick={closeSidebar}
-            />
+  const handleProfilePicClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
-            {/* Main Content */}
-            <div className="mea-content">
-                <h1 className="mea-title">Edit Account</h1>
-                <p className="mea-subtitle">Update your display name and password.</p>
+  const handleProfilePicChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-                {msg && (
-                    <div className={`mea-alert ${msg.type === "ok" ? "mea-ok" : "mea-err"}`}>
-                        {msg.text}
-                    </div>
-                )}
+    const formData = new FormData();
+    formData.append("profilePic", file);
 
-                <form onSubmit={onSubmit} className="mea-form">
-                    <label htmlFor="mea-email">Email (read-only)</label>
-                    <input id="mea-email" value={email} readOnly />
+    try {
+      const res = await fetch(
+        `${PHP_BASE}/updateProfilePic.php`,
+        {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setUser((prev) => ({
+          ...prev,
+          profilePic: data.profilePic,
+        }));
+        showModal("Profile picture updated successfully!", "success");
+      } else {
+        showModal("Failed to update profile picture.", "error");
+      }
+    } catch (err) {
+      console.error("Error uploading new profile pic", err);
+      showModal("Error uploading new profile pic.", "error");
+    }
+  };
 
-                    <label htmlFor="mea-username">Display name (required)</label>
-                    <input
-                        id="mea-username"
-                        name="name"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Your name"
-                        required
-                    />
+  const handleAccountClick = () => {
+    if (user) {
+      navigate("/account");
+    } else {
+      navigate("/login");
+    }
+  };
 
-                    <hr className="mea-sep" />
+  const handleEditProfile = () => {
+    navigate("/account/edit");
+  };
 
-                    {/* Current Password */}
-                    <label htmlFor="mea-current">Current password (required)</label>
-                    <div className="mea-password-field">
-                        <input
-                            id="mea-current"
-                            type={showCurrent ? "text" : "password"}
-                            name="current-password"
-                            autoComplete="current-password"
-                            value={currentPwd}
-                            onChange={(e) => setCurrentPwd(e.target.value)}
-                            required
-                        />
-                        <button
-                            type="button"
-                            className="mea-eye-btn"
-                            onClick={() => setShowCurrent(!showCurrent)}
-                            aria-label={showCurrent ? "Hide password" : "Show password"}
-                        >
-                            <span className="material-symbols-outlined">
-                                {showCurrent ? "visibility_off" : "visibility"}
-                            </span>
-                        </button>
-                    </div>
+  const navigateToForum = (view) => {
+    navigate("/forum", { state: { activeView: view } });
+    setShowMobileMenu(false);
+  };
 
-                    {/* New Password */}
-                    <label htmlFor="mea-new">New password (optional)</label>
-                    <div className="mea-password-field">
-                        <input
-                            id="mea-new"
-                            type={showNew ? "text" : "password"}
-                            name="new-password"
-                            autoComplete="new-password"
-                            value={newPwd}
-                            onChange={(e) => setNewPwd(e.target.value)}
-                        />
-                        <button
-                            type="button"
-                            className="mea-eye-btn"
-                            onClick={() => setShowNew(!showNew)}
-                            aria-label={showNew ? "Hide password" : "Show password"}
-                        >
-                            <span className="material-symbols-outlined">
-                                {showNew ? "visibility_off" : "visibility"}
-                            </span>
-                        </button>
-                    </div>
-
-                    {/* Confirm Password */}
-                    <label htmlFor="mea-confirm">Confirm new password</label>
-                    <div className="mea-password-field">
-                        <input
-                            id="mea-confirm"
-                            type={showConfirm ? "text" : "password"}
-                            name="new-password"
-                            autoComplete="new-password"
-                            value={confirmPwd}
-                            onChange={(e) => setConfirmPwd(e.target.value)}
-                        />
-                        <button
-                            type="button"
-                            className="mea-eye-btn"
-                            onClick={() => setShowConfirm(!showConfirm)}
-                            aria-label={showConfirm ? "Hide password" : "Show password"}
-                        >
-                            <span className="material-symbols-outlined">
-                                {showConfirm ? "visibility_off" : "visibility"}
-                            </span>
-                        </button>
-                    </div>
-
-                    <div className="mea-actions">
-                        <button type="submit" className="mea-btn mea-btn-solid" disabled={submitting}>
-                            {submitting ? "Saving…" : "Save changes"}
-                        </button>
-                        <button type="button" className="mea-btn" onClick={() => navigate(-1)}>
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            {/* Mobile Bottom Navigation */}
-            <nav className="mobile-bottom-nav">
-                <Link to="/stage" className="mobile-nav-item">
-                    <span className="material-symbols-outlined mobile-nav-icon">piano</span>
-                    <span>Stage</span>
-                </Link>
-                <Link to="/looping" className="mobile-nav-item">
-                    <span className="material-symbols-outlined mobile-nav-icon">instant_mix</span>
-                    <span>Looping</span>
-                </Link>
-                <Link to="/forum" className="mobile-nav-item">
-                    <span className="material-symbols-outlined mobile-nav-icon">chat</span>
-                    <span>Forum</span>
-                </Link>
-                <Link to="/account" className="mobile-nav-item active">
-                    <span className="material-symbols-outlined mobile-nav-icon">person</span>
-                    <span>Profile</span>
-                </Link>
-            </nav>
-
-            {/* Material Icons Font */}
-            <link
-                href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-                rel="stylesheet"
-            />
+  return (
+    <div className="mobile-profile-page">
+      {/* Mobile Header */}
+      <header className="mobile-header">
+        <div className="mobile-header-left">
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+          <Link to="/" className="mobile-logo">
+            <span className="material-symbols-outlined paw-icon">pets</span>
+            <span className="mobile-site-title">ANIMALBAND</span>
+          </Link>
         </div>
-    );
+
+        <div className="mobile-header-right">
+          {user ? (
+            <img
+              src={`${PHP_BASE}/${user.profilePic}`}
+              alt="Profile"
+              className="mobile-profile-pic"
+              onClick={handleAccountClick}
+            />
+          ) : (
+            <button
+              className="mobile-login-btn"
+              onClick={() => navigate("/login")}
+            >
+              Login
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Mobile Navigation Menu */}
+      {showMobileMenu && (
+        <div className="mobile-nav-menu">
+          <div className="mobile-nav-header">
+            <h3>Menu</h3>
+            <button
+              className="mobile-close-btn"
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <nav className="mobile-nav">
+            <button
+              className="mobile-nav-btn"
+              onClick={() => { navigate("/"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">home</span>
+              Home
+            </button>
+            <button
+              className="mobile-nav-btn"
+              onClick={() => navigateToForum("community")}
+            >
+              <span className="material-symbols-outlined">forum</span>
+              Forum
+            </button>
+            <button
+              className="mobile-nav-btn"
+              onClick={() => navigateToForum("my-posts")}
+            >
+              <span className="material-symbols-outlined">article</span>
+              My Posts
+            </button>
+            <button
+              className="mobile-nav-btn"
+              onClick={() => navigateToForum("my-likes")}
+            >
+              <span className="material-symbols-outlined">favorite</span>
+              My Likes
+            </button>
+            <button
+              className="mobile-nav-btn"
+              onClick={() => { navigate("/my-recordings"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">mic</span>
+              My Recordings
+            </button>
+            <button
+              className="mobile-nav-btn"
+              onClick={() => { navigate("/playlists"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">playlist_play</span>
+              My Playlists
+            </button>
+            <button
+              className="mobile-nav-btn active"
+              onClick={() => { navigate("/account"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">person</span>
+              My Profile
+            </button>
+            <button
+              className="mobile-nav-btn"
+              onClick={() => { navigate("/account/edit"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">edit</span>
+              Edit Profile
+            </button>
+            <button
+              className="mobile-nav-btn logout"
+              onClick={() => { navigate("/login"); setShowMobileMenu(false); }}
+            >
+              <span className="material-symbols-outlined">logout</span>
+              Log Out
+            </button>
+          </nav>
+        </div>
+      )}
+
+      {/* Main Profile Content */}
+      <main className="mobile-profile-content">
+        {user ? (
+          <>
+            <div className="mobile-profile-pic-container" onClick={handleProfilePicClick}>
+              <img
+                src={`${PHP_BASE}/${user.profilePic}`}
+                alt="Profile"
+                className="mobile-profile-pic-large"
+              />
+              <div className="mobile-profile-pic-overlay">Change Photo</div>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                style={{ display: "none" }}
+                onChange={handleProfilePicChange}
+              />
+            </div>
+            <h2>{user.username}</h2>
+
+            <button
+              className="mobile-edit-profile-btn"
+              onClick={handleEditProfile}
+            >
+              <span className="material-symbols-outlined">edit</span>
+              Edit Profile
+            </button>
+
+            {/* Profile Information */}
+            <div className="mobile-profile-info">
+              <h3>Profile Information</h3>
+              <div className="mobile-info-grid">
+                <div className="mobile-info-item">
+                  <div className="mobile-info-label">Username</div>
+                  <div className="mobile-info-value">{user.username}</div>
+                </div>
+                <div className="mobile-info-item">
+                  <div className="mobile-info-label">Email</div>
+                  <div className="mobile-info-value">{user.email || "Not provided"}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Profile Stats */}
+            <div className="mobile-profile-stats">
+              <h3>My Statistics</h3>
+              <div className="mobile-stats-container">
+                <div className="mobile-stat-card">
+                  <div className="mobile-stat-number">{postCount}</div>
+                  <div className="mobile-stat-label">Posts</div>
+                </div>
+                <div className="mobile-stat-card">
+                  <div className="mobile-stat-number">{recordingCount}</div>
+                  <div className="mobile-stat-label">Recordings</div>
+                </div>
+                <div className="mobile-stat-card">
+                  <div className="mobile-stat-number">{likeCount}</div>
+                  <div className="mobile-stat-label">Likes</div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="mobile-loading">
+            Loading profile...
+          </div>
+        )}
+      </main>
+
+      {/* Bottom Navigation */}
+      <nav className="mobile-bottom-nav">
+        <Link to="/stage" className="mobile-nav-item">
+          <span className="material-symbols-outlined mobile-nav-icon">piano</span>
+          <span>Stage</span>
+        </Link>
+        <Link to="/forum" className="mobile-nav-item">
+          <span className="material-symbols-outlined mobile-nav-icon">chat</span>
+          <span>Forum</span>
+        </Link>
+        <Link to="/playlists" className="mobile-nav-item">
+          <span className="material-symbols-outlined mobile-nav-icon">playlist_play</span>
+          <span>Playlists</span>
+        </Link>
+        <Link to="/account" className="mobile-nav-item active">
+          <span className="material-symbols-outlined mobile-nav-icon">person</span>
+          <span>Profile</span>
+        </Link>
+      </nav>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        message={modalState.message}
+        type={modalState.type}
+        title={modalState.title}
+      />
+
+      {/* Material Icons Font */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+        rel="stylesheet"
+      />
+    </div>
+  );
 }
