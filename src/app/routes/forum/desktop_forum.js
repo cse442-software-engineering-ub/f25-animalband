@@ -36,8 +36,10 @@ export default function DesktopForum() {
     const [newPostTags, setNewPostTags] = useState([]);
 
     // ========== Tags and sorting stuff ==========
+    const SONG_TAG = "Song Recording";
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
-    const soundTags = ["Song Recording"];
+    const soundFilterTags = [SONG_TAG];
+    const soundPostTags = [SONG_TAG];
     const sortOptions = ["recent", "likes"];
 
     // ========== Date and Time whatnot ==========
@@ -78,6 +80,17 @@ export default function DesktopForum() {
         if (!s) return "";
         return s.length > 30 ? s.slice(0, 30) + "..." : s;
     }
+    useEffect(() => {
+        setNewPostTags(prev => {
+            // Remove Song Recording from tags
+            const withoutSong = prev.filter(t => t !== SONG_TAG);
+            // If a recording is selected, force-add Song Recording
+            if (selectedRecordingId) {
+                return [...withoutSong, SONG_TAG];
+            }
+            return withoutSong;
+        });
+    }, [selectedRecordingId]);
 
     const fetchMyRecordings = useCallback(async () => {
         if (!user?.id) return;
@@ -326,12 +339,17 @@ export default function DesktopForum() {
     };
 
     const handleTagSelect = (tag) => {
+        if (tag === SONG_TAG) {
+            // Song Recording is controlled only by selectedRecordingId
+            return;
+        }
         setNewPostTags(prev =>
             prev.includes(tag)
                 ? prev.filter(t => t !== tag)
                 : [...prev, tag]
         );
     };
+
 
     // ========== Handle post submission ==========
     const handleSubmitPost = async (e) => {
@@ -342,10 +360,15 @@ export default function DesktopForum() {
         if (!user.id) {
             return;
         }
+        const finalTags = selectedRecordingId
+            ? Array.from(new Set([...newPostTags, SONG_TAG]))
+            : newPostTags.filter(t => t !== SONG_TAG);
+
+        const tempId = Date.now();
         const payload = {
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
-            tags: newPostTags,
+            tags: finalTags,
             likesFrom: [user.username],
             author: user.username,
             authorId: user.id,
@@ -353,12 +376,11 @@ export default function DesktopForum() {
             recording_id: selectedRecordingId ?? null,
         };
 
-        const tempId = Date.now();
         const optimistic = {
             id: tempId,
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
-            tags: newPostTags,
+            tags: finalTags,
             author: user.username,
             authorId: user.id,
             likes: 1,
@@ -368,6 +390,7 @@ export default function DesktopForum() {
             liked: true,
             recording_id: selectedRecordingId ?? null,
         };
+
         setPosts(prev => [optimistic, ...prev]);
         try {
             const url = `${PHP_URL}/makeForumPost.php`;
@@ -549,18 +572,20 @@ export default function DesktopForum() {
                             ))}
                         </div>
                         {/* Sounds */}
+                        {/* Sounds */}
                         <div className="filter-section">
                             <span className="filter-title">Sounds:</span>
-                            {soundTags.map(tag => (
+                            {soundFilterTags.map(tag => (
                                 <span
                                     key={tag}
-                                    className={`tag ${selectedTags.includes(tag) ? 'active' : ''}`}
+                                    className={`tag ${selectedTags.includes(tag) ? "active" : ""}`}
                                     onClick={() => handleTagClick(tag)}
                                 >
                                     {tag}
                                 </span>
                             ))}
                         </div>
+
                         {/* Sort by */}
                         <div className="sort-controls">
                             <div className="control-group">
@@ -753,23 +778,38 @@ export default function DesktopForum() {
                                     {animalTags.map(tag => (
                                         <span
                                             key={tag}
-                                            className={`tag ${newPostTags.includes(tag) ? 'active' : ''}`}
+                                            className={`tag ${newPostTags.includes(tag) ? "active" : ""}`}
                                             onClick={() => handleTagSelect(tag)}
                                         >
                                             {tag}
                                         </span>
                                     ))}
-                                    {soundTags.map(tag => (
-                                        <span
-                                            key={tag}
-                                            className={`tag ${newPostTags.includes(tag) ? 'active' : ''}`}
-                                            onClick={() => handleTagSelect(tag)}
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
+                                    {soundPostTags.map(tag => {
+                                        const isSongRecording = tag === SONG_TAG;
+                                        const isActive = isSongRecording
+                                            ? !!selectedRecordingId          // active only if a recording is selected
+                                            : newPostTags.includes(tag);
+
+                                        return (
+                                            <span
+                                                key={tag}
+                                                className={`tag ${isActive ? "active" : ""} ${isSongRecording && !selectedRecordingId ? "disabled" : ""
+                                                    }`}
+                                                onClick={() => {
+                                                    if (isSongRecording) {
+                                                        // Non-clickable: tied to recording selection
+                                                        return;
+                                                    }
+                                                    handleTagSelect(tag);
+                                                }}
+                                            >
+                                                {tag}
+                                            </span>
+                                        );
+                                    })}
                                 </div>
                             </div>
+
                             <div className="form-group">
                                 <label>Attach Recording (optional):</label>
                                 <div className="recording-select-wrap">
