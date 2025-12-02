@@ -37,8 +37,11 @@ if (empty($_COOKIE['auth_token'])) {
 $token = $_COOKIE['auth_token'];
 
 // === Get User Info ===
+// NOTE: now also selecting Name so we know the old username
 $stmt = $conn->prepare("
-    SELECT accountCredentials.Email, accountCredentials.Password
+    SELECT accountCredentials.Email,
+           accountCredentials.Password,
+           accountCredentials.Name
     FROM authTokens
     JOIN accountCredentials ON authTokens.Email = accountCredentials.Email
     WHERE authTokens.Token = ?
@@ -58,6 +61,7 @@ if ($res->num_rows === 0) {
 $user = $res->fetch_assoc();
 $currentEmail = $user['Email'];
 $currentHash = $user['Password'];
+$oldName      = $user['Name'];  // <-- current username in DB
 
 // === Read Input ===
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -98,26 +102,68 @@ if (!password_verify($currentPassword, $currentHash)) {
     exit;
 }
 
-// === Update Account ===
-if ($newPassword !== null && $newPassword !== '') {
-    $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-    $stmt = $conn->prepare("UPDATE accountCredentials SET Name = ?, Password = ? WHERE Email = ?");
-    $stmt->bind_param("sss", $newName, $newHash, $currentEmail);
-} else {
-    $stmt = $conn->prepare("UPDATE accountCredentials SET Name = ? WHERE Email = ?");
-    $stmt->bind_param("ss", $newName, $currentEmail);
-}
+// If name didn't change, you can optionally skip the forum updates
+// but still allow password-only changes
+$changingName = ($newName !== $oldName);
 
-$ok = $stmt->execute();
-$err = h($stmt->error);
-$stmt->close();
+// === Transaction for account + forum updates ===
+$conn->begin_transaction();
 
-if (!$ok) {
+try {
+    // === Update Account ===
+    if ($newPassword !== null && $newPassword !== '') {
+        $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("UPDATE accountCredentials SET Name = ?, Password = ? WHERE Email = ?");
+        $stmt->bind_param("sss", $newName, $newHash, $currentEmail);
+    } else {
+        $stmt = $conn->prepare("UPDATE accountCredentials SET Name = ? WHERE Email = ?");
+        $stmt->bind_param("ss", $newName, $currentEmail);
+    }
+
+    $ok = $stmt->execute();
+    $err = h($stmt->error);
+    $stmt->close();
+
+    if (!$ok) {
+        throw new Exception("Account update failed: " . $err);
+    }
+
+    // === Propagate username change to forum tables ===
+    if ($changingName) {
+        // forumPosts.author
+        $stmt = $conn->prepare("UPDATE forumPosts SET author = ? WHERE author = ?");
+        $stmt->bind_param("ss", $newName, $oldName);
+        $ok = $stmt->execute();
+        $err = h($stmt->error);
+        $stmt->close();
+        if (!$ok) {
+            throw new Exception("forumPosts update failed: " . $err);
+        }
+
+        // forumComments.author
+        $stmt = $conn->prepare("UPDATE forumComments SET author = ? WHERE author = ?");
+        $stmt->bind_param("ss", $newName, $oldName);
+        $ok = $stmt->execute();
+        $err = h($stmt->error);
+        $stmt->close();
+        if (!$ok) {
+            throw new Exception("forumComments update failed: " . $err);
+        }
+    }
+
+    // All good
+    $conn->commit();
+    echo json_encode(["success" => true]);
+
+} catch (Exception $e) {
+    $conn->rollback();
     http_response_code(500);
-    echo json_encode(["success" => false, "message" => "Update failed", "error" => $err]);
-    exit;
+    echo json_encode([
+        "success" => false,
+        "message" => "Update failed",
+        "error"   => $e->getMessage()
+    ]);
 }
 
-echo json_encode(["success" => true]);
 $conn->close();
 ?>
