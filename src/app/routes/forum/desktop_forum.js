@@ -530,6 +530,12 @@ export default function DesktopForum() {
                         <div className="header-controls">
                             <div className="view-buttons">
                                 <button
+                                    className={`nav-btn ${activeView === "community" ? "active" : ""}`}
+                                    onClick={() => setActiveView("community")}
+                                >
+                                    All Posts
+                                </button>
+                                <button
                                     className={`nav-btn ${activeView === "my-posts" ? "active" : ""}`}
                                     onClick={() => setActiveView("my-posts")}
                                 >
@@ -542,6 +548,7 @@ export default function DesktopForum() {
                                     My Likes
                                 </button>
                             </div>
+
 
                             <div className="header-search">
                                 <input
