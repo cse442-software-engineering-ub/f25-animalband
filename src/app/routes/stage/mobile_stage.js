@@ -921,13 +921,13 @@ export default function MobileStage() {
   };
 
   const saveRecordingLocally = async () => {
-    if (isSaving) return;
+  if (isSaving) return;
 
-    const sanitizedTitle = sanitizeInput(recordingTitle, MAX_TITLE_LENGTH);
-    const sanitizedDescription = sanitizeInput(
-      recordingDescription,
-      MAX_DESCRIPTION_LENGTH
-    );
+  const sanitizedTitle = sanitizeInput(recordingTitle, MAX_TITLE_LENGTH);
+  const sanitizedDescription = sanitizeInput(
+    recordingDescription,
+    MAX_DESCRIPTION_LENGTH
+  );
 
     if (!sanitizedTitle) {
       showAlertModal("Title Required", "Please enter a valid title.", "warning");
@@ -939,11 +939,11 @@ export default function MobileStage() {
       return;
     }
 
-    setIsSaving(true);
+  setIsSaving(true);
 
-    const cookies = document.cookie.split("; ");
-    const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
-    const authCookie = cookieObj["auth_token"] || "";
+  const cookies = document.cookie.split("; ");
+  const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
+  const authCookie = cookieObj["auth_token"] || "";
 
     if (!authCookie) {
       showAlertModal("Login Required", "You must be logged in to save recordings.", "warning");
@@ -951,70 +951,81 @@ export default function MobileStage() {
       return;
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    try {
-      const endpoint = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php";
+  try {
+    const endpoint = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php";
 
-      const payload = {
-        recording: recordedTracks,
-        title: sanitizedTitle,
-        description: sanitizedDescription,
-        userToken: authCookie,
-      };
+    const payload = {
+      recording: recordedTracks,
+      title: sanitizedTitle,
+      description: sanitizedDescription,
+      userToken: authCookie,
+    };
 
-      // ONLY include recordingId if in edit mode AND overwriting
-      if (isEditMode && saveOption === "overwrite" && editingRecordingId) {
-        payload.recordingId = editingRecordingId;
+    // Include recordingId if in edit mode AND overwriting
+    if (isEditMode && saveOption === "overwrite") {
+      if (!editingRecordingId) {
+        alert("Error: Missing recording ID for overwrite operation.");
+        setIsSaving(false);
+        return;
       }
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        if (isEditMode && saveOption === "overwrite") {
-          showAlertModal("Success", "Recording updated successfully!", "success");
-          setHasUnsavedChanges(false);
-          setInitialTrackCount(recordedTracks.length);
-        } else if (isEditMode && saveOption === "remix") {
-          showAlertModal("Success", "Remix saved as a new recording!", "success");
-          setIsEditMode(false);
-          setEditingRecordingId(null);
-          setHasUnsavedChanges(false);
-        } else {
-          showAlertModal("Success", "Recording saved successfully!", "success");
-        }
-        
-        setShowSaveForm(false);
-        
-        if (!isEditMode || saveOption === "remix") {
-          setRecordingTitle("");
-          setRecordingDescription("");
-        }
-      } else {
-        const errorText = await response.text();
-        console.error("Save failed:", errorText);
-        showAlertModal("Save Failed", "Failed to save recording. Please try again.", "error");
-      }
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (err.name === "AbortError") {
-        showAlertModal("Timeout", "Request timeout. Please try again.", "error");
-      } else {
-        console.error("Save error:", err);
-        showAlertModal("Error", "Error saving recording. Please try again.", "error");
-      }
-    } finally {
-      setIsSaving(false);
+      payload.recordingId = editingRecordingId;
+      console.log("Overwriting recording with ID:", editingRecordingId);
+    } else {
+      console.log("Saving as new recording (remix or new)");
     }
-  };
+    // For remix or new recordings, we don't include recordingId
+
+    console.log("Sending payload:", payload);
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      if (isEditMode && saveOption === "overwrite") {
+        alert("Recording updated successfully!");
+        setHasUnsavedChanges(false);
+        setInitialTrackCount(recordedTracks.length);
+      } else if (isEditMode && saveOption === "remix") {
+        alert("Remix saved as a new recording!");
+        setIsEditMode(false);
+        setEditingRecordingId(null);
+        setHasUnsavedChanges(false);
+      } else {
+        alert("Recording saved successfully!");
+      }
+      
+      setShowSaveForm(false);
+      
+      if (!isEditMode || saveOption === "remix") {
+        setRecordingTitle("");
+        setRecordingDescription("");
+      }
+    } else {
+      const errorText = await response.text();
+      console.error("Save failed:", errorText);
+      alert("Failed to save recording. Please try again.");
+    }
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      alert("Request timeout. Please try again.");
+    } else {
+      console.error("Save error:", err);
+      alert("Error saving recording. Please try again.");
+    }
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   function bufferToWav(buffer) {
     const numOfChan = buffer.numberOfChannels;
