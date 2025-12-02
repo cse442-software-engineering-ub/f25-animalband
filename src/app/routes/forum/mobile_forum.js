@@ -36,11 +36,19 @@ export default function MobileForum() {
 
     const [currentPage, setCurrentPage] = useState(1);   // <-- add this
     const POSTS_PER_PAGE = 20;
-
     // ========== Tags and sorting stuff ==========
+    const SONG_TAG = "Song Recording";
+
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
-    const soundTags = ["Song Recording"];
+
+    // For filtering
+    const soundFilterTags = [SONG_TAG];
+
+    // For the New Post popup
+    const soundPostTags = [SONG_TAG];
+
     const sortOptions = ["recent", "likes"];
+
 
     // ========== Date and Time whatnot ==========
     const [nowTick, setNowTick] = useState(Date.now());
@@ -109,6 +117,16 @@ export default function MobileForum() {
         const id = setInterval(() => setNowTick(Date.now()), 60_000);
         return () => clearInterval(id);
     }, []);
+
+    useEffect(() => {
+        setNewPostTags(prev => {
+            const withoutSong = prev.filter(t => t !== SONG_TAG);
+            if (selectedRecordingId) {
+                return [...withoutSong, SONG_TAG];
+            }
+            return withoutSong;
+        });
+    }, [selectedRecordingId]);
 
     // ========== Fetch Posts ==========
     const fetchPosts = useCallback(async (opts = { refresh: false }) => {
@@ -312,14 +330,18 @@ export default function MobileForum() {
         setPostError("");
         setTitleError("");
     };
-
     const handleTagSelect = (tag) => {
+        if (tag === SONG_TAG) {
+            // Song Recording is controlled only by selectedRecordingId
+            return;
+        }
         setNewPostTags(prev =>
             prev.includes(tag)
                 ? prev.filter(t => t !== tag)
                 : [...prev, tag]
         );
     };
+
 
     // ========== Handle post submission ==========
     const handleSubmitPost = async (e) => {
@@ -330,10 +352,14 @@ export default function MobileForum() {
         if (!user.id) {
             return;
         }
+
+        const finalTags = selectedRecordingId
+            ? Array.from(new Set([...newPostTags, SONG_TAG]))
+            : newPostTags.filter(t => t !== SONG_TAG);
         const payload = {
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
-            tags: newPostTags,
+            tags: finalTags,
             likesFrom: [user.username],
             author: user.username,
             authorId: user.id,
@@ -346,7 +372,7 @@ export default function MobileForum() {
             id: tempId,
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
-            tags: newPostTags,
+            tags: finalTags,
             author: user.username,
             authorId: user.id,
             likes: 1,
@@ -599,10 +625,10 @@ export default function MobileForum() {
                         <div className="mobile-filter-group">
                             <h4 className="mobile-filter-title">Sounds</h4>
                             <div className="mobile-tags-grid">
-                                {soundTags.map(tag => (
+                                {soundFilterTags.map(tag => (
                                     <span
                                         key={tag}
-                                        className={`mobile-tag ${selectedTags.includes(tag) ? 'active' : ''}`}
+                                        className={`mobile-tag ${selectedTags.includes(tag) ? "active" : ""}`}
                                         onClick={() => handleTagClick(tag)}
                                     >
                                         {tag}
@@ -610,6 +636,7 @@ export default function MobileForum() {
                                 ))}
                             </div>
                         </div>
+
 
                         {/* Sort Options */}
                         <div className="mobile-filter-group">
@@ -856,30 +883,45 @@ export default function MobileForum() {
                                     </p>
                                 )}
                             </div>
-
                             <div className="mobile-form-group">
                                 <label>Tags:</label>
                                 <div className="mobile-tag-selection">
                                     {animalTags.map(tag => (
                                         <span
                                             key={tag}
-                                            className={`mobile-tag ${newPostTags.includes(tag) ? 'active' : ''}`}
+                                            className={`mobile-tag ${newPostTags.includes(tag) ? "active" : ""}`}
                                             onClick={() => handleTagSelect(tag)}
                                         >
                                             {tag}
                                         </span>
                                     ))}
-                                    {soundTags.map(tag => (
-                                        <span
-                                            key={tag}
-                                            className={`mobile-tag ${newPostTags.includes(tag) ? 'active' : ''}`}
-                                            onClick={() => handleTagSelect(tag)}
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
+
+                                    {soundPostTags.map(tag => {
+                                        const isSongRecording = tag === SONG_TAG;
+                                        const isActive = isSongRecording
+                                            ? !!selectedRecordingId
+                                            : newPostTags.includes(tag);
+
+                                        return (
+                                            <span
+                                                key={tag}
+                                                className={`mobile-tag ${isActive ? "active" : ""} ${isSongRecording && !selectedRecordingId ? "disabled" : ""
+                                                    }`}
+                                                onClick={() => {
+                                                    if (isSongRecording) {
+                                                        // Non-clickable: tied to recording selection
+                                                        return;
+                                                    }
+                                                    handleTagSelect(tag);
+                                                }}
+                                            >
+                                                {tag}
+                                            </span>
+                                        );
+                                    })}
                                 </div>
                             </div>
+
                             <div className="mobile-form-group">
                                 <label>Attach Recording (optional):</label>
                                 <div className="m-recording-select-wrap">
@@ -908,7 +950,7 @@ export default function MobileForum() {
                                 className="mobile-submit-btn"
                                 onClick={handleSubmitPost}
                                 disabled={
-                                    newPostTitle.length > 100||
+                                    newPostTitle.length > 100 ||
                                     !user?.id ||
                                     !newPostTitle.trim() ||
                                     !newPostContent.trim() ||

@@ -939,3 +939,8 @@ body.popup-open { overflow: hidden; }
     cursor: pointer;
     text-decoration: underline;
 }
+.mobile-tag.disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
