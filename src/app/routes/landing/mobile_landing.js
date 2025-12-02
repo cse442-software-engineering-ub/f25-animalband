@@ -8,11 +8,11 @@ import useCustomModal from "../../components/useCustomModal.js";
 import RecordingPlaybackModal from "../account/recording_playback_modal.js";
 
 import "./mobile_landing.css";
-import Ostrich from "../../../assets/ostrich.jpeg";
-import Bird from "../../../assets/bird.jpeg";
-import Hamster from "../../../assets/hamster.jpeg";
-import Kangaroo from "../../../assets/kangaroo.jpeg";
-import Snake from "../../../assets/snake.jpeg";
+import Ostrich from "../../../assets/ostrich.png";
+import Bird from "../../../assets/bird.png";
+import Hamster from "../../../assets/hamster.png";
+import Kangaroo from "../../../assets/kangaroo.png";
+import Snake from "../../../assets/snake.png";
 
 export default function MobileLanding() {
   const navigate = useNavigate();

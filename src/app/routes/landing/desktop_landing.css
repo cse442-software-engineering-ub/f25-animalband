@@ -109,23 +109,6 @@
   padding: 2rem 2rem 0;
 }
 
-.main-heading {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 0px;
-  color: #000;
-}
-
-.subtitle {
-  font-size: 1rem;
-  color: #6E6E6E;
-  margin-bottom: 0rem;
-  max-width: 42rem;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.6;
-}
-
 /* ==========Animals Part========== */
 .band-stage {
   text-align: center;
@@ -155,8 +138,9 @@
 }
 
 .animal-member img {
-  height: 10rem;
+  height: 15rem !important;  /* increased from 10rem */
   object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
 .btn-start-band {
@@ -500,7 +484,7 @@
   }
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .header {
     flex-direction: column;
     gap: 1rem;
@@ -530,12 +514,11 @@
   .band-stage {
     padding: 2rem 1rem;
   }
-}
+} */
 
 /* ===== Make all section backgrounds pure white ===== */
 .landing-page,
 
-.band-stage,
 .features-section,
 .stats-container,
 .featured-songs-section
@@ -562,13 +545,6 @@ body {
 .footer {
   border-top: 1px solid #e5e5e5;
   border-bottom: none;
-}
-
-/* ===== Animal hover hop animation ===== */
-.animal-member img {
-  height: 10rem;
-  object-fit: cover;
-  transition: transform 0.3s ease;
 }
 
 .animal-member:hover img {
@@ -641,4 +617,21 @@ body {
   justify-content: center;
   margin-top: 10px;
   flex-wrap: wrap;
+}
+
+.main-heading {
+  font-size: 3rem;  /* increased from 2rem */
+  font-weight: bold;
+  margin-bottom: 0px;
+  color: #000;
+}
+
+.subtitle {
+  font-size: 10rem;  /* increased from 1rem */
+  color: #6E6E6E;
+  margin-bottom: 0rem;
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
 }
