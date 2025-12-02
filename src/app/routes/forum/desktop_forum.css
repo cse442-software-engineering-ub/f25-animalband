@@ -1093,3 +1093,11 @@ body.popup-open {
   font-size: 0.9rem;
   color: #555;
 }
+
+
+
+.tag.disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
