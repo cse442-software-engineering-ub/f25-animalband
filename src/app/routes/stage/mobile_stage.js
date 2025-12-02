@@ -869,100 +869,111 @@ export default function MobileStage() {
   };
 
   const saveRecordingLocally = async () => {
-    if (isSaving) return;
+  if (isSaving) return;
 
-    const sanitizedTitle = sanitizeInput(recordingTitle, MAX_TITLE_LENGTH);
-    const sanitizedDescription = sanitizeInput(
-      recordingDescription,
-      MAX_DESCRIPTION_LENGTH
-    );
+  const sanitizedTitle = sanitizeInput(recordingTitle, MAX_TITLE_LENGTH);
+  const sanitizedDescription = sanitizeInput(
+    recordingDescription,
+    MAX_DESCRIPTION_LENGTH
+  );
 
-    if (!sanitizedTitle) {
-      alert("Please enter a valid title.");
-      return;
-    }
+  if (!sanitizedTitle) {
+    alert("Please enter a valid title.");
+    return;
+  }
 
-    if (recordedTracks.length === 0) {
-      alert("No tracks to save.");
-      return;
-    }
+  if (recordedTracks.length === 0) {
+    alert("No tracks to save.");
+    return;
+  }
 
-    setIsSaving(true);
+  setIsSaving(true);
 
-    const cookies = document.cookie.split("; ");
-    const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
-    const authCookie = cookieObj["auth_token"] || "";
+  const cookies = document.cookie.split("; ");
+  const cookieObj = Object.fromEntries(cookies.map((c) => c.split("=")));
+  const authCookie = cookieObj["auth_token"] || "";
 
-    if (!authCookie) {
-      alert("You must be logged in to save recordings.");
-      setIsSaving(false);
-      return;
-    }
+  if (!authCookie) {
+    alert("You must be logged in to save recordings.");
+    setIsSaving(false);
+    return;
+  }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    try {
-      const endpoint = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php";
+  try {
+    const endpoint = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/saveRecordingsLocal.php";
 
-      const payload = {
-        recording: recordedTracks,
-        title: sanitizedTitle,
-        description: sanitizedDescription,
-        userToken: authCookie,
-      };
+    const payload = {
+      recording: recordedTracks,
+      title: sanitizedTitle,
+      description: sanitizedDescription,
+      userToken: authCookie,
+    };
 
-      // ONLY include recordingId if in edit mode AND overwriting
-      if (isEditMode && saveOption === "overwrite" && editingRecordingId) {
-        payload.recordingId = editingRecordingId;
+    // Include recordingId if in edit mode AND overwriting
+    if (isEditMode && saveOption === "overwrite") {
+      if (!editingRecordingId) {
+        alert("Error: Missing recording ID for overwrite operation.");
+        setIsSaving(false);
+        return;
       }
+      payload.recordingId = editingRecordingId;
+      console.log("Overwriting recording with ID:", editingRecordingId);
+    } else {
+      console.log("Saving as new recording (remix or new)");
+    }
+    // For remix or new recordings, we don't include recordingId
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+    console.log("Sending payload:", payload);
 
-      clearTimeout(timeoutId);
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
 
-      if (response.ok) {
-        if (isEditMode && saveOption === "overwrite") {
-          alert("Recording updated successfully!");
-          setHasUnsavedChanges(false);
-          setInitialTrackCount(recordedTracks.length);
-        } else if (isEditMode && saveOption === "remix") {
-          alert("Remix saved as a new recording!");
-          setIsEditMode(false);
-          setEditingRecordingId(null);
-          setHasUnsavedChanges(false);
-        } else {
-          alert("Recording saved successfully!");
-        }
-        
-        setShowSaveForm(false);
-        
-        if (!isEditMode || saveOption === "remix") {
-          setRecordingTitle("");
-          setRecordingDescription("");
-        }
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      if (isEditMode && saveOption === "overwrite") {
+        alert("Recording updated successfully!");
+        setHasUnsavedChanges(false);
+        setInitialTrackCount(recordedTracks.length);
+      } else if (isEditMode && saveOption === "remix") {
+        alert("Remix saved as a new recording!");
+        setIsEditMode(false);
+        setEditingRecordingId(null);
+        setHasUnsavedChanges(false);
       } else {
-        const errorText = await response.text();
-        console.error("Save failed:", errorText);
-        alert("Failed to save recording. Please try again.");
+        alert("Recording saved successfully!");
       }
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (err.name === "AbortError") {
-        alert("Request timeout. Please try again.");
-      } else {
-        console.error("Save error:", err);
-        alert("Error saving recording. Please try again.");
+      
+      setShowSaveForm(false);
+      
+      if (!isEditMode || saveOption === "remix") {
+        setRecordingTitle("");
+        setRecordingDescription("");
       }
-    } finally {
-      setIsSaving(false);
+    } else {
+      const errorText = await response.text();
+      console.error("Save failed:", errorText);
+      alert("Failed to save recording. Please try again.");
     }
-  };
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      alert("Request timeout. Please try again.");
+    } else {
+      console.error("Save error:", err);
+      alert("Error saving recording. Please try again.");
+    }
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   function bufferToWav(buffer) {
     const numOfChan = buffer.numberOfChannels;
