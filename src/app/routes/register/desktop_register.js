@@ -70,16 +70,37 @@ export default function Register() {
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`Request failed. Status ${response.status}`);
+      // Try to parse JSON, fall back to empty object if it fails
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || data.success === false) {
+        // Username taken case (409 from backend, with field === 'username')
+        if (response.status === 409 || data.field === "username") {
+          setErrors((prev) => ({ ...prev, username: true }));
+          showModal(
+            data.message || "That username is already taken. Please choose another one.",
+            "error"
+          );
+          return;
+        }
+
+        // Generic failure
+        showModal(
+          data.message || "Registration failed. Please try again.",
+          "error"
+        );
+        return;
       }
 
+      // Success
       navigate("/");
     } catch (err) {
       console.error(err);
       showModal("Registration failed. Please try again.", "error");
     }
+
   };
+
 
   return (
     <div className="register-page">
@@ -92,36 +113,36 @@ export default function Register() {
       <form onSubmit={handleRegister}>
         <label>
           Name
-          <input 
-            type="text" 
-            name="username" 
+          <input
+            type="text"
+            name="username"
             placeholder="Name"
             style={errors.username ? { border: '2px solid red' } : {}}
           />
         </label>
         <label>
           Email
-          <input 
-            type="text" 
-            name="email" 
+          <input
+            type="text"
+            name="email"
             placeholder="Email"
             style={errors.email ? { border: '2px solid red' } : {}}
           />
         </label>
         <label>
           Password
-          <input 
-            type="password" 
-            name="password" 
+          <input
+            type="password"
+            name="password"
             placeholder="Create a Password"
             style={errors.password ? { border: '2px solid red' } : {}}
           />
         </label>
         <label>
           Confirm Password
-          <input 
-            type="password" 
-            name="password-conf" 
+          <input
+            type="password"
+            name="password-conf"
             placeholder="Confirm Password"
             style={errors.passwordConf ? { border: '2px solid red' } : {}}
           />
