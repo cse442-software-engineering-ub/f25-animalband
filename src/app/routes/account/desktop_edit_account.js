@@ -16,7 +16,7 @@ export default function DesktopEditAccount() {
     const [newPwd, setNewPwd] = useState("");
     const [confirmPwd, setConfirmPwd] = useState("");
     const [msg, setMsg] = useState(null);
-
+    const [errors, setErrors] = useState({});
     // Password visibility states
     const [showCurrent, setShowCurrent] = useState(false);
     const [showNew, setShowNew] = useState(false);
@@ -57,6 +57,7 @@ export default function DesktopEditAccount() {
     const onSubmit = async (e) => {
         e.preventDefault();
         setMsg(null);
+        setErrors({}); // Clear previous errors
 
         if (!currentPwd) {
             setMsg({ type: "error", text: "Please enter your current password." });
@@ -80,11 +81,21 @@ export default function DesktopEditAccount() {
                 }),
             });
             const data = await res.json();
+
+            // Handle username conflict (409 status)
+            if (!res.ok && (res.status === 409 || data.field === "username")) {
+                setErrors({ username: true });
+                setMsg({ type: "error", text: data.message || "That username is already taken." });
+                setSubmitting(false);
+                return;
+            }
+
             if (data.success) {
                 setMsg({ type: "ok", text: "Profile updated!" });
                 setCurrentPwd("");
                 setNewPwd("");
                 setConfirmPwd("");
+                setErrors({});
 
                 // Update user data
                 setUser(prev => ({ ...prev, username: username.trim() }));
@@ -159,6 +170,7 @@ export default function DesktopEditAccount() {
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             placeholder="Your name"
+                            style={errors.username ? { border: '2px solid red' } : {}}
                             required
                         />
 

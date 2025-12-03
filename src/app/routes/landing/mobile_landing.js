@@ -1,35 +1,44 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { preloadLandingSounds, schedulePlayback } from "./landing_player.js";
+import { preloadLandingSounds } from "./landing_player.js";
 import MobileAddToPlaylistButton from "../../../components/mobile_add_to_playlist_button.js";
+import CustomModal from "../../components/CustomModal.js";
+import useCustomModal from "../../components/useCustomModal.js";
 
+import RecordingPlaybackModal from "../account/recording_playback_modal.js";
 
 import "./mobile_landing.css";
-import Ostrich from "../../../assets/ostrich.jpeg";
-import Bird from "../../../assets/bird.jpeg";
-import Hamster from "../../../assets/hamster.jpeg";
-import Kangaroo from "../../../assets/kangaroo.jpeg";
-import Snake from "../../../assets/snake.jpeg";
+import Ostrich from "../../../assets/ostrich.png";
+import Bird from "../../../assets/bird.png";
+import Hamster from "../../../assets/hamster.png";
+import Kangaroo from "../../../assets/kangaroo.png";
+import Snake from "../../../assets/snake.png";
 
 export default function MobileLanding() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [memberCount, setMemberCount] = useState(null);
+  const [postCount, setPostCount] = useState(null);
+  const [loopCount, setLoopCount] = useState(null);
 
-  // Stuff for carousel
+  // Carousel
   const slides = [Ostrich, Bird, Hamster, Kangaroo, Snake];
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
 
   // Songs
-  const topSongs = [
-    { title: "Animal Jam", author: "DJ Owl" },
-    { title: "Paws and Beats", author: "Cat Band" },
-    { title: "Roar Remix", author: "Lion Orchestra" },
-  ];
   const [featuredSongs, setFeaturedSongs] = useState([]);
-  const [buffers, setBuffers] = useState(null);
+  const [buffers, setBuffers] = useState(null); // for WAV download
+  const { modalState, showModal, closeModal } = useCustomModal();
+
+  // 🔹 Shared playback modal state (same behavior as desktop landing)
+  const [showRecModal, setShowRecModal] = useState(false);
+  const [activeRecording, setActiveRecording] = useState(null); // {id,title,description}
+  const [activeNotes, setActiveNotes] = useState([]); // song.recording
+  // const [buffers, setBuffers] = useState(null);
   const [playingIndex, setPlayingIndex] = useState(-1);
   const stopRef = useRef(null);
+
   useEffect(() => {
     (async () => {
       try {
@@ -40,10 +49,13 @@ export default function MobileLanding() {
       }
     })();
   }, []);
+
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php");
+        const r = await fetch(
+          "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getFeaturedSongs.php"
+        );
         const d = await r.json();
         if (d?.success && Array.isArray(d.songs)) setFeaturedSongs(d.songs);
       } catch (e) {
@@ -65,7 +77,29 @@ export default function MobileLanding() {
         console.error("Failed to fetch user", err);
       }
     };
+
+    const fetchCount = async (url, setter) => {
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        setter(data[Object.keys(data)[0]]);
+      } catch (err) {
+        console.error(err);
+      }
+    };
     checkUser();
+    fetchCount(
+      "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getMemberCount.php",
+      setMemberCount
+    );
+    fetchCount(
+      "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getPostCount.php",
+      setPostCount
+    );
+    fetchCount(
+      "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/getLoopCount.php",
+      setLoopCount
+    );
   }, []);
 
   const handleAccountClick = () => {
@@ -76,6 +110,7 @@ export default function MobileLanding() {
   const handleNavigation = (path) => {
     navigate(path);
   };
+
   const stopAll = () => {
     if (stopRef.current) {
       stopRef.current();
@@ -83,21 +118,25 @@ export default function MobileLanding() {
     }
   };
 
-  const togglePlay = (index) => {
-    if (!buffers) return;
-    if (playingIndex === index) {
-      stopAll();
-      setPlayingIndex(-1);
-      return;
-    }
+  // NEW: Handle remix button click
+  const handleRemix = (song) => {
+    // Stop any playing audio first
     stopAll();
-    const song = featuredSongs[index];
-    if (!song) return;
-    stopRef.current = schedulePlayback(buffers, song.recording, () => {
-      setPlayingIndex(-1);
-      stopRef.current = null;
-    });
-    setPlayingIndex(index);
+
+    // Store the song data in sessionStorage so the stage can access it
+    const remixData = {
+      songId: song.id,
+      title: song.title,
+      author: song.author,
+      description: song.description,
+      recording: song.recording,
+      isRemix: true,
+    };
+
+    sessionStorage.setItem("remixData", JSON.stringify(remixData));
+
+    // Navigate to stage with remix parameter
+    navigate(`/stage?remix=${song.id}`);
   };
 
   useEffect(() => {
@@ -121,18 +160,175 @@ export default function MobileLanding() {
     el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
   };
 
+  // 🔹 Normalize flat vs tracks-of-notes into a single note array
+  const normalizeRecordingNotes = (rec) => {
+    if (!Array.isArray(rec) || rec.length === 0) return [];
+    const first = rec[0];
+
+    // Flat: [{ key, time }, ...]
+    if (
+      first &&
+      typeof first === "object" &&
+      "key" in first &&
+      "time" in first
+    ) {
+      return rec;
+    }
+
+    // Tracks: [ [ {key,time}, ... ], [ ... ], ... ]
+    return rec
+      .flat()
+      .filter((n) => n && typeof n === "object" && "key" in n && "time" in n);
+  };
+
+  // 🔹 Open RecordingPlaybackModal for a song
+  const openRecordingModal = (song) => {
+    if (!song || !song.recording) return;
+    const notes = normalizeRecordingNotes(song.recording);
+    if (notes.length === 0) return;
+
+    setActiveRecording({
+      id: song.id,
+      title: song.title || `Song #${song.id}`,
+      description: song.description || "",
+    });
+    setActiveNotes(notes);
+    setShowRecModal(true);
+  };
+
+  const closeRecordingModal = () => {
+    setShowRecModal(false);
+    setActiveRecording(null);
+    setActiveNotes([]);
+  };
+
+  // 🔹 WAV download (same logic as desktop landing)
+  const downloadWav = async (song) => {
+    if (!buffers || !song?.recording) return;
+
+    const notes = normalizeRecordingNotes(song.recording);
+    if (notes.length === 0) return;
+
+    // Find latest note time
+    const maxTimeMs = notes.reduce(
+      (max, n) => (typeof n.time === "number" && n.time > max ? n.time : max),
+      0
+    );
+
+    // +1000 ms tail; ensure at least 1 second
+    const durationSec = Math.max(1, (maxTimeMs + 1000) / 1000);
+    const sampleRate = 44100;
+    const frameCount = Math.max(1, Math.floor(sampleRate * durationSec));
+
+    const offlineCtx = new OfflineAudioContext(2, frameCount, sampleRate);
+
+    // Schedule all notes
+    notes.forEach(({ key, time }) => {
+      const buffer = buffers[key];
+      if (!buffer) return;
+
+      const source = offlineCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(offlineCtx.destination);
+      source.start(time / 1000);
+    });
+
+    const renderedBuffer = await offlineCtx.startRendering();
+    const wavBlob = bufferToWav(renderedBuffer);
+
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${song.title || `song_${song.id}`}.wav`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const bufferToWav = (buffer) => {
+    const numOfChan = buffer.numberOfChannels;
+    const length = buffer.length * numOfChan * 2 + 44;
+    const bufferArray = new ArrayBuffer(length);
+    const view = new DataView(bufferArray);
+
+    let offset = 0;
+    const writeString = (view, offset, string) => {
+      for (let i = 0; i < string.length; i++)
+        view.setUint8(offset + i, string.charCodeAt(i));
+    };
+
+    writeString(view, offset, "RIFF");
+    offset += 4;
+    view.setUint32(offset, 36 + buffer.length * numOfChan * 2, true);
+    offset += 4;
+    writeString(view, offset, "WAVE");
+    offset += 4;
+    writeString(view, offset, "fmt ");
+    offset += 4;
+    view.setUint32(offset, 16, true);
+    offset += 4;
+    view.setUint16(offset, 1, true);
+    offset += 2;
+    view.setUint16(offset, numOfChan, true);
+    offset += 2;
+    view.setUint32(offset, buffer.sampleRate, true);
+    offset += 4;
+    view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true);
+    offset += 4;
+    view.setUint16(offset, numOfChan * 2, true);
+    offset += 2;
+    view.setUint16(offset, 16, true);
+    offset += 2;
+    writeString(view, offset, "data");
+    offset += 4;
+    view.setUint32(offset, buffer.length * numOfChan * 2, true);
+    offset += 4;
+
+    const inputL = buffer.getChannelData(0);
+    const inputR =
+      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : inputL;
+    const interleaved = new Float32Array(buffer.length * 2);
+    for (let i = 0, j = 0; i < buffer.length; i++, j += 2) {
+      interleaved[j] = inputL[i];
+      interleaved[j + 1] = inputR[i];
+    }
+
+    let index = 44;
+    for (let i = 0; i < interleaved.length; i++, index += 2) {
+      const sample = Math.max(-1, Math.min(1, interleaved[i]));
+      view.setInt16(
+        index,
+        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+        true
+      );
+    }
+
+    return new Blob([view], { type: "audio/wav" });
+  };
+
   return (
     <div className="m-landing">
       <header className={`m-header ${user ? "is-logged-in" : ""}`}>
         <div className="m-site-title">
-          <span className="material-symbols-outlined m-paw" aria-hidden>pets</span>
+          <span className="material-symbols-outlined m-paw" aria-hidden>
+            pets
+          </span>
           <span className="m-name">ANIMALBAND</span>
         </div>
         <div className={`m-auth ${user ? "is-logged-in" : ""}`}>
           {!user ? (
             <>
-              <button className="m-btn m-btn-solid" onClick={() => navigate("/login")}>Login</button>
-              <button className="m-btn m-btn-outline" onClick={() => navigate("/register")}>Register</button>
+              <button
+                className="m-btn m-btn-solid"
+                onClick={() => navigate("/login")}
+              >
+                Login
+              </button>
+              <button
+                className="m-btn m-btn-outline"
+                onClick={() => navigate("/register")}
+              >
+                Register
+              </button>
             </>
           ) : (
             <img
@@ -148,15 +344,25 @@ export default function MobileLanding() {
       <main className="m-main">
         <h1 className="m-title">Create Music with Animals</h1>
         <p className="m-sub">
-          Play music with your animal bandmates on a stage. Layer beats, record music,
-          and share it all with a friendly community.
+          Play music with your animal bandmates on a stage. Layer beats, record
+          music, and share it all with a friendly community.
         </p>
 
         {/* Swipeable Animal Carousel */}
         <div className="m-carousel">
-          <div className="m-track" ref={trackRef} role="region" aria-label="Feature images">
+          <div
+            className="m-track"
+            ref={trackRef}
+            role="region"
+            aria-label="Feature images"
+          >
             {slides.map((src, i) => (
-              <div className="m-slide" key={i} aria-roledescription="slide" aria-label={`Image ${i + 1} of ${slides.length}`}>
+              <div
+                className="m-slide"
+                key={i}
+                aria-roledescription="slide"
+                aria-label={`Image ${i + 1} of ${slides.length}`}
+              >
                 <img src={src} alt="" className="m-slide-img" />
               </div>
             ))}
@@ -176,7 +382,9 @@ export default function MobileLanding() {
         </div>
 
         {/* Start Button */}
-        <Link to="/stage" className="m-btn-start-band">Start Your Band</Link>
+        <Link to="/stage" className="m-btn-start-band">
+          Start Your Band
+        </Link>
 
         {/* Features */}
         <section className="m-features">
@@ -184,28 +392,29 @@ export default function MobileLanding() {
             <span className="material-symbols-outlined m-card-icon">piano</span>
             <div className="m-card-text">
               <div className="m-card-title">Stage</div>
-              <div className="m-card-sub">Play instruments with your favorite animals.</div>
+              <div className="m-card-sub">
+                Play instruments with your favorite animals.
+              </div>
             </div>
           </Link>
-          <Link to="/looping" className="m-card">
-            <span className="material-symbols-outlined m-card-icon">instant_mix</span>
+          <Link to="/rhythm-game" className="m-card">
+            <span className="material-symbols-outlined m-card-icon">
+              instant_mix
+            </span>
             <div className="m-card-text">
-              <div className="m-card-title">Looping</div>
-              <div className="m-card-sub">Layer beats & notes with a visual mixer.</div>
+              <div className="m-card-title">Rhythm Game</div>
+              <div className="m-card-sub">
+                Two-player competitive mode to test your rhythm.
+              </div>
             </div>
           </Link>
           <Link to="/forum" className="m-card">
             <span className="material-symbols-outlined m-card-icon">chat</span>
             <div className="m-card-text">
               <div className="m-card-title">Forum</div>
-              <div className="m-card-sub">Share your tracks, ask for help, and get feedback.</div>
-            </div>
-          </Link>
-          <Link to="/stage" className="m-card">
-            <span className="material-symbols-outlined m-card-icon">edit</span>
-            <div className="m-card-text">
-              <div className="m-card-title">Customization</div>
-              <div className="m-card-sub">Import sounds and personalize your animals.</div>
+              <div className="m-card-sub">
+                Share your tracks, ask for help, and get feedback.
+              </div>
             </div>
           </Link>
         </section>
@@ -215,35 +424,63 @@ export default function MobileLanding() {
           <h2 className="m-top-songs-title">Today's Top Songs</h2>
 
           <div className="m-top-songs-list">
-            {featuredSongs.length === 0 && [0, 1, 2].map(i => (
-              <div key={`sk-${i}`} className="m-song-card">
-                <div className="m-song-info">
-                  <div className="m-song-title">Loading…</div>
-                  <div className="m-song-author">&nbsp;</div>
+            {featuredSongs.length === 0 &&
+              [0, 1, 2].map((i) => (
+                <div key={`sk-${i}`} className="m-song-card">
+                  <div className="m-song-info">
+                    <div className="m-song-title">Loading…</div>
+                    <div className="m-song-author">&nbsp;</div>
+                  </div>
+                  <button className="m-play-btn" disabled>
+                    <span className="material-symbols-outlined">
+                      hourglass_top
+                    </span>
+                  </button>
                 </div>
-                <button className="m-play-btn" disabled>
-                  <span className="material-symbols-outlined">hourglass_top</span>
-                </button>
-              </div>
-            ))}
+              ))}
 
-            {featuredSongs.map((song, index) => (
+            {featuredSongs.map((song) => (
               <div key={song.id} className="m-song-card">
                 <div className="m-song-info">
-                  <div className="m-song-title">{song.title || `Untitled #${song.id}`}</div>
+                  <div className="m-song-title">
+                    {song.title || `Untitled #${song.id}`}
+                  </div>
                   <div className="m-song-author">by {song.author}</div>
                 </div>
 
-                <div className="m-song-actions" style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                {/* FIXED: Removed inline styles that were overriding CSS */}
+                <div className="m-song-actions">
                   <button
                     className="m-play-btn"
-                    disabled={!buffers}
-                    onClick={() => togglePlay(index)}
-                    title={!buffers ? "Loading sounds..." : (playingIndex === index ? "Stop" : "Play")}
+                    aria-label="Play song"
+                    onClick={() => openRecordingModal(song)}
+                    disabled={
+                      !song.recording ||
+                      !normalizeRecordingNotes(song.recording).length
+                    }
+                    title="Play with animals"
                   >
                     <span className="material-symbols-outlined">
-                      {playingIndex === index ? "stop" : "play_arrow"}
+                      play_arrow
                     </span>
+                  </button>
+
+                  <button
+                    className="song-download-btn"
+                    aria-label="Download Song"
+                    onClick={() => downloadWav(song)}
+                  >
+                    <span className="material-symbols-outlined">download</span>
+                  </button>
+
+                  {/* Remix Button */}
+                  <button
+                    className="m-remix-btn"
+                    onClick={() => handleRemix(song)}
+                    aria-label="Remix this song"
+                    title="Remix this song"
+                  >
+                    <span className="material-symbols-outlined">edit_note</span>
                   </button>
 
                   <MobileAddToPlaylistButton
@@ -251,31 +488,46 @@ export default function MobileLanding() {
                     compact
                     user={user}
                     onAdded={() => {
-                      // optional toast or haptic feedback
-                      console.log("Added to playlist!");
+                      showModal(
+                        `Added "${
+                          song.title || `song_${song.id}`
+                        }" to your playlist!`,
+                        "success"
+                      );
                     }}
                   />
                 </div>
               </div>
             ))}
-
           </div>
         </section>
-
-
 
         {/* Stats */}
         <section className="m-stats">
           <div className="m-stat">
-            <div className="m-stat-num">12,572</div>
+            <div className="m-stat-num">
+              <p className="stat-number">
+                {loopCount !== null ? loopCount.toLocaleString() : "Loading..."}
+              </p>
+            </div>
             <div className="m-stat-label">Loops</div>
           </div>
           <div className="m-stat">
-            <div className="m-stat-num">472</div>
+            <div className="m-stat-num">
+              <p className="stat-number">
+                {memberCount !== null
+                  ? memberCount.toLocaleString()
+                  : "Loading..."}
+              </p>
+            </div>
             <div className="m-stat-label">Members</div>
           </div>
           <div className="m-stat">
-            <div className="m-stat-num">2,184</div>
+            <div className="m-stat-num">
+              <p className="stat-number">
+                {postCount !== null ? postCount.toLocaleString() : "Loading..."}
+              </p>
+            </div>
             <div className="m-stat-label">Posts</div>
           </div>
         </section>
@@ -284,6 +536,23 @@ export default function MobileLanding() {
       <footer className="m-footer">
         Register for free and rock out with your animals today!
       </footer>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        message={modalState.message}
+        type={modalState.type}
+        title={modalState.title}
+      />
+
+      {/* 🔹 Shared playback modal for mobile featured songs */}
+      {showRecModal && activeRecording && (
+        <RecordingPlaybackModal
+          recording={activeRecording}
+          recordedNotes={activeNotes}
+          onClose={closeRecordingModal}
+        />
+      )}
 
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

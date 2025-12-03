@@ -47,22 +47,29 @@ $res = $stmt->get_result();
 $out = [];
 while ($row = $res->fetch_assoc()) {
     $likesFrom = $row["likesFrom"] ? json_decode($row["likesFrom"], true) : [];
-    if (!is_array($likesFrom)) $likesFrom = [];
-    
+    if (!is_array($likesFrom))
+        $likesFrom = [];
+
+    // 🔽 Decode entities coming from DB (handles &#039; → ')
+    $author = html_entity_decode($row["author"] ?? "", ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $content = html_entity_decode($row["content"] ?? "", ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $created = $row["created_at"]; // timestamp, no need to encode
+
     $out[] = [
         "id" => intval($row["id"]),
         "postId" => intval($row["postId"]),
         "parentId" => $row["parentId"] ? intval($row["parentId"]) : null,
-        "author" => htmlspecialchars($row["author"], ENT_QUOTES, 'UTF-8'),
+        "author" => $author,
         "authorId" => intval($row["authorId"]),
-        "content" => htmlspecialchars($row["content"], ENT_QUOTES, 'UTF-8'),
+        "content" => $content,
         "likesFrom" => $likesFrom,
         "likeCount" => intval($row["likeCount"]),
-        "created_at" => htmlspecialchars($row["created_at"], ENT_QUOTES, 'UTF-8')
+        "created_at" => $created
     ];
 }
 
-echo json_encode($out, JSON_UNESCAPED_UNICODE);
+// keep JSON pretty sane
+echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
 $stmt->close();
 $mysqli->close();

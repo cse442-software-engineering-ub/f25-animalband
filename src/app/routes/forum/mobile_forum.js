@@ -1,8 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import MobilePostModal from "./mobile_post_modal";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./mobile_forum.css";
-
 
 const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php";
 
@@ -23,17 +24,31 @@ export default function MobileForum() {
     const [myRecordings, setMyRecordings] = useState([]);
     const [recsLoading, setRecsLoading] = useState(false);
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+    const { modalState, showModal, closeModal } = useCustomModal();
 
     // ========== New post popup ==========
     const [showNewPostPopup, setShowNewPostPopup] = useState(false);
     const [newPostTitle, setNewPostTitle] = useState("");
     const [newPostContent, setNewPostContent] = useState("");
     const [newPostTags, setNewPostTags] = useState([]);
+    const [postError, setPostError] = useState("");
+    const [titleError, setTitleError] = useState("");
 
+    const [currentPage, setCurrentPage] = useState(1);   // <-- add this
+    const POSTS_PER_PAGE = 20;
     // ========== Tags and sorting stuff ==========
+    const SONG_TAG = "Song Recording";
+
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
-    const soundTags = ["Song Recording"];
+
+    // For filtering
+    const soundFilterTags = [SONG_TAG];
+
+    // For the New Post popup
+    const soundPostTags = [SONG_TAG];
+
     const sortOptions = ["recent", "likes"];
+
 
     // ========== Date and Time whatnot ==========
     const [nowTick, setNowTick] = useState(Date.now());
@@ -43,11 +58,15 @@ export default function MobileForum() {
         const d = new Date(iso);
         return isNaN(d.getTime()) ? null : d;
     }
+    function truncate20(s) {
+        if (!s) return "";
+        return s.length > 20 ? s.slice(0, 20) + "..." : s;
+    }
+
     const fetchMyRecordings = useCallback(async () => {
         if (!user?.id) return;
         try {
             setRecsLoading(true);
-            // same cookie trick you used on desktop
             const cookiePairs = document.cookie.split("; ").map(c => c.split("="));
             const cookieMap = Object.fromEntries(cookiePairs);
             const authCookie = cookieMap["auth_token"] || "";
@@ -98,6 +117,16 @@ export default function MobileForum() {
         const id = setInterval(() => setNowTick(Date.now()), 60_000);
         return () => clearInterval(id);
     }, []);
+
+    useEffect(() => {
+        setNewPostTags(prev => {
+            const withoutSong = prev.filter(t => t !== SONG_TAG);
+            if (selectedRecordingId) {
+                return [...withoutSong, SONG_TAG];
+            }
+            return withoutSong;
+        });
+    }, [selectedRecordingId]);
 
     // ========== Fetch Posts ==========
     const fetchPosts = useCallback(async (opts = { refresh: false }) => {
@@ -272,7 +301,7 @@ export default function MobileForum() {
                     likes: nextLikesFrom.length,
                 };
             }));
-            alert("Failed to like/unlike. Please try again.");
+            showModal("Failed to like/unlike. Please try again.", "error");
         }
     };
 
@@ -298,16 +327,21 @@ export default function MobileForum() {
         setNewPostContent("");
         setNewPostTags([]);
         setSelectedRecordingId(null);
+        setPostError("");
+        setTitleError("");
     };
-
-
     const handleTagSelect = (tag) => {
+        if (tag === SONG_TAG) {
+            // Song Recording is controlled only by selectedRecordingId
+            return;
+        }
         setNewPostTags(prev =>
             prev.includes(tag)
                 ? prev.filter(t => t !== tag)
                 : [...prev, tag]
         );
     };
+
 
     // ========== Handle post submission ==========
     const handleSubmitPost = async (e) => {
@@ -318,16 +352,19 @@ export default function MobileForum() {
         if (!user.id) {
             return;
         }
+
+        const finalTags = selectedRecordingId
+            ? Array.from(new Set([...newPostTags, SONG_TAG]))
+            : newPostTags.filter(t => t !== SONG_TAG);
         const payload = {
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
-            tags: newPostTags,
+            tags: finalTags,
             likesFrom: [user.username],
             author: user.username,
             authorId: user.id,
             likes: 1,
             recording_id: selectedRecordingId ?? null,
-
         };
 
         const tempId = Date.now();
@@ -335,7 +372,7 @@ export default function MobileForum() {
             id: tempId,
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
-            tags: newPostTags,
+            tags: finalTags,
             author: user.username,
             authorId: user.id,
             likes: 1,
@@ -344,7 +381,6 @@ export default function MobileForum() {
             likesFrom: [user.username],
             liked: true,
             recording_id: selectedRecordingId ?? null,
-
         };
         setPosts(prev => [optimistic, ...prev]);
         try {
@@ -363,7 +399,7 @@ export default function MobileForum() {
         } catch (err) {
             setPosts(prev => prev.filter(p => p.id !== tempId));
             console.error(err);
-            alert("Post failed");
+            showModal("Post failed", "error");
         }
 
         handleClosePopup();
@@ -377,13 +413,11 @@ export default function MobileForum() {
             if (!post.liked) return false;
         }
 
-        // ========== Search filter ==========
         const matchesSearch = searchTerm === "" ||
             (post.title && post.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.content && post.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.author && post.author.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        // ========== Tag filter ==========
         const matchesTags = selectedTags.length === 0 ||
             selectedTags.some(tag => post.tags && post.tags.includes(tag));
 
@@ -400,6 +434,14 @@ export default function MobileForum() {
                 return (b.id || 0) - (a.id || 0);
         }
     }) : [];
+    const totalPages = Math.max(1, Math.ceil(sortedPosts.length / POSTS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedTags, sortBy, activeView]);
 
     const getViewTitle = () => {
         switch (activeView) {
@@ -583,10 +625,10 @@ export default function MobileForum() {
                         <div className="mobile-filter-group">
                             <h4 className="mobile-filter-title">Sounds</h4>
                             <div className="mobile-tags-grid">
-                                {soundTags.map(tag => (
+                                {soundFilterTags.map(tag => (
                                     <span
                                         key={tag}
-                                        className={`mobile-tag ${selectedTags.includes(tag) ? 'active' : ''}`}
+                                        className={`mobile-tag ${selectedTags.includes(tag) ? "active" : ""}`}
                                         onClick={() => handleTagClick(tag)}
                                     >
                                         {tag}
@@ -594,6 +636,7 @@ export default function MobileForum() {
                                 ))}
                             </div>
                         </div>
+
 
                         {/* Sort Options */}
                         <div className="mobile-filter-group">
@@ -624,7 +667,7 @@ export default function MobileForum() {
                             </button>
                         </div>
                     ) : (
-                        sortedPosts.map((post) => (
+                        paginatedPosts.map((post) => (
                             <div
                                 key={post.id}
                                 className="mobile-post-card"
@@ -634,14 +677,38 @@ export default function MobileForum() {
                             >
                                 <div className="mobile-post-header">
                                     <div className="mobile-post-author">
-                                        <h3 className="mobile-post-title">{post.title}</h3>
-                                        <span className="mobile-author-name">by {post.author}</span>
+                                        <h3 className="mobile-post-title">{truncate20(post.title)}</h3>
+
+                                        <span className="mobile-author-name">by </span>
+
+                                        <span
+                                            className="mobile-author-name clickable-mobile-author"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/account/${encodeURIComponent(post.authorId)}`);
+                                            }}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    e.stopPropagation();
+                                                    navigate(`/account/${encodeURIComponent(post.authorId)}`);
+                                                }
+                                            }}
+                                        >
+                                            {truncate20(post.author)}
+                                        </span>
+
+
+
                                         {post.created_at && (
-                                            <span className="mobile-post-time">{timeAgo(post.created_at, nowTick)}</span>
+                                            <span className="mobile-post-time">{
+                                                timeAgo(post.created_at, nowTick)}</span>
                                         )}
                                     </div>
                                     <button
                                         className={`mobile-like-btn ${post.liked ? "liked" : ""}`}
+                                        aria-label="Like post"
                                         onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
                                         onMouseDown={(e) => e.stopPropagation()}
                                         onKeyDown={(e) => e.stopPropagation()}
@@ -651,7 +718,7 @@ export default function MobileForum() {
                                     </button>
                                 </div>
 
-                                <p className="mobile-post-content">{post.content}</p>
+                                <p className="mobile-post-content">{truncate20(post.content)}</p>
 
                                 <div className="mobile-post-tags">
                                     {post.tags && post.tags.map(tag => (
@@ -667,22 +734,59 @@ export default function MobileForum() {
                                         </span>
                                     </div>
                                     <div className="mobile-post-actions">
-                                        {/* Time since posted */}
                                         {post.created_at && (
                                             (() => {
                                                 const ta = timeAgo(post.created_at, nowTick);
-                                                return (
-                                                    <span className="post-time">
-                                                        Created {ta === "just now" ? ta : `${ta} ago`}
-                                                    </span>
-                                                );
+
+                                                if (ta === "just now") {
+                                                    return <span className="post-time">Created just now</span>;
+                                                }
+
+                                                if (ta === "yesterday") {
+                                                    return <span className="post-time">Created yesterday</span>;
+                                                }
+
+                                                // Relative times: 5m, 3h, 2d, etc.
+                                                if (["m", "h", "d"].some((s) => ta.endsWith(s))) {
+                                                    return <span className="post-time">Created {ta} ago</span>;
+                                                }
+
+                                                // Absolute dates like "Nov 12"
+                                                return <span className="post-time">Created {ta}</span>;
                                             })()
                                         )}
+
                                     </div>
                                 </div>
                             </div>
                         ))
                     )}
+                    {sortedPosts.length > 0 && totalPages > 1 && (
+                        <div className="mobile-pagination">
+                            <button
+                                className="mobile-page-btn"
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                disabled={safePage === 1}
+                                aria-label="Previous page"
+                            >
+                                ‹ Prev
+                            </button>
+
+                            <span className="mobile-page-info">
+                                Page {safePage} of {totalPages}
+                            </span>
+
+                            <button
+                                className="mobile-page-btn"
+                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={safePage === totalPages}
+                                aria-label="Next page"
+                            >
+                                Next ›
+                            </button>
+                        </div>
+                    )}
+
                 </div>
             </main>
 
@@ -692,13 +796,13 @@ export default function MobileForum() {
                     <span className="material-symbols-outlined mobile-nav-icon">piano</span>
                     <span>Stage</span>
                 </Link>
-                <Link to="/looping" className="mobile-nav-item">
-                    <span className="material-symbols-outlined mobile-nav-icon">instant_mix</span>
-                    <span>Looping</span>
-                </Link>
                 <Link to="/forum" className="mobile-nav-item active">
                     <span className="material-symbols-outlined mobile-nav-icon">chat</span>
                     <span>Forum</span>
+                </Link>
+                <Link to="/playlists" className="mobile-nav-item">
+                    <span className="material-symbols-outlined mobile-nav-icon">playlist_play</span>
+                    <span>Playlists</span>
                 </Link>
                 <Link to="/account" className="mobile-nav-item">
                     <span className="material-symbols-outlined mobile-nav-icon">person</span>
@@ -720,18 +824,64 @@ export default function MobileForum() {
                                 <input
                                     type="text"
                                     value={newPostTitle}
-                                    onChange={(e) => setNewPostTitle(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 100) {
+                                            setTitleError("Title cannot exceed 100 characters.");
+                                        } else {
+                                            setTitleError("");
+                                        }
+                                        setNewPostTitle(v);
+                                    }}
                                     placeholder="Enter post title"
                                 />
+                                <div
+                                    style={{
+                                        fontSize: "0.8rem",
+                                        marginTop: "4px",
+                                        color: newPostTitle.length > 100 ? "red" : "#666",
+                                    }}
+                                >
+                                    {newPostTitle.length}/100
+                                </div>
+                                {titleError && (
+                                    <p style={{ color: "red", marginTop: "4px" }}>
+                                        {titleError}
+                                    </p>
+                                )}
                             </div>
+
                             <div className="mobile-form-group">
                                 <label>Content:</label>
                                 <textarea
                                     value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 300) {
+                                            setPostError("Content cannot exceed 300 characters.");
+                                        } else {
+                                            setPostError("");
+                                        }
+                                        setNewPostContent(v);
+                                    }}
                                     placeholder="Enter post content"
                                     rows="4"
                                 />
+                                {/* optional live counter */}
+                                <div
+                                    style={{
+                                        fontSize: "0.8rem",
+                                        marginTop: "4px",
+                                        color: newPostContent.length > 300 ? "red" : "#666",
+                                    }}
+                                >
+                                    {newPostContent.length}/300
+                                </div>
+                                {postError && (
+                                    <p style={{ color: "red", marginTop: "4px" }}>
+                                        {postError}
+                                    </p>
+                                )}
                             </div>
                             <div className="mobile-form-group">
                                 <label>Tags:</label>
@@ -739,23 +889,39 @@ export default function MobileForum() {
                                     {animalTags.map(tag => (
                                         <span
                                             key={tag}
-                                            className={`mobile-tag ${newPostTags.includes(tag) ? 'active' : ''}`}
+                                            className={`mobile-tag ${newPostTags.includes(tag) ? "active" : ""}`}
                                             onClick={() => handleTagSelect(tag)}
                                         >
                                             {tag}
                                         </span>
                                     ))}
-                                    {soundTags.map(tag => (
-                                        <span
-                                            key={tag}
-                                            className={`mobile-tag ${newPostTags.includes(tag) ? 'active' : ''}`}
-                                            onClick={() => handleTagSelect(tag)}
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
+
+                                    {soundPostTags.map(tag => {
+                                        const isSongRecording = tag === SONG_TAG;
+                                        const isActive = isSongRecording
+                                            ? !!selectedRecordingId
+                                            : newPostTags.includes(tag);
+
+                                        return (
+                                            <span
+                                                key={tag}
+                                                className={`mobile-tag ${isActive ? "active" : ""} ${isSongRecording && !selectedRecordingId ? "disabled" : ""
+                                                    }`}
+                                                onClick={() => {
+                                                    if (isSongRecording) {
+                                                        // Non-clickable: tied to recording selection
+                                                        return;
+                                                    }
+                                                    handleTagSelect(tag);
+                                                }}
+                                            >
+                                                {tag}
+                                            </span>
+                                        );
+                                    })}
                                 </div>
                             </div>
+
                             <div className="mobile-form-group">
                                 <label>Attach Recording (optional):</label>
                                 <div className="m-recording-select-wrap">
@@ -776,7 +942,6 @@ export default function MobileForum() {
                                 </div>
                                 {recsLoading && <small className="m-recording-select-hint">Loading your recordings…</small>}
                             </div>
-
                         </div>
                         <div className="mobile-popup-footer">
                             <button className="mobile-cancel-btn" onClick={handleClosePopup}>Cancel</button>
@@ -784,7 +949,14 @@ export default function MobileForum() {
                                 type="button"
                                 className="mobile-submit-btn"
                                 onClick={handleSubmitPost}
-                                disabled={!user?.id || !newPostTitle.trim() || !newPostContent.trim()}
+                                disabled={
+                                    newPostTitle.length > 100 ||
+                                    !user?.id ||
+                                    !newPostTitle.trim() ||
+                                    !newPostContent.trim() ||
+                                    newPostContent.length > 300
+                                }
+
                             >
                                 Create Post
                             </button>
@@ -800,6 +972,15 @@ export default function MobileForum() {
                     onBumpPostComments={() => refreshNoJump()}
                 />
             )}
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
+
             {/* Material Icons */}
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

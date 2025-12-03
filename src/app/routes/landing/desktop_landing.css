@@ -7,7 +7,7 @@
 
 .landing-page {
   min-height: 100vh;
-  background-color: #E4E2E2;
+  background-color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -19,7 +19,7 @@
   align-items: center;
   justify-content: flex-end;
   padding: 1rem 2rem;
-  background-color: #D9D9D9;
+  background-color: #ffffff;
   position: relative;
 }
 
@@ -44,7 +44,7 @@
   font-size: 2.5rem;
   font-weight: bold;
   color: #000;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.25);
 }
 
 .header-buttons {
@@ -109,23 +109,6 @@
   padding: 2rem 2rem 0;
 }
 
-.main-heading {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 0px;
-  color: #000;
-}
-
-.subtitle {
-  font-size: 1rem;
-  color: #6E6E6E;
-  margin-bottom: 0rem;
-  max-width: 42rem;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.6;
-}
-
 /* ==========Animals Part========== */
 .band-stage {
   text-align: center;
@@ -155,8 +138,9 @@
 }
 
 .animal-member img {
-  height: 10rem;
+  height: 15rem !important;  /* increased from 10rem */
   object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
 .btn-start-band {
@@ -173,7 +157,7 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(255, 255, 255, 0.1);
   transition: background-color 0.2s;
   z-index: 10;
   text-decoration: none;
@@ -185,16 +169,18 @@
 
 /* ==========Feature Cards========== */
 .features-section {
-  background-color: #F2F2F2;
+  background-color: #ffffff;
   padding: 2rem 0.5rem .5rem;
 }
 
 .features-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  display: flex;
+  justify-content: flex-start;   /* align left */
+  align-items: flex-start;
+  gap: 2rem;
   max-width: 72rem;
-  margin: 0 auto 1rem;
+  margin: 0 auto 2rem;
+  padding-left: 10rem;  /* Added left padding to visually center */
 }
 
 .feature-card {
@@ -207,6 +193,8 @@
   padding: 1.25rem;
   text-align: center;
   transition: box-shadow 0.2s;
+  width: 280px;  /* fixed width */
+  box-sizing: border-box;
 }
 
 .feature-icon {
@@ -336,10 +324,16 @@
   margin-bottom: 0.5rem;
 }
 
+.song-desc-container {
+  height: 1.5rem;   /* fixed space for 1 line — adjust as needed */
+  display: flex;
+  align-items: center; /* optional: vertically center the text */
+}
+
 .song-desc {
   font-size: 0.8rem;
   color: #555;
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 
 .song-button-group {
@@ -372,7 +366,7 @@
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.35);
+  background: rgba(255, 255, 255, 0.35);
   display: grid;
   place-items: center;
   z-index: 1000; /* above everything on landing */
@@ -390,7 +384,7 @@
   align-items: center;
   justify-content: space-between;
   padding: .75rem 1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #ffffff;
 }
 .modal-body {
   padding: 1rem;
@@ -430,7 +424,7 @@
   cursor: pointer;
 }
 .btn.primary:disabled { opacity: .6; cursor: not-allowed; }
-.divider { height: 1px; background: #eee; margin: .75rem 0; }
+.divider { height: 1px; background: #ffffff; margin: .75rem 0; }
 
 /* ==========Formatting========== */
 @media (max-width: 1024px) {
@@ -438,10 +432,6 @@
     font-size: 3rem;
   }
 
-  .features-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .animals-container {
     gap: 1rem;
   }
@@ -470,9 +460,6 @@
     font-size: 3.5rem !important;
   }
 
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
 
   .stats-container {
     flex-direction: column;
@@ -487,7 +474,6 @@
     padding: 2rem 1rem;
   }
 
-
   .animals-container {
     gap: 1rem;
   }
@@ -498,7 +484,7 @@
   }
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .header {
     flex-direction: column;
     gap: 1rem;
@@ -516,10 +502,6 @@
     font-size: 3.5rem !important;
   }
 
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
-
   .stats-container {
     flex-direction: column;
     align-items: center;
@@ -532,5 +514,124 @@
   .band-stage {
     padding: 2rem 1rem;
   }
+} */
+
+/* ===== Make all section backgrounds pure white ===== */
+.landing-page,
+
+.features-section,
+.stats-container,
+.featured-songs-section
+ {
+  background-color: #ffffff;
 }
 
+/* Optional: keep smooth transitions if there were gradients or tints */
+body {
+  background-color: #ffffff;
+}
+
+/* ===== Subtle dividers between sections ===== */
+
+.features-section,
+.featured-songs-section,
+.stats-container,
+.band-stage,
+.header {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+/* Remove line below the footer (optional) */
+.footer {
+  border-top: 1px solid #e5e5e5;
+  border-bottom: none;
+}
+
+.animal-member:hover img {
+  animation: hop 0.6s ease;
+}
+
+@keyframes hop {
+  0% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Remix Button Styles */
+.song-remix-btn {
+  background-color: #178C3A;;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.song-remix-btn:hover {
+  background-color: #15803d;
+  transform: scale(1.1);
+}
+
+.song-remix-btn:active {
+  transform: scale(0.95);
+}
+
+.song-remix-btn .material-symbols-outlined {
+  color: white;
+  font-size: 20px;
+}
+
+.song-remix-btn:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.song-remix-btn:disabled:hover {
+  background-color: #d1d5db;
+  transform: none;
+}
+
+/* Ensure button group has proper spacing */
+.song-button-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.main-heading {
+  font-size: 3rem;  /* increased from 2rem */
+  font-weight: bold;
+  margin-bottom: 0px;
+  color: #000;
+}
+
+.subtitle {
+  font-size: 10rem;  /* increased from 1rem */
+  color: #6E6E6E;
+  margin-bottom: 0rem;
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}

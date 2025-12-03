@@ -46,7 +46,7 @@ if (isset($_COOKIE['auth_token'])) {
         'expires' => time() - 3600,
         'path' => '/',
         'secure' => true,
-        'httponly' => true,  // Changed from false to true to match login
+        'httponly' => false,  // Changed from false to true to match login
         'samesite' => 'Strict'
     ]);
 }

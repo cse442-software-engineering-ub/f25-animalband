@@ -1,4 +1,13 @@
 /* ===== Playlist Details Styling ===== */
+
+/* Header actions group for Back and Save Order buttons */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .plf-track-actions {
   display: flex;
   align-items: center;
@@ -19,6 +28,7 @@
   color: white;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
+  flex-shrink: 0;
 }
 
 .song-play-btn:hover,
@@ -57,9 +67,65 @@
   margin-right: 12px;
   cursor: grab;
   color: #888;
+  flex-shrink: 0;
 }
 
 .plf-drag:active {
   cursor: grabbing;
   color: #555;
+}
+
+/* Ensure track meta takes available space */
+.plf-track-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .plf-track {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .plf-track-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+
+/* Make Remove button match forum nav-btn style */
+.plf-track-actions .nav-btn {
+  border: 2px solid transparent;
+  background: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Default hover (green-outline, same feel as forum) */
+.plf-track-actions .nav-btn:hover {
+  background: rgba(23, 140, 58, 0.1);
+  border-color: #178c3a;
+}
+
+/* Optional: make Remove look “danger” but still use nav-btn shape */
+.plf-track-actions .nav-btn.plf-danger {
+  color: #b3261e;
+}
+
+.plf-track-actions .nav-btn.plf-danger:hover {
+  background: rgba(179, 38, 30, 0.08);
+  border-color: #b3261e;
 }

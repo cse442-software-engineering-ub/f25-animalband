@@ -35,7 +35,7 @@ export default function MyRecordings() {
   const audioContextRef = useRef(null);
   const activeSourcesRef = useRef([]);
 
-  // --- animal mappings + images (same as stage) ---
+  // Animal mappings + images
   const ANIMAL_IMAGES = {
     hamster: [Hamster, HamsterPlaying],
     bird: [Bird, BirdPlaying],
@@ -59,7 +59,6 @@ export default function MyRecordings() {
             loadedCount++;
             if (loadedCount === allImages.length) {
               setImagesLoaded(true);
-              console.log("All animal images fully preloaded");
             }
           };
           img.onerror = () => console.warn("Failed to preload:", src);
@@ -92,7 +91,7 @@ export default function MyRecordings() {
     r: "snake",
   };
 
-  // --- load sound files ---
+  // Load sound files
   const loadSoundForPage = async (filename) => {
     const audioContext = audioContextRef.current;
     const url = `${process.env.PUBLIC_URL}/stage_sounds/${filename}`;
@@ -101,7 +100,7 @@ export default function MyRecordings() {
     return await audioContext.decodeAudioData(arrayBuffer);
   };
 
-  // --- user fetch ---
+  // User fetch
   useEffect(() => {
     (async () => {
       try {
@@ -123,7 +122,7 @@ export default function MyRecordings() {
     })();
   }, [navigate]);
 
-  // --- audio context + sound buffers ---
+  // Audio context + sound buffers
   useEffect(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext ||
@@ -145,7 +144,7 @@ export default function MyRecordings() {
     loadAllSounds();
   }, []);
 
-  // --- fetch recordings ---
+  // Fetch recordings
   useEffect(() => {
     const fetchRecordings = async () => {
       const cookies = document.cookie.split("; ");
@@ -188,7 +187,18 @@ export default function MyRecordings() {
     setRecordedNotes([]);
   };
 
-  // --- play recording with animation ---
+  // Navigate to stage with edit parameter
+  const editRecording = (rec) => {
+    navigate(`/stage?edit=${rec.id}`);
+  };
+
+  // Navigate to forum with recording pre-selected
+  const shareToForum = (rec) => {
+    stopAllSounds();
+    navigate(`/forum?share=${rec.id}`);
+  };
+
+  // Play recording with animation
   const playRecording = async () => {
     if (recordedNotes.length === 0) return;
 
@@ -236,7 +246,7 @@ export default function MyRecordings() {
             setPlayingAnimals((prev) => ({ ...prev, [animal]: true }));
             setTimeout(() => {
               setPlayingAnimals((prev) => ({ ...prev, [animal]: false }));
-            }, 500); // duration of "rockin'" animation
+            }, 500);
           }, time);
         }
 
@@ -262,7 +272,6 @@ export default function MyRecordings() {
     activeSourcesRef.current = [];
     setIsPlaying(false);
   };
-
 
   if (loading) return <p className="ea-loading">Loading…</p>;
 
@@ -290,18 +299,35 @@ export default function MyRecordings() {
           <h3>Menu</h3>
           <ul>
             <li>
-              <button >My Recordings</button>
+              <button className="df-sidebar-btn" onClick={() => navigate("/")}>
+                Home
+              </button>
             </li>
-            <li><button onClick={() => navigate("/playlists")}>My Playlists</button></li>
+            <li>
+              <button
+                className="df-sidebar-btn"
+                onClick={() => navigate("/forum")}
+              >
+                Forum
+              </button>
+            </li>
+            <li>
+              <button onClick={() => navigate("/my-recordings")}>
+                My Recordings
+              </button>
+            </li>
+            <li>
+              <button onClick={() => navigate("/playlists")}>
+                My Playlists
+              </button>
+            </li>
             <li>
               <button onClick={() => navigate("/stage")}>Back to Stage</button>
             </li>
             <li>
               <button
-                onClick={() => {
-                  fetch(`${PHP_URL}/logout.php`, { credentials: "include" });
-                  navigate("/login");
-                }}
+                className="df-sidebar-btn logout-btn"
+                onClick={() => navigate("/login")}
               >
                 Logout
               </button>
@@ -312,10 +338,18 @@ export default function MyRecordings() {
         <main className="ea-content">
           <h1 className="ea-title">My Recordings</h1>
           <p className="ea-subtitle">
-            Listen to your saved AnimalBand sessions.
+            Listen to your saved AnimalBand sessions or edit them.
           </p>
 
           <div className="recordings-grid">
+            {recordings.length === 0 && (
+              <p
+                style={{ textAlign: "center", width: "100%", padding: "20px" }}
+              >
+                No recordings yet. Go to the stage to create your first
+                recording!
+              </p>
+            )}
             {recordings.map((rec) => (
               <div
                 key={rec.id}
@@ -333,12 +367,23 @@ export default function MyRecordings() {
               <div
                 className="modal-content"
                 onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: "600px", position: "relative" }}
               >
                 <h2>{selectedRecording.title}</h2>
                 <p>{selectedRecording.description}</p>
 
-                {/* mini animal stage */}
-                <div className="mini-stage">
+                {/* Mini animal stage */}
+                <div
+                  className="mini-stage"
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: "15px",
+                    margin: "20px 0",
+                    minHeight: "120px",
+                  }}
+                >
                   {Object.keys(ANIMAL_IMAGES)
                     .filter((animal) =>
                       recordedNotes.some((track) =>
@@ -357,24 +402,109 @@ export default function MyRecordings() {
                         className={`mini-animal ${
                           playingAnimals[animal] ? "playing" : ""
                         }`}
+                        style={{
+                          height: "80px",
+                          width: "auto",
+                          transition: "transform 0.3s ease",
+                        }}
                       />
                     ))}
                 </div>
 
-                <div className="buttons-row">
+                <div
+                  className="buttons-row"
+                  style={{
+                    display: "flex",
+                    gap: "15px",
+                    justifyContent: "center",
+                    marginTop: "20px",
+                  }}
+                >
                   <button
                     onClick={playRecording}
-                    disabled={!imagesLoaded}
-                    className="play-button"
+                    disabled={!imagesLoaded || isPlaying}
+                    className="circle-btn play"
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      backgroundColor: isPlaying ? "#666" : "#15803d",
+                      color: "white",
+                      border: "none",
+                      cursor: isPlaying ? "not-allowed" : "pointer",
+                      fontSize: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    title="Play Recording"
+                    aria-label="Play Recording"
                   >
-                    ▶
+                    {isPlaying ? "■" : "▶"}
                   </button>
                   <button
-                    className="close-button"
+                    onClick={() => editRecording(selectedRecording)}
+                    className="circle-btn edit"
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      backgroundColor: "#15803d",
+                      color: "white",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    title="Edit Recording"
+                    aria-label="Edit Recording"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => shareToForum(selectedRecording)}
+                    className="circle-btn share"
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      backgroundColor: "#15803d",
+                      color: "white",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    title="Share to Forum"
+                    aria-label="Share to Forum"
+                  >
+                    💬
+                  </button>
+                  <button
+                    className="circle-btn close"
                     onClick={() => {
                       stopAllSounds();
                       closeModal();
                     }}
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      backgroundColor: "#9E9E9E",
+                      color: "white",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    title="Close"
+                    aria-label="Close"
                   >
                     ✕
                   </button>

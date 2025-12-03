@@ -13,7 +13,6 @@ $servername = "localhost";
 $username = "ikimos";
 $password = "50445468";
 $dbname = "cse442_2025_fall_team_h_db";
-
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
     http_response_code(500);
@@ -33,12 +32,11 @@ if (empty($_COOKIE['auth_token'])) {
     echo json_encode(["success" => false, "message" => "Not logged in"]);
     exit;
 }
-
 $token = $_COOKIE['auth_token'];
 
 // === Get User Info ===
 $stmt = $conn->prepare("
-    SELECT accountCredentials.Email, accountCredentials.Password
+    SELECT accountCredentials.Email, accountCredentials.Password, accountCredentials.Name
     FROM authTokens
     JOIN accountCredentials ON authTokens.Email = accountCredentials.Email
     WHERE authTokens.Token = ?
@@ -54,10 +52,10 @@ if ($res->num_rows === 0) {
     echo json_encode(["success" => false, "message" => "Not logged in"]);
     exit;
 }
-
 $user = $res->fetch_assoc();
 $currentEmail = $user['Email'];
 $currentHash = $user['Password'];
+$currentName = $user['Name'];
 
 // === Read Input ===
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -96,6 +94,49 @@ if (!password_verify($currentPassword, $currentHash)) {
     http_response_code(401);
     echo json_encode(["success" => false, "message" => "Invalid current password"]);
     exit;
+}
+
+// === Check if username is being changed and if it's already taken ===
+if ($newName !== $currentName) {
+    $checkStmt = $conn->prepare("SELECT ID FROM accountCredentials WHERE Name = ? AND Email != ?");
+    if (!$checkStmt) {
+        http_response_code(500);
+        echo json_encode(["success" => false, "message" => "Database prepare error"]);
+        exit;
+    }
+    
+    $checkStmt->bind_param("ss", $newName, $currentEmail);
+    $checkStmt->execute();
+    $checkStmt->store_result();
+    
+    if ($checkStmt->num_rows > 0) {
+        $checkStmt->close();
+        http_response_code(409); // Conflict
+        echo json_encode([
+            "success" => false,
+            "field" => "username",
+            "message" => "That username is already taken. Please choose another one."
+        ]);
+        $conn->close();
+        exit;
+    }
+    $checkStmt->close();
+    
+    // === Update username in forumPosts ===
+    $updatePostsStmt = $conn->prepare("UPDATE forumPosts SET Author = ? WHERE Author = ?");
+    if ($updatePostsStmt) {
+        $updatePostsStmt->bind_param("ss", $newName, $currentName);
+        $updatePostsStmt->execute();
+        $updatePostsStmt->close();
+    }
+    
+    // === Update username in forumComments ===
+    $updateCommentsStmt = $conn->prepare("UPDATE forumComments SET Author = ? WHERE Author = ?");
+    if ($updateCommentsStmt) {
+        $updateCommentsStmt->bind_param("ss", $newName, $currentName);
+        $updateCommentsStmt->execute();
+        $updateCommentsStmt->close();
+    }
 }
 
 // === Update Account ===

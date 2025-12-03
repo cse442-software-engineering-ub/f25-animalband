@@ -47,6 +47,7 @@ $auth_token   = trim($data['userToken'] ?? '');
 $title        = trim($data['title'] ?? '');
 $description  = trim($data['description'] ?? '');
 $recording    = $data['recording'] ?? [];
+$recordingId  = isset($data['recordingId']) ? intval($data['recordingId']) : null;
 
 if (empty($auth_token)) {
     http_response_code(401);
@@ -81,34 +82,97 @@ if ($result && $result->num_rows > 0) {
 }
 $tokenStmt->close();
 
-// === Insert Recording (SQL Injection Safe) ===
-$insertStmt = $conn->prepare("
-    INSERT INTO localRecordings (email, title, description, recording)
-    VALUES (?, ?, ?, ?)
-");
-if (!$insertStmt) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Prepare failed: ' . h($conn->error)]);
-    $conn->close();
-    exit;
-}
-
-// Bind parameters securely
-$insertStmt->bind_param("ssss", $email, $title, $description, $recordingJson);
-
-if ($insertStmt->execute()) {
-    echo json_encode([
-        'success' => true,
-        'message' => 'Recording saved successfully'
-    ]);
+// === Check if this is an UPDATE or INSERT ===
+if ($recordingId !== null && $recordingId > 0) {
+    // UPDATE existing recording
+    
+    // First verify ownership
+    $checkStmt = $conn->prepare("SELECT id FROM localRecordings WHERE id = ? AND email = ?");
+    if (!$checkStmt) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Database error']);
+        $conn->close();
+        exit;
+    }
+    
+    $checkStmt->bind_param("is", $recordingId, $email);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
+    
+    if ($checkResult->num_rows === 0) {
+        http_response_code(403);
+        echo json_encode(['error' => 'You do not have permission to edit this recording']);
+        $checkStmt->close();
+        $conn->close();
+        exit;
+    }
+    $checkStmt->close();
+    
+    // Perform UPDATE
+    $updateStmt = $conn->prepare("
+        UPDATE localRecordings 
+        SET title = ?, description = ?, recording = ?
+        WHERE id = ? AND email = ?
+    ");
+    
+    if (!$updateStmt) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Prepare failed: ' . h($conn->error)]);
+        $conn->close();
+        exit;
+    }
+    
+    $updateStmt->bind_param("sssis", $title, $description, $recordingJson, $recordingId, $email);
+    
+    if ($updateStmt->execute()) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Recording updated successfully',
+            'recordingId' => $recordingId
+        ]);
+    } else {
+        http_response_code(500);
+        echo json_encode([
+            'error' => 'Failed to update recording',
+            'details' => h($updateStmt->error)
+        ]);
+    }
+    
+    $updateStmt->close();
+    
 } else {
-    http_response_code(500);
-    echo json_encode([
-        'error' => 'Failed to save recording',
-        'details' => h($insertStmt->error)
-    ]);
+    // INSERT new recording
+    
+    $insertStmt = $conn->prepare("
+        INSERT INTO localRecordings (email, title, description, recording)
+        VALUES (?, ?, ?, ?)
+    ");
+    
+    if (!$insertStmt) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Prepare failed: ' . h($conn->error)]);
+        $conn->close();
+        exit;
+    }
+    
+    $insertStmt->bind_param("ssss", $email, $title, $description, $recordingJson);
+    
+    if ($insertStmt->execute()) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Recording saved successfully',
+            'recordingId' => $insertStmt->insert_id
+        ]);
+    } else {
+        http_response_code(500);
+        echo json_encode([
+            'error' => 'Failed to save recording',
+            'details' => h($insertStmt->error)
+        ]);
+    }
+    
+    $insertStmt->close();
 }
 
-$insertStmt->close();
 $conn->close();
 ?>

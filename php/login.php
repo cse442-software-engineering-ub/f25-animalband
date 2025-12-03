@@ -124,7 +124,7 @@
             'expires' => time() + 3600,
             'path' => '/',
             'secure' => true,
-            'httponly' => true,  // Changed from false to true
+            'httponly' => false,  // Changed from false to true
             'samesite' => 'Strict',
         ]);
     } else {

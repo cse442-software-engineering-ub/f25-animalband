@@ -1,5 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
+import CustomModal from "../../components/CustomModal";
+import useCustomModal from "../../components/useCustomModal";
 import "./desktop_forum.css";
 import ForumPostModal from "./desktop_post_modal";
 
@@ -7,6 +9,7 @@ const PHP_URL = "https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php"
 
 export default function DesktopForum() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -19,6 +22,11 @@ export default function DesktopForum() {
     const [myRecordings, setMyRecordings] = useState([]);
     const [recsLoading, setRecsLoading] = useState(false);
     const [selectedRecordingId, setSelectedRecordingId] = useState(null);
+    const { modalState, showModal, closeModal } = useCustomModal();
+    const [postError, setPostError] = useState("");
+    const [titleError, setTitleError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const POSTS_PER_PAGE = 20;
 
 
     // ========== New post popup ==========
@@ -28,8 +36,10 @@ export default function DesktopForum() {
     const [newPostTags, setNewPostTags] = useState([]);
 
     // ========== Tags and sorting stuff ==========
+    const SONG_TAG = "Song Recording";
     const animalTags = ["Hamster", "Cockatiel", "Emu", "Kangaroo", "Snake", "Ostrich"];
-    const soundTags = ["Song Recording"];
+    const soundFilterTags = [SONG_TAG];
+    const soundPostTags = [SONG_TAG];
     const sortOptions = ["recent", "likes"];
 
     // ========== Date and Time whatnot ==========
@@ -66,12 +76,27 @@ export default function DesktopForum() {
         return () => clearInterval(id);
     }, []);
 
+    function truncate30(s) {
+        if (!s) return "";
+        return s.length > 30 ? s.slice(0, 30) + "..." : s;
+    }
+    useEffect(() => {
+        setNewPostTags(prev => {
+            // Remove Song Recording from tags
+            const withoutSong = prev.filter(t => t !== SONG_TAG);
+            // If a recording is selected, force-add Song Recording
+            if (selectedRecordingId) {
+                return [...withoutSong, SONG_TAG];
+            }
+            return withoutSong;
+        });
+    }, [selectedRecordingId]);
+
     const fetchMyRecordings = useCallback(async () => {
         if (!user?.id) return;
         try {
             setRecsLoading(true);
 
-            // get auth_token cookie (same as your MyRecordings page)
             const cookiePairs = document.cookie.split("; ").map(c => c.split("="));
             const cookieMap = Object.fromEntries(cookiePairs);
             const authCookie = cookieMap["auth_token"] || "";
@@ -85,7 +110,6 @@ export default function DesktopForum() {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
             const data = await res.json();
-            // Expecting: { success: true, recordings: [{ id, title, description, recording: [...] }, ...] }
             const list = (data?.recordings || []).map(r => ({
                 id: Number(r.id),
                 title: r.title ?? `Recording #${r.id}`,
@@ -98,8 +122,6 @@ export default function DesktopForum() {
             setRecsLoading(false);
         }
     }, [user?.id]);
-
-
 
     // ========== Fetch Posts ==========
     const fetchPosts = useCallback(async (opts = { refresh: false }) => {
@@ -177,10 +199,25 @@ export default function DesktopForum() {
             }
         };
 
-
         checkUser();
         fetchPosts();
     }, [navigate, fetchPosts]);
+
+    // ========== Handle share parameter from MyRecordings ==========
+    useEffect(() => {
+        const shareId = searchParams.get('share');
+        if (shareId && user) {
+            const recordingId = Number(shareId);
+            if (!isNaN(recordingId) && recordingId > 0) {
+                // Open the new post popup with this recording pre-selected
+                setSelectedRecordingId(recordingId);
+                handleNewPost();
+                // Clear the URL parameter
+                searchParams.delete('share');
+                setSearchParams(searchParams, { replace: true });
+            }
+        }
+    }, [searchParams, user]);
 
     // ========== Compute liked ==========
     useEffect(() => {
@@ -210,7 +247,6 @@ export default function DesktopForum() {
 
         return () => es.close();
     }, [fetchPosts]);
-
 
     const handleAccountClick = () => {
         if (user) {
@@ -270,10 +306,9 @@ export default function DesktopForum() {
                     likes: nextLikesFrom.length,
                 };
             }));
-            alert("Failed to like/unlike. Please try again.");
+            showModal("Failed to like/unlike. Please try again.", "error");
         }
     };
-
 
     // ========== Tags ==========
     const handleTagClick = (tag) => {
@@ -287,8 +322,10 @@ export default function DesktopForum() {
     // ========== New Post ==========
     const handleNewPost = async () => {
         setShowNewPostPopup(true);
-        setSelectedRecordingId(null);
-        await fetchMyRecordings();
+        // Only fetch recordings if we don't already have them or if selectedRecordingId isn't set
+        if (!selectedRecordingId) {
+            await fetchMyRecordings();
+        }
     };
 
     const handleClosePopup = () => {
@@ -296,15 +333,24 @@ export default function DesktopForum() {
         setNewPostTitle("");
         setNewPostContent("");
         setNewPostTags([]);
+        setPostError("");
+        setTitleError("");
+        setSelectedRecordingId(null);
     };
 
     const handleTagSelect = (tag) => {
+        if (tag === SONG_TAG) {
+            // Song Recording is controlled only by selectedRecordingId
+            return;
+        }
         setNewPostTags(prev =>
             prev.includes(tag)
                 ? prev.filter(t => t !== tag)
                 : [...prev, tag]
         );
     };
+
+
     // ========== Handle post submission ==========
     const handleSubmitPost = async (e) => {
         if (e && typeof e.preventDefault === "function") e.preventDefault();
@@ -314,24 +360,27 @@ export default function DesktopForum() {
         if (!user.id) {
             return;
         }
+        const finalTags = selectedRecordingId
+            ? Array.from(new Set([...newPostTags, SONG_TAG]))
+            : newPostTags.filter(t => t !== SONG_TAG);
+
+        const tempId = Date.now();
         const payload = {
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
-            tags: newPostTags,
+            tags: finalTags,
             likesFrom: [user.username],
             author: user.username,
             authorId: user.id,
             likes: 1,
             recording_id: selectedRecordingId ?? null,
-
         };
 
-        const tempId = Date.now();
         const optimistic = {
             id: tempId,
             title: newPostTitle.trim(),
             content: newPostContent.trim(),
-            tags: newPostTags,
+            tags: finalTags,
             author: user.username,
             authorId: user.id,
             likes: 1,
@@ -341,6 +390,7 @@ export default function DesktopForum() {
             liked: true,
             recording_id: selectedRecordingId ?? null,
         };
+
         setPosts(prev => [optimistic, ...prev]);
         try {
             const url = `${PHP_URL}/makeForumPost.php`;
@@ -358,7 +408,7 @@ export default function DesktopForum() {
         } catch (err) {
             setPosts(prev => prev.filter(p => p.id !== tempId));
             console.error(err);
-            alert("Post failed");
+            showModal("Post failed", "error");
         }
 
         handleClosePopup();
@@ -372,13 +422,11 @@ export default function DesktopForum() {
             if (!post.liked) return false;
         }
 
-        // ========== Search filter ==========
         const matchesSearch = searchTerm === "" ||
             (post.title && post.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.content && post.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (post.author && post.author.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        // ========== Tag filter ==========
         const matchesTags = selectedTags.length === 0 ||
             selectedTags.some(tag => post.tags && post.tags.includes(tag));
 
@@ -396,6 +444,12 @@ export default function DesktopForum() {
         }
     }) : [];
 
+    const totalPages = Math.max(1, Math.ceil(sortedPosts.length / POSTS_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+
     const getViewTitle = () => {
         switch (activeView) {
             case "my-posts":
@@ -409,103 +463,106 @@ export default function DesktopForum() {
     };
 
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedTags, sortBy, activeView]);
+
     return (
         <div className="forum-page">
-            {/* Sidebar */}
-            <aside className="forum-sidebar">
-                <div className="sidebar-header">
-                    <Link to="/">
-                        <span className="material-symbols-outlined paw-icon">pets</span>
-                        <span className="forum-site-title">ANIMALBAND</span>
-                    </Link>
-                </div>
-
-                <nav className="sidebar-nav">
-                    <ul>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
-                        <li>
-                            <button
-                                className={`df-sidebar-btn ${activeView === "community" ? "active" : ""}`}
-                                onClick={() => setActiveView("community")}
-                            >
-                                Forum
+            {/* Header - Matching Profile Page */}
+            <header className="forum-header">
+                <Link to="/" className="logo-section">
+                    <span className="material-symbols-outlined paw-icon">pets</span>
+                    <h1 className="site-title">ANIMALBAND</h1>
+                </Link>
+                <div className="header-buttons">
+                    {!user ? (
+                        <>
+                            <button className="btn-login" onClick={() => navigate("/login")}>
+                                Login
                             </button>
-                        </li>
-                        <li>
-                            <button
-                                className={`df-sidebar-btn ${activeView === "my-posts" ? "active" : ""}`}
-                                onClick={() => setActiveView("my-posts")}
-                            >
-                                My Posts
+                            <button className="btn-register" onClick={() => navigate("/register")}>
+                                Register
                             </button>
-                        </li>
-                        <li>
-                            <button
-                                className={`df-sidebar-btn ${activeView === "my-likes" ? "active" : ""}`}
-                                onClick={() => setActiveView("my-likes")}
-                            >
-                                My Likes
-                            </button>
-                        </li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
-                        <li><button className="df-sidebar-btn" onClick={() => navigate("/account")}>My Profile</button></li>
-                        <button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
-                            Log Out
-                        </button>
-                    </ul>
-                </nav>
-            </aside>
-
-            {/* Main Content */}
-            <div className="forum-main">
-                {/* Header */}
-                <header className="forum-header">
-                    <div className="header-left">
-                        <h1 className="forum-title">{getViewTitle()}</h1>
-                        <span className="post-count">{sortedPosts.length} posts</span>
-                    </div>
-
-                    <div className="header-search">
-                        <input
-                            type="text"
-                            placeholder="Search post or users"
-                            className="search-bar"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                        </>
+                    ) : (
+                        <img
+                            src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
+                            alt="Profile"
+                            className="profile-pic"
+                            onClick={handleAccountClick}
                         />
-                        <span className="material-symbols-outlined search-icon">search</span>
-                    </div>
+                    )}
+                </div>
+            </header>
 
-                    <div className="header-right">
-                        {/* Profile */}
-                        {!user ? (
-                            <div className="header-auth-buttons">
+            {/* Main Layout */}
+            <div className="forum-layout">
+                {/* Sidebar - Matching Profile Page */}
+                <aside className="forum-sidebar">
+                    <div className="sidebar-header">
+                        <h3>Menu</h3>
+                    </div>
+                    <nav className="sidebar-nav">
+                        <ul>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/")}>Home</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/forum")}>Forum</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/my-recordings")}>My Recordings</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/playlists")}>My Playlists</button></li>
+                            <li><button className="df-sidebar-btn" onClick={() => navigate("/stage")}>Back to Stage</button></li>
+                            <li><button className="df-sidebar-btn logout-btn" onClick={() => navigate("/login")}>
+                                Logout
+                            </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                {/* Main Content */}
+                <main className="forum-main">
+                    {/* Content Header */}
+                    <div className="content-header">
+                        <div>
+                            <h1>{getViewTitle()}</h1>
+                            <span className="post-count">{sortedPosts.length} posts</span>
+                        </div>
+
+                        <div className="header-controls">
+                            <div className="view-buttons">
                                 <button
-                                    className="btn-login"
-                                    onClick={() => navigate("/login")}
+                                    className={`nav-btn ${activeView === "community" ? "active" : ""}`}
+                                    onClick={() => setActiveView("community")}
                                 >
-                                    Login
+                                    All Posts
                                 </button>
                                 <button
-                                    className="btn-register"
-                                    onClick={() => navigate("/register")}
+                                    className={`nav-btn ${activeView === "my-posts" ? "active" : ""}`}
+                                    onClick={() => setActiveView("my-posts")}
                                 >
-                                    Register
+                                    My Posts
+                                </button>
+                                <button
+                                    className={`nav-btn ${activeView === "my-likes" ? "active" : ""}`}
+                                    onClick={() => setActiveView("my-likes")}
+                                >
+                                    My Likes
                                 </button>
                             </div>
-                        ) : (
-                            <img
-                                src={`https://aptitude.cse.buffalo.edu/CSE442/2025-Fall/cse-442h/php/${user.profilePic}`}
-                                alt="Profile"
-                                className="profile-pic"
-                                onClick={handleAccountClick}
-                            />
-                        )}
-                    </div>
-                </header>
 
-                {/* Posts Section */}
-                <main className="forum-content">
+
+                            <div className="header-search">
+                                <input
+                                    type="text"
+                                    placeholder="Search post or users"
+                                    className="search-bar"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                <span className="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Filter bar */}
                     <div className="tag-filter-bar">
                         {/* Animals */}
@@ -522,18 +579,20 @@ export default function DesktopForum() {
                             ))}
                         </div>
                         {/* Sounds */}
+                        {/* Sounds */}
                         <div className="filter-section">
                             <span className="filter-title">Sounds:</span>
-                            {soundTags.map(tag => (
+                            {soundFilterTags.map(tag => (
                                 <span
                                     key={tag}
-                                    className={`tag ${selectedTags.includes(tag) ? 'active' : ''}`}
+                                    className={`tag ${selectedTags.includes(tag) ? "active" : ""}`}
                                     onClick={() => handleTagClick(tag)}
                                 >
                                     {tag}
                                 </span>
                             ))}
                         </div>
+
                         {/* Sort by */}
                         <div className="sort-controls">
                             <div className="control-group">
@@ -564,27 +623,45 @@ export default function DesktopForum() {
                                 <p>No posts found.</p>
                             </div>
                         ) : (
-                            sortedPosts.map((post) => (
-                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>                                    <div className="post-header">
-                                    <div className="post-author">
-                                        <div>
-                                            <h3 className="post-title">{post.title}</h3>
-                                            <span className="author-name">by {post.author}</span>
-                                        </div>
-                                    </div>
-                                    {/* Time since posted */}
-                                    {post.created_at && (
-                                        (() => {
-                                            const ta = timeAgo(post.created_at, nowTick);
-                                            return (
-                                                <span className="post-time">
-                                                    Created {ta === "just now" ? ta : `${ta} ago`}
+
+                            paginatedPosts.map((post) => (
+
+                                <div key={post.id} className="post-card" onClick={() => setOpenPost(post)} role="button" tabIndex={0}>
+                                    <div className="post-header">
+                                        <div className="post-author">
+                                            <div>
+                                                <h3 className="post-title">{truncate30(post.title)}</h3>
+                                                <span className="author-name">by </span>
+                                                <span
+                                                    className="author-name clickable-author"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/account/${encodeURIComponent(post.authorId)}`);
+                                                    }}
+                                                >
+                                                    {truncate30(post.author)}
                                                 </span>
-                                            );
-                                        })()
-                                    )}
-                                </div>
-                                    <p className="post-content">{post.content}</p>
+                                            </div>
+                                        </div>
+                                        {post.created_at && (
+                                            (() => {
+                                                const ta = timeAgo(post.created_at, nowTick);
+                                                return (
+                                                    <span className="post-time">
+
+                                                        {ta === "just now"
+                                                            ? "Created just now"
+                                                            : ta === "yesterday"
+                                                                ? "Created yesterday"
+                                                                : ["m", "h", "d"].some(s => ta.endsWith(s))
+                                                                    ? `Created ${ta} ago`
+                                                                    : `Created ${ta}`}
+                                                    </span>
+                                                );
+                                            })()
+                                        )}
+                                    </div>
+                                    <p className="post-content">{truncate30(post.content)}</p>
                                     <div className="post-tags">
                                         {post.tags && post.tags.map(tag => (
                                             <span key={tag} className="post-tag">{tag}</span>
@@ -608,6 +685,31 @@ export default function DesktopForum() {
                                 </div>
                             ))
                         )}
+                        {totalPages > 1 && (
+                            <div className="pagination-controls">
+                                <button
+                                    className="page-btn"
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={safePage === 1}
+                                    aria-label="Previous page"
+                                >
+                                    ‹ Prev
+                                </button>
+
+                                <span className="page-info">
+                                    Page {safePage} of {totalPages}
+                                </span>
+
+                                <button
+                                    className="page-btn"
+                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={safePage === totalPages}
+                                    aria-label="Next page"
+                                >
+                                    Next ›
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </main>
             </div>
@@ -626,18 +728,56 @@ export default function DesktopForum() {
                                 <input
                                     type="text"
                                     value={newPostTitle}
-                                    onChange={(e) => setNewPostTitle(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 100) {
+                                            setTitleError("Title cannot exceed 100 characters.");
+                                        } else {
+                                            setTitleError("");
+                                        }
+                                        setNewPostTitle(v);
+                                    }}
                                     placeholder="Enter post title"
                                 />
+                                {titleError && (
+                                    <p className="error-text" style={{ color: "red", marginTop: "5px" }}>
+                                        {titleError}
+                                    </p>
+                                )}
+                                <div
+                                    style={{
+                                        fontSize: "0.85rem",
+                                        color: newPostTitle.length > 100 ? "red" : "#555",
+                                    }}
+                                >
+                                    {newPostTitle.length}/100
+                                </div>
                             </div>
+
                             <div className="form-group">
                                 <label>Content:</label>
                                 <textarea
                                     value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        if (v.length > 300) {
+                                            setPostError("Content cannot exceed 300 characters.");
+                                        } else {
+                                            setPostError("");
+                                        }
+                                        setNewPostContent(v);
+                                    }}
                                     placeholder="Enter post content"
                                     rows="4"
                                 />
+                                {postError && (
+                                    <p className="error-text" style={{ color: "red", marginTop: "5px" }}>
+                                        {postError}
+                                    </p>
+                                )}
+                                <div style={{ fontSize: "0.85rem", color: newPostContent.length > 300 ? "red" : "#555" }}>
+                                    {newPostContent.length}/300
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label>Tags:</label>
@@ -645,26 +785,40 @@ export default function DesktopForum() {
                                     {animalTags.map(tag => (
                                         <span
                                             key={tag}
-                                            className={`tag ${newPostTags.includes(tag) ? 'active' : ''}`}
+                                            className={`tag ${newPostTags.includes(tag) ? "active" : ""}`}
                                             onClick={() => handleTagSelect(tag)}
                                         >
                                             {tag}
                                         </span>
                                     ))}
-                                    {soundTags.map(tag => (
-                                        <span
-                                            key={tag}
-                                            className={`tag ${newPostTags.includes(tag) ? 'active' : ''}`}
-                                            onClick={() => handleTagSelect(tag)}
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
+                                    {soundPostTags.map(tag => {
+                                        const isSongRecording = tag === SONG_TAG;
+                                        const isActive = isSongRecording
+                                            ? !!selectedRecordingId          // active only if a recording is selected
+                                            : newPostTags.includes(tag);
+
+                                        return (
+                                            <span
+                                                key={tag}
+                                                className={`tag ${isActive ? "active" : ""} ${isSongRecording && !selectedRecordingId ? "disabled" : ""
+                                                    }`}
+                                                onClick={() => {
+                                                    if (isSongRecording) {
+                                                        // Non-clickable: tied to recording selection
+                                                        return;
+                                                    }
+                                                    handleTagSelect(tag);
+                                                }}
+                                            >
+                                                {tag}
+                                            </span>
+                                        );
+                                    })}
                                 </div>
                             </div>
+
                             <div className="form-group">
                                 <label>Attach Recording (optional):</label>
-
                                 <div className="recording-select-wrap">
                                     <select
                                         className="recording-select"
@@ -683,11 +837,8 @@ export default function DesktopForum() {
                                         ))}
                                     </select>
                                 </div>
-
                                 {recsLoading && <small className="recording-select-hint">Loading your recordings…</small>}
                             </div>
-
-
                         </div>
                         <div className="popup-footer">
                             <button className="cancel-btn" onClick={handleClosePopup}>Cancel</button>
@@ -695,7 +846,13 @@ export default function DesktopForum() {
                                 type="button"
                                 className="submit-btn"
                                 onClick={handleSubmitPost}
-                                disabled={!user?.id || !newPostTitle.trim() || !newPostContent.trim()}
+                                disabled={
+                                    newPostTitle.length > 100 ||
+                                    !user?.id ||
+                                    !newPostTitle.trim() ||
+                                    !newPostContent.trim() ||
+                                    newPostContent.length > 300
+                                }
                             >
                                 Create Post
                             </button>
@@ -713,6 +870,15 @@ export default function DesktopForum() {
                     }}
                 />
             )}
+
+            <CustomModal
+                isOpen={modalState.isOpen}
+                onClose={closeModal}
+                message={modalState.message}
+                type={modalState.type}
+                title={modalState.title}
+            />
+
             {/* Material Icons */}
             <link
                 href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

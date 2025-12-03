@@ -151,6 +151,15 @@ html, body, #root {
   text-align: center;
 }
 
+.stats-container {
+  background-color: #f2f2f2 !important;
+}
+
+.stat-card {
+  background-color: white !important;
+  color: white !important;
+}
+
 /* ========== PROFILE PICTURE ========== */
 .profile-pic-container {
   position: relative;
@@ -247,7 +256,7 @@ html, body, #root {
 }
 
 .modal-box {
-  background-color: #fff;
+  background-color: #F2F2F2;
   padding: 2rem;
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);

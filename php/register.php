@@ -67,42 +67,71 @@ if (isset($_FILES['profilePic']) && $_FILES['profilePic']['error'] === UPLOAD_ER
 
 // Insert user securely
 if ($username && $email && $password) {
-    $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
-
-    $stmt = $conn->prepare("INSERT INTO accountCredentials (Name, Email, Password, ProfilePic) VALUES (?, ?, ?, ?)");
-    if (!$stmt) {
-        echo json_encode(['message' => 'Database prepare error.']);
+    // Check if username already exists
+    $checkStmt = $conn->prepare("SELECT ID FROM accountCredentials WHERE Name = ?");
+    if (!$checkStmt) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database prepare error.']);
         exit;
     }
-
-    $stmt->bind_param("ssss", $username, $email, $hashedPwd, $profilePicPath);
-
-    if ($stmt->execute()) {
-        echo json_encode(['message' => 'User registered successfully']);
-    } else {
-        echo json_encode(['message' => 'Error inserting user: ' . htmlspecialchars($stmt->error, ENT_QUOTES, 'UTF-8')]);
+    
+    $checkStmt->bind_param("s", $username);
+    $checkStmt->execute();
+    $checkStmt->store_result();
+    
+    if ($checkStmt->num_rows > 0) {
+        $checkStmt->close();
+        http_response_code(409); // Conflict
+        echo json_encode([
+            'success' => false,
+            'field' => 'username',
+            'message' => 'That username is already taken. Please choose another one.'
+        ]);
+        $conn->close();
+        exit;
     }
-    $stmt->close();
-
-    // Generate secure token
-    $token = bin2hex(random_bytes(32));
-    $stmt = $conn->prepare("INSERT INTO authTokens (Email, Token) VALUES (?, ?)");
-    if ($stmt) {
-        $stmt->bind_param("ss", $email, $token);
-        $stmt->execute();
+    $checkStmt->close();
+    
+    // Proceed with registration
+    $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
+    $stmt = $conn->prepare("INSERT INTO accountCredentials (Name, Email, Password, ProfilePic) VALUES (?, ?, ?, ?)");
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database prepare error.']);
+        exit;
+    }
+    
+    $stmt->bind_param("ssss", $username, $email, $hashedPwd, $profilePicPath);
+    if ($stmt->execute()) {
+        $stmt->close();
+        
+        // Generate secure token
+        $token = bin2hex(random_bytes(32));
+        $stmt = $conn->prepare("INSERT INTO authTokens (Email, Token) VALUES (?, ?)");
+        if ($stmt) {
+            $stmt->bind_param("ss", $email, $token);
+            $stmt->execute();
+            $stmt->close();
+        }
+        
+        // Set secure cookie
+        setcookie("auth_token", $token, [
+            'expires' => time() + 3600,
+            'path' => '/',
+            'secure' => true,
+            'httponly' => false,
+            'samesite' => 'Strict',
+        ]);
+        
+        echo json_encode(['success' => true, 'message' => 'User registered successfully']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error inserting user: ' . htmlspecialchars($stmt->error, ENT_QUOTES, 'UTF-8')]);
         $stmt->close();
     }
-
-    // Set secure cookie
-    setcookie("auth_token", $token, [
-        'expires' => time() + 3600,
-        'path' => '/',
-        'secure' => true,
-        'httponly' => true,  // prevent JS access to cookie
-        'samesite' => 'Strict',
-    ]);
 } else {
-    echo json_encode(['message' => 'Missing required fields']);
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Missing required fields']);
 }
 
 $conn->close();
