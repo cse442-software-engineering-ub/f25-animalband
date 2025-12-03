@@ -67,6 +67,9 @@ export default function MobileStage() {
   // Tutorial state
   const [showTutorial, setShowTutorial] = useState(false);
 
+  const [showExportForm, setShowExportForm] = useState(false);
+  const [exportFileName, setExportFileName] = useState("animalband_recording");
+
   const audioContextRef = useRef(null);
   const requestInProgressRef = useRef(false);
   
@@ -855,70 +858,86 @@ export default function MobileStage() {
     input.click();
   };
 
-  const exportRecording = async () => {
-    if (!audioContextRef.current || recordedTracks.length === 0) return;
+  
+const exportRecording = async () => {
+  if (!audioContextRef.current || recordedTracks.length === 0) return;
 
-    let fileName = prompt(
-      "Enter a name for your recording:",
-      "animalband_recording"
-    );
-    if (!fileName) return;
+  // Show the export modal instead of using prompt
+  setShowExportForm(true);
+};
 
-    fileName = sanitizeFilename(fileName);
+const performExport = async () => {
+  const sanitizedFileName = sanitizeFilename(exportFileName);
 
-    try {
-      let maxDuration = 0;
-      recordedTracks.forEach((track) => {
-        if (track.length === 0) return;
-        const lastNote = track[track.length - 1];
-        if (lastNote.isImported && lastNote.audioBuffer) {
-          const trackEnd = lastNote.time + lastNote.audioBuffer.duration * 1000;
-          maxDuration = Math.max(maxDuration, trackEnd);
+  if (!sanitizedFileName) {
+    showAlertModal("Invalid Name", "Please enter a valid filename.", "warning");
+    return;
+  }
+
+  setShowExportForm(false);
+
+  try {
+    let maxDuration = 0;
+    recordedTracks.forEach((track) => {
+      if (track.length === 0) return;
+      const lastNote = track[track.length - 1];
+      if (lastNote.isImported && lastNote.audioBuffer) {
+        const trackEnd = lastNote.time + lastNote.audioBuffer.duration * 1000;
+        maxDuration = Math.max(maxDuration, trackEnd);
+      } else {
+        maxDuration = Math.max(maxDuration, lastNote.time + 1000);
+      }
+    });
+
+    const duration = maxDuration / 1000;
+    const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
+
+    recordedTracks.forEach((track, trackIndex) => {
+      const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
+      const anySolo = trackSettings.some((t) => t.solo);
+      const settings = trackSettings[trackIndex];
+      
+      // Skip muted tracks or non-solo tracks when solo is active
+      if (settings?.muted || (anySolo && !settings?.solo)) return;
+
+      track.forEach(({ key, time, isImported, audioBuffer }) => {
+        if (isImported && audioBuffer) {
+          const source = offlineCtx.createBufferSource();
+          source.buffer = audioBuffer;
+          const gainNode = offlineCtx.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
+          source.connect(gainNode).connect(offlineCtx.destination);
+          source.start(time / 1000);
         } else {
-          maxDuration = Math.max(maxDuration, lastNote.time + 1000);
+          const buffer = sounds[key];
+          if (!buffer) return;
+          const source = offlineCtx.createBufferSource();
+          source.buffer = buffer;
+          const gainNode = offlineCtx.createGain();
+          gainNode.gain.value = masterVolume * trackVolume;
+          source.connect(gainNode).connect(offlineCtx.destination);
+          source.start(time / 1000);
         }
       });
+    });
 
-      const duration = maxDuration / 1000;
-      const offlineCtx = new OfflineAudioContext(2, 44100 * duration, 44100);
+    const renderedBuffer = await offlineCtx.startRendering();
+    const wavBlob = bufferToWav(renderedBuffer);
 
-      recordedTracks.forEach((track, trackIndex) => {
-        const trackVolume = trackSettings[trackIndex]?.volume ?? 1;
-        track.forEach(({ key, time, isImported, audioBuffer }) => {
-          if (isImported && audioBuffer) {
-            const source = offlineCtx.createBufferSource();
-            source.buffer = audioBuffer;
-            const gainNode = offlineCtx.createGain();
-            gainNode.gain.value = masterVolume * trackVolume;
-            source.connect(gainNode).connect(offlineCtx.destination);
-            source.start(time / 1000);
-          } else {
-            const buffer = sounds[key];
-            if (!buffer) return;
-            const source = offlineCtx.createBufferSource();
-            source.buffer = buffer;
-            const gainNode = offlineCtx.createGain();
-            gainNode.gain.value = masterVolume * trackVolume;
-            source.connect(gainNode).connect(offlineCtx.destination);
-            source.start(time / 1000);
-          }
-        });
-      });
-
-      const renderedBuffer = await offlineCtx.startRendering();
-      const wavBlob = bufferToWav(renderedBuffer);
-
-      const url = URL.createObjectURL(wavBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${fileName}.wav`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Export failed:", err);
-      showAlertModal("Export Failed", "Failed to export recording. Please try again.", "error");
-    }
-  };
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${sanitizedFileName}.wav`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showAlertModal("Success", `Recording exported as ${sanitizedFileName}.wav`, "success");
+    setExportFileName("animalband_recording"); // Reset for next time
+  } catch (err) {
+    console.error("Export failed:", err);
+    showAlertModal("Export Failed", "Failed to export recording. Please try again.", "error");
+  }
+};
 
   const saveRecordingLocally = async () => {
   if (isSaving) return;
@@ -967,7 +986,7 @@ export default function MobileStage() {
     // Include recordingId if in edit mode AND overwriting
     if (isEditMode && saveOption === "overwrite") {
       if (!editingRecordingId) {
-        alert("Error: Missing recording ID for overwrite operation.");
+        showAlertModal("Error", "Missing recording ID for overwrite operation.", "error");
         setIsSaving(false);
         return;
       }
@@ -991,16 +1010,16 @@ export default function MobileStage() {
 
     if (response.ok) {
       if (isEditMode && saveOption === "overwrite") {
-        alert("Recording updated successfully!");
+        showAlertModal("Success", "Recording updated successfully!", "success");
         setHasUnsavedChanges(false);
         setInitialTrackCount(recordedTracks.length);
       } else if (isEditMode && saveOption === "remix") {
-        alert("Remix saved as a new recording!");
+        showAlertModal("Success", "Remix saved as a new recording!", "success");
         setIsEditMode(false);
         setEditingRecordingId(null);
         setHasUnsavedChanges(false);
       } else {
-        alert("Recording saved successfully!");
+        showAlertModal("Success", "Recording saved successfully!", "success");
       }
       
       setShowSaveForm(false);
@@ -1012,15 +1031,15 @@ export default function MobileStage() {
     } else {
       const errorText = await response.text();
       console.error("Save failed:", errorText);
-      alert("Failed to save recording. Please try again.");
+      showAlertModal("Save Failed", "Failed to save recording. Please try again.", "error");
     }
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === "AbortError") {
-      alert("Request timeout. Please try again.");
+      showAlertModal("Timeout", "Request timeout. Please try again.", "error");
     } else {
       console.error("Save error:", err);
-      alert("Error saving recording. Please try again.");
+      showAlertModal("Error", "Error saving recording. Please try again.", "error");
     }
   } finally {
     setIsSaving(false);
@@ -1476,6 +1495,37 @@ export default function MobileStage() {
             </div>
           </div>
         )}
+
+        {showExportForm && (
+  <div className="modal-overlay" onClick={() => setShowExportForm(false)}>
+    <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+      <h3>Export Recording</h3>
+      <label>
+        Filename:
+        <input
+          type="text"
+          value={exportFileName}
+          onChange={(e) => setExportFileName(e.target.value)}
+          placeholder="animalband_recording"
+          maxLength={50}
+          required
+          aria-label="Export Filename"
+        />
+      </label>
+      <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+        File will be saved as {sanitizeFilename(exportFileName) || 'unnamed'}.wav
+      </p>
+      <div className="form-buttons">
+        <button onClick={() => setShowExportForm(false)}>
+          Cancel
+        </button>
+        <button onClick={performExport}>
+          Export
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Custom Alert Modal */}
         {showModal && (
