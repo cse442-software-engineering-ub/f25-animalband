@@ -327,11 +327,9 @@ export default function MobileOtherProfile() {
           </span>
           <span>Stage</span>
         </Link>
-        <Link to="/looping" className="mobile-nav-item">
-          <span className="material-symbols-outlined mobile-nav-icon">
-            instant_mix
-          </span>
-          <span>Looping</span>
+        <Link to="/playlists" className="mobile-nav-item">
+          <span className="material-symbols-outlined mobile-nav-icon">playlist_play</span>
+          <span>Playlists</span>
         </Link>
         <Link to="/forum" className="mobile-nav-item">
           <span className="material-symbols-outlined mobile-nav-icon">
